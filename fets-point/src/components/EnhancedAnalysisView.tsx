@@ -24,30 +24,30 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
   const analytics = useMemo(() => {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
-    
+
     // Filter schedules for current month
     const monthlySchedules = schedules.filter(s => {
       const scheduleDate = new Date(s.date)
       return scheduleDate.getMonth() === month && scheduleDate.getFullYear() === year
     })
-    
+
     // Filter staff by active branch
     let filteredStaff = staffProfiles
     if (activeBranch !== 'global') {
       filteredStaff = staffProfiles.filter(s => s.branch_assigned === activeBranch)
     }
-    
+
     // Filter schedules for branch staff
-    const branchSchedules = monthlySchedules.filter(s => 
+    const branchSchedules = monthlySchedules.filter(s =>
       filteredStaff.some(staff => staff.id === s.profile_id)
     )
-    
+
     // Monthly requests for current month
     const monthlyRequests = requests.filter(r => {
       const requestDate = new Date(r.requested_date)
       return requestDate.getMonth() === month && requestDate.getFullYear() === year
     })
-    
+
     // Calculate overtime statistics
     const overtimeStats = {
       totalOvertimeHours: branchSchedules.reduce((sum, s) => sum + (s.overtime_hours || 0), 0),
@@ -55,12 +55,12 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
       pureOvertimeShifts: branchSchedules.filter(s => s.shift_code === 'OT').length,
       averageOvertimePerShift: 0
     }
-    
+
     const overtimeShiftsCount = branchSchedules.filter(s => s.overtime_hours && s.overtime_hours > 0).length
-    overtimeStats.averageOvertimePerShift = overtimeShiftsCount > 0 
-      ? overtimeStats.totalOvertimeHours / overtimeShiftsCount 
+    overtimeStats.averageOvertimePerShift = overtimeShiftsCount > 0
+      ? overtimeStats.totalOvertimeHours / overtimeShiftsCount
       : 0
-    
+
     // Shift distribution
     const shiftDistribution = {
       dayShifts: branchSchedules.filter(s => s.shift_code === 'D').length,
@@ -71,23 +71,33 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
       trainingDays: branchSchedules.filter(s => s.shift_code === 'T').length,
       overtimeDays: branchSchedules.filter(s => s.shift_code === 'OT').length
     }
-    
+
     // Staff individual analytics
     const staffAnalytics = filteredStaff.map(staff => {
       const staffSchedules = branchSchedules.filter(s => s.profile_id === staff.id)
       const staffOvertimeHours = staffSchedules.reduce((sum, s) => sum + (s.overtime_hours || 0), 0)
-      
+
+      const dayShifts = staffSchedules.filter(s => s.shift_code === 'D').length
+      const eveningShifts = staffSchedules.filter(s => s.shift_code === 'E').length
+      const halfDays = staffSchedules.filter(s => s.shift_code === 'HD').length
+      const trainingDays = staffSchedules.filter(s => s.shift_code === 'T').length
+      const overtimeDays = staffSchedules.filter(s => s.shift_code === 'OT').length
+
+      const effectiveWorkingDays = dayShifts + eveningShifts + trainingDays + overtimeDays + (halfDays * 0.5)
+
       return {
         ...staff,
         totalShifts: staffSchedules.length,
+        effectiveWorkingDays,
         overtimeHours: staffOvertimeHours,
-        dayShifts: staffSchedules.filter(s => s.shift_code === 'D').length,
-        eveningShifts: staffSchedules.filter(s => s.shift_code === 'E').length,
+        dayShifts,
+        eveningShifts,
+        halfDays,
         restDays: staffSchedules.filter(s => s.shift_code === 'RD').length,
         leaveDays: staffSchedules.filter(s => s.shift_code === 'L').length
       }
     })
-    
+
     // Request analytics
     const requestStats = {
       totalRequests: monthlyRequests.length,
@@ -97,12 +107,12 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
       leaveRequests: monthlyRequests.filter(r => r.request_type === 'leave').length,
       swapRequests: monthlyRequests.filter(r => r.request_type === 'shift_swap').length
     }
-    
+
     // Efficiency metrics
     const totalPossibleShifts = filteredStaff.length * new Date(year, month + 1, 0).getDate()
-    const totalActualShifts = branchSchedules.filter(s => ['D', 'E', 'HD', 'T', 'OT'].includes(s.shift_code)).length
-    const utilizationRate = totalPossibleShifts > 0 ? (totalActualShifts / totalPossibleShifts) * 100 : 0
-    
+    const totalEffectiveShifts = staffAnalytics.reduce((sum, s) => sum + s.effectiveWorkingDays, 0)
+    const utilizationRate = totalPossibleShifts > 0 ? (totalEffectiveShifts / totalPossibleShifts) * 100 : 0
+
     return {
       overtimeStats,
       shiftDistribution,
@@ -110,8 +120,9 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
       requestStats,
       totalStaff: filteredStaff.length,
       totalSchedules: branchSchedules.length,
+      totalEffectiveShifts,
       utilizationRate,
-      averageShiftsPerStaff: filteredStaff.length > 0 ? branchSchedules.length / filteredStaff.length : 0
+      averageShiftsPerStaff: filteredStaff.length > 0 ? totalEffectiveShifts / filteredStaff.length : 0
     }
   }, [schedules, staffProfiles, requests, currentDate, activeBranch])
 
@@ -121,11 +132,11 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
     .slice(0, 5)
 
   // Get shift distribution percentage
-  const totalWorkingShifts = analytics.shiftDistribution.dayShifts + 
-                              analytics.shiftDistribution.eveningShifts + 
-                              analytics.shiftDistribution.halfDays +
-                              analytics.shiftDistribution.trainingDays +
-                              analytics.shiftDistribution.overtimeDays
+  const totalWorkingShifts = analytics.shiftDistribution.dayShifts +
+    analytics.shiftDistribution.eveningShifts +
+    analytics.shiftDistribution.halfDays +
+    analytics.shiftDistribution.trainingDays +
+    analytics.shiftDistribution.overtimeDays
 
   return (
     <div className="space-y-6">
@@ -136,9 +147,9 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           Workforce Analytics
         </h2>
         <p className="text-gray-600">
-          {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} - 
-          {activeBranch === 'global' ? 'All Centers' : 
-           activeBranch === 'calicut' ? 'Calicut Center' : 'Cochin Center'}
+          {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} -
+          {activeBranch === 'global' ? 'All Centers' :
+            activeBranch === 'calicut' ? 'Calicut Center' : 'Cochin Center'}
         </p>
       </div>
 
@@ -149,19 +160,23 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           <div className="text-2xl font-bold text-blue-600">{analytics.totalStaff}</div>
           <div className="text-sm text-blue-700">Total Staff</div>
         </div>
-        
+
         <div className="bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg p-6 text-center">
           <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-green-600">{analytics.totalSchedules}</div>
-          <div className="text-sm text-green-700">Total Shifts</div>
+          <div className="text-2xl font-bold text-green-600">
+            {Number.isInteger(analytics.totalEffectiveShifts)
+              ? analytics.totalEffectiveShifts
+              : analytics.totalEffectiveShifts.toFixed(1)}
+          </div>
+          <div className="text-sm text-green-700">Total Shifts (Effective)</div>
         </div>
-        
+
         <div className="bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg p-6 text-center">
           <Clock className="h-8 w-8 text-purple-500 mx-auto mb-2" />
           <div className="text-2xl font-bold text-purple-600">{analytics.overtimeStats.totalOvertimeHours}</div>
           <div className="text-sm text-purple-700">OT Hours</div>
         </div>
-        
+
         <div className="bg-white/60 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg p-6 text-center">
           <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
           <div className="text-2xl font-bold text-orange-600">{analytics.utilizationRate.toFixed(1)}%</div>
@@ -175,23 +190,23 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           <Clock className="h-5 w-5 mr-2 text-purple-500" />
           Overtime Analytics
         </h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="text-center p-4 bg-purple-50/50 rounded-lg">
             <div className="text-xl font-bold text-purple-600">{analytics.overtimeStats.totalOvertimeHours}</div>
             <div className="text-sm text-purple-700">Total OT Hours</div>
           </div>
-          
+
           <div className="text-center p-4 bg-purple-50/50 rounded-lg">
             <div className="text-xl font-bold text-purple-600">{analytics.overtimeStats.overtimeShifts}</div>
             <div className="text-sm text-purple-700">Shifts with OT</div>
           </div>
-          
+
           <div className="text-center p-4 bg-purple-50/50 rounded-lg">
             <div className="text-xl font-bold text-purple-600">{analytics.overtimeStats.pureOvertimeShifts}</div>
             <div className="text-sm text-purple-700">Pure OT Shifts</div>
           </div>
-          
+
           <div className="text-center p-4 bg-purple-50/50 rounded-lg">
             <div className="text-xl font-bold text-purple-600">{analytics.overtimeStats.averageOvertimePerShift.toFixed(1)}</div>
             <div className="text-sm text-purple-700">Avg OT/Shift</div>
@@ -206,12 +221,11 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
               {topPerformers.map((staff, index) => (
                 <div key={staff.id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
                       index === 1 ? 'bg-gray-300 text-gray-700' :
-                      index === 2 ? 'bg-orange-300 text-orange-900' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
+                        index === 2 ? 'bg-orange-300 text-orange-900' :
+                          'bg-blue-100 text-blue-700'
+                      }`}>
                       {index + 1}
                     </div>
                     <div>
@@ -236,7 +250,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           <BarChart3 className="h-5 w-5 mr-2 text-blue-500" />
           Shift Distribution
         </h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {[
             { key: 'dayShifts', label: 'Day', color: 'bg-blue-500', value: analytics.shiftDistribution.dayShifts },
@@ -268,33 +282,33 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           <AlertCircle className="h-5 w-5 mr-2 text-yellow-500" />
           Request Analytics
         </h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="text-center p-3 bg-blue-50/50 rounded-lg">
             <div className="text-xl font-bold text-blue-600">{analytics.requestStats.totalRequests}</div>
             <div className="text-sm text-blue-700">Total Requests</div>
           </div>
-          
+
           <div className="text-center p-3 bg-yellow-50/50 rounded-lg">
             <div className="text-xl font-bold text-yellow-600">{analytics.requestStats.pendingRequests}</div>
             <div className="text-sm text-yellow-700">Pending</div>
           </div>
-          
+
           <div className="text-center p-3 bg-green-50/50 rounded-lg">
             <div className="text-xl font-bold text-green-600">{analytics.requestStats.approvedRequests}</div>
             <div className="text-sm text-green-700">Approved</div>
           </div>
-          
+
           <div className="text-center p-3 bg-red-50/50 rounded-lg">
             <div className="text-xl font-bold text-red-600">{analytics.requestStats.rejectedRequests}</div>
             <div className="text-sm text-red-700">Rejected</div>
           </div>
-          
+
           <div className="text-center p-3 bg-purple-50/50 rounded-lg">
             <div className="text-xl font-bold text-purple-600">{analytics.requestStats.leaveRequests}</div>
             <div className="text-sm text-purple-700">Leave Requests</div>
           </div>
-          
+
           <div className="text-center p-3 bg-indigo-50/50 rounded-lg">
             <div className="text-xl font-bold text-indigo-600">{analytics.requestStats.swapRequests}</div>
             <div className="text-sm text-indigo-700">Swap Requests</div>
@@ -308,7 +322,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
           <Users className="h-5 w-5 mr-2 text-green-500" />
           Staff Performance Summary
         </h3>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -340,7 +354,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
             </tbody>
           </table>
         </div>
-        
+
         {analytics.staffAnalytics.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No staff data available for the selected period.

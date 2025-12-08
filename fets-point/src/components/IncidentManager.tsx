@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, User, Clock, AlertTriangle,
   Monitor, Wrench, Building, Users, UserX, Globe, Zap, MoreHorizontal, MessageSquare, Send,
-  X, CheckCircle, Circle, Edit3, Trash2, Calendar, Filter, Eye, MapPin
+  X, CheckCircle, Circle, Edit3, Trash2, Calendar, Filter, Eye, MapPin, Activity
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
@@ -47,20 +47,20 @@ interface Comment {
 }
 
 const INCIDENT_CATEGORIES = [
-  { id: 'computer', name: 'Computer/System', icon: Monitor, color: 'bg-blue-500' },
-  { id: 'equipment', name: 'Equipment Failure', icon: Wrench, color: 'bg-orange-500' },
-  { id: 'property', name: 'Property Damage', icon: Building, color: 'bg-red-500' },
-  { id: 'staff', name: 'Staff Issue', icon: Users, color: 'bg-purple-500' },
-  { id: 'candidate', name: 'Candidate Issue', icon: UserX, color: 'bg-pink-500' },
-  { id: 'client', name: 'Client/Provider', icon: Globe, color: 'bg-green-500' },
-  { id: 'utility', name: 'Environment/Utility', icon: Zap, color: 'bg-yellow-500' },
-  { id: 'other', name: 'Other', icon: MoreHorizontal, color: 'bg-gray-500' }
+  { id: 'computer', name: 'Computer/System', icon: Monitor, color: 'text-blue-600' },
+  { id: 'equipment', name: 'Equipment Failure', icon: Wrench, color: 'text-orange-600' },
+  { id: 'property', name: 'Property Damage', icon: Building, color: 'text-red-600' },
+  { id: 'staff', name: 'Staff Issue', icon: Users, color: 'text-purple-600' },
+  { id: 'candidate', name: 'Candidate Issue', icon: UserX, color: 'text-pink-600' },
+  { id: 'client', name: 'Client/Provider', icon: Globe, color: 'text-green-600' },
+  { id: 'utility', name: 'Environment/Utility', icon: Zap, color: 'text-yellow-600' },
+  { id: 'other', name: 'Other', icon: MoreHorizontal, color: 'text-gray-600' }
 ]
 
 const PRIORITY_CONFIG = {
-  critical: { color: 'bg-red-500 text-white', dot: 'bg-red-500', label: 'Critical', border: 'border-red-200', ring: 'ring-red-500' },
-  major: { color: 'bg-orange-500 text-white', dot: 'bg-orange-500', label: 'Major', border: 'border-orange-200', ring: 'ring-orange-500' },
-  minor: { color: 'bg-blue-500 text-white', dot: 'bg-blue-500', label: 'Minor', border: 'border-blue-200', ring: 'ring-blue-500' }
+  critical: { color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500', label: 'Critical' },
+  major: { color: 'bg-orange-100 text-orange-700 border-orange-200', dot: 'bg-orange-500', label: 'Major' },
+  minor: { color: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-500', label: 'Minor' }
 }
 
 const STATUS_CONFIG = {
@@ -199,7 +199,7 @@ export default function IncidentManager() {
 
   const filteredIncidents = incidents.filter(incident => {
     if (searchQuery && !incident.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !incident.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+      !incident.description.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
     if (categoryFilter !== 'all' && incident.category !== categoryFilter) return false
@@ -221,139 +221,181 @@ export default function IncidentManager() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10 backdrop-blur-sm bg-white/95">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Incident Manager</h1>
-                <p className="text-gray-600 mt-1">Track, manage, and resolve operational incidents efficiently</p>
-              </div>
-            </div>
+    <div className="min-h-screen -mt-32 pt-48 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+      {/* Functional Notification Banner */}
+      <div className="h-6 -mx-8 -mt-12 mb-8"></div>
 
-            <button
-              onClick={() => setShowNewIncidentModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              <Plus className="w-5 h-5" />
-              Report Incident
-            </button>
+      <div className="max-w-[1800px] mx-auto px-6">
+        {/* Executive Header - Neumorphic */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
+        >
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gold-gradient mb-2 uppercase">
+              Incident Manager
+            </h1>
+            <p className="text-lg text-gray-600 font-medium">
+              {activeBranch?.name ? `${activeBranch.name} · ` : ''}Track, manage, and resolve operational incidents
+            </p>
           </div>
+          <div className="text-right">
+            <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </motion.div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-4 mt-4">
-            <div className="flex-1 min-w-[250px] relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {/* Stats Dashboard - Neumorphic */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="neomorphic-card p-5 group hover:text-blue-600"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <Circle className="w-4 h-4 text-blue-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Open</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-blue-600 transition-colors">{stats.total_open}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            className="neomorphic-card p-5 group hover:text-green-600"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Closed</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-green-600 transition-colors">{stats.total_closed}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="neomorphic-card p-5 group hover:text-red-600"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Critical</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-red-600 transition-colors">{stats.critical_open}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            className="neomorphic-card p-5 group hover:text-orange-600"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-orange-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Major</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-orange-600 transition-colors">{stats.major_open}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="neomorphic-card p-5 group hover:text-blue-500"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <Circle className="w-4 h-4 text-blue-500" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Minor</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-blue-500 transition-colors">{stats.minor_open}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            className="neomorphic-card p-5 group hover:text-purple-600"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-purple-600" />
+              </div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">This Week</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-700 group-hover:text-purple-600 transition-colors">{stats.upcoming_this_week}</p>
+          </motion.div>
+        </div>
+
+        {/* Controls & Filters - Neumorphic */}
+        <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1 w-full relative">
+            <div className="neomorphic-card px-4 py-2 flex items-center gap-3">
+              <Search className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search incidents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="bg-transparent border-none focus:ring-0 text-gray-700 w-full placeholder-gray-400"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 bg-white transition-all appearance-none"
-                >
-                  <option value="all">All Categories</option>
-                  {INCIDENT_CATEGORIES.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative">
-                <AlertTriangle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  value={priorityFilter}
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 bg-white transition-all appearance-none"
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="critical">Critical</option>
-                  <option value="major">Major</option>
-                  <option value="minor">Minor</option>
-                </select>
-              </div>
-              <div className="relative">
-                <Circle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 bg-white transition-all appearance-none"
-                >
-                  <option value="all">All Status</option>
-                  <option value="open">Open</option>
-                  <option value="assigned">Assigned</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="escalated">Escalated</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Stats Dashboard */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
-          <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Circle className="w-5 h-5 text-blue-600" />
-              <p className="text-sm font-semibold text-gray-600">Open</p>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.total_open}</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <p className="text-sm font-semibold text-gray-600">Closed</p>
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+            <div className="neomorphic-card px-4 py-2 flex items-center gap-2 min-w-[150px]">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-gray-700 text-sm w-full cursor-pointer"
+              >
+                <option value="all">All Categories</option>
+                {INCIDENT_CATEGORIES.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.total_closed}</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 shadow-md border-2 border-red-300 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <p className="text-sm font-bold text-red-700">Critical</p>
+            <div className="neomorphic-card px-4 py-2 flex items-center gap-2 min-w-[150px]">
+              <AlertTriangle className="w-4 h-4 text-gray-400" />
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-gray-700 text-sm w-full cursor-pointer"
+              >
+                <option value="all">All Priorities</option>
+                <option value="critical">Critical</option>
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+              </select>
             </div>
-            <p className="text-3xl font-bold text-red-900">{stats.critical_open}</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-5 shadow-md border-2 border-orange-300 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
-              <p className="text-sm font-bold text-orange-700">Major</p>
+            <div className="neomorphic-card px-4 py-2 flex items-center gap-2 min-w-[150px]">
+              <Circle className="w-4 h-4 text-gray-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-gray-700 text-sm w-full cursor-pointer"
+              >
+                <option value="all">All Status</option>
+                <option value="open">Open</option>
+                <option value="assigned">Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="escalated">Escalated</option>
+                <option value="closed">Closed</option>
+              </select>
             </div>
-            <p className="text-3xl font-bold text-orange-900">{stats.major_open}</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 shadow-md border-2 border-blue-300 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Circle className="w-5 h-5 text-blue-600" />
-              <p className="text-sm font-bold text-blue-700">Minor</p>
-            </div>
-            <p className="text-3xl font-bold text-blue-900">{stats.minor_open}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 shadow-md border-2 border-purple-300 hover:shadow-lg transition-all">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-purple-600" />
-              <p className="text-sm font-bold text-purple-700">This Week</p>
-            </div>
-            <p className="text-3xl font-bold text-purple-900">{stats.upcoming_this_week}</p>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowNewIncidentModal(true)}
+              className="neomorphic-btn group"
+            >
+              <Plus className="w-5 h-5 text-gray-600 group-hover:text-yellow-600 transition-colors" />
+              <span className="group-hover:text-yellow-600 transition-colors">Report Incident</span>
+            </motion.button>
           </div>
         </div>
 
@@ -361,31 +403,33 @@ export default function IncidentManager() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-red-500 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-yellow-500 mx-auto mb-4"></div>
               <p className="text-gray-600 font-medium">Loading incidents...</p>
             </div>
           </div>
         ) : filteredIncidents.length === 0 ? (
-          <div className="bg-white rounded-2xl p-16 text-center shadow-md border border-gray-200">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="neomorphic-card p-16 text-center">
+            <div className="w-20 h-20 bg-[#e0e5ec] rounded-full shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-10 h-10 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">No incidents found</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-gray-700 mb-3">No incidents found</h3>
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
               {searchQuery || categoryFilter !== 'all' || priorityFilter !== 'all' || statusFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : 'Great news! There are no incidents reported. Click below to report a new incident if needed.'}
             </p>
-            <button
+            <motion.button
               onClick={() => setShowNewIncidentModal(true)}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="neomorphic-btn mx-auto group"
             >
-              <Plus className="w-5 h-5" />
-              Report Incident
-            </button>
+              <Plus className="w-5 h-5 text-gray-600 group-hover:text-yellow-600" />
+              <span className="group-hover:text-yellow-600">Report Incident</span>
+            </motion.button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence mode="popLayout">
               {filteredIncidents.map((incident) => {
                 const categoryConfig = INCIDENT_CATEGORIES.find(cat => cat.id === incident.category) || INCIDENT_CATEGORIES[INCIDENT_CATEGORIES.length - 1]
@@ -402,78 +446,66 @@ export default function IncidentManager() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
+                    whileHover={{ translateY: -5 }}
                     transition={{ duration: 0.3 }}
-                    className="relative bg-white rounded-2xl shadow-md border border-gray-200 hover:shadow-2xl transition-all duration-300 overflow-hidden group"
+                    className="neomorphic-card p-6 group h-full flex flex-col justify-between"
                   >
-                    {/* Card Header - Category Banner */}
-                    <div className={`${categoryConfig.color} h-2`}></div>
-
-                    <div className="p-6">
-                      {/* Category & Priority */}
+                    <div>
+                      {/* Header Section */}
                       <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-14 h-14 ${categoryConfig.color} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                            <Icon className="w-7 h-7 text-white" />
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-xl bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center`}>
+                            <Icon className={`w-6 h-6 ${categoryConfig.color}`} />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-bold text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors text-lg">
+                          <div>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">{categoryConfig.name}</span>
+                            <h3 className="font-bold text-gray-800 text-lg line-clamp-1 group-hover:text-yellow-600 transition-colors">
                               {incident.title}
                             </h3>
-                            <p className="text-xs text-gray-500 mt-1">{categoryConfig.name}</p>
                           </div>
                         </div>
+                        {hasNewComment && (
+                          <div className="indicator-dot active" title="New Comments"></div>
+                        )}
                       </div>
 
                       {/* Description */}
-                      <p className="text-sm text-gray-700 mb-5 line-clamp-3 leading-relaxed">{incident.description}</p>
+                      <p className="text-sm text-gray-600 mb-6 line-clamp-3 leading-relaxed">{incident.description}</p>
+                    </div>
 
-                      {/* Priority & Status Badges */}
-                      <div className="flex items-center gap-2 mb-5 flex-wrap">
-                        <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold ${priorityConfig.color} shadow-md`}>
-                          <div className={`w-2 h-2 rounded-full ${priorityConfig.dot} animate-pulse`}></div>
+                    <div>
+                      {/* Tags */}
+                      <div className="flex items-center gap-3 mb-6 flex-wrap">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border ${priorityConfig.color} bg-opacity-50`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${priorityConfig.dot} animate-pulse`}></div>
                           {priorityConfig.label}
                         </span>
-                        <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold ${statusConfig.color}`}>
-                          <StatusIcon className="w-3.5 h-3.5" />
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold ${statusConfig.color} bg-opacity-50`}>
+                          <StatusIcon className="w-3 h-3" />
                           {statusConfig.label}
                         </span>
                       </div>
 
                       {/* Footer */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span className="font-medium">{getTimeSince(incident.created_at)}</span>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
+                        <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{getTimeSince(incident.created_at)}</span>
                         </div>
-                        <button
+
+                        <motion.button
                           onClick={() => {
                             setSelectedIncident(incident)
                             setShowIncidentDetail(true)
-                            // Clear notification when opening details
                             setNewCommentAlerts(prev => prev.filter(id => id !== incident.id))
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          whileTap={{ scale: 0.95 }}
+                          className="px-4 py-2 bg-[#e0e5ec] shadow-[3px_3px_6px_#bec3c9,-3px_-3px_6px_#ffffff] rounded-lg text-xs font-bold text-gray-600 hover:text-yellow-600 flex items-center gap-2"
                         >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
+                          <Eye className="w-3.5 h-3.5" />
+                          VIEW
+                        </motion.button>
                       </div>
-
-                      {/* New Comment Alert */}
-                      {hasNewComment && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-full text-xs font-bold animate-pulse shadow-lg">
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>New Comment</span>
-                        </div>
-                      )}
-
-                      {/* Branch Location */}
-                      {activeBranch === 'global' && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="text-xs text-gray-600 font-medium capitalize">{incident.branch_location}</span>
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                 )
@@ -483,7 +515,7 @@ export default function IncidentManager() {
         )}
       </div>
 
-      {/* New Incident Modal */}
+      {/* New Incident Modal - Premium Style */}
       {showNewIncidentModal && (
         <NewIncidentModal
           onClose={() => setShowNewIncidentModal(false)}
@@ -495,7 +527,7 @@ export default function IncidentManager() {
         />
       )}
 
-      {/* Incident Detail Modal */}
+      {/* Incident Detail Modal - Premium Style */}
       {showIncidentDetail && selectedIncident && (
         <IncidentDetailModal
           incident={selectedIncident}
@@ -568,28 +600,31 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+        className="premium-modal max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-500 to-orange-500">
+        <div className="p-6 border-b border-gray-100 bg-white/50 backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Plus className="w-6 h-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Report New Incident</h2>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">New Incident Logic</h2>
+                <p className="text-xs text-gray-500 font-medium">Create a new operational record</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
             >
-              <X className="w-5 h-5 text-white" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(90vh-100px)] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto bg-[#e0e5ec]">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
               Incident Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -597,60 +632,70 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
               placeholder="Brief description of the incident"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
                 Category <span className="text-red-500">*</span>
               </label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-              >
-                {INCIDENT_CATEGORIES.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
+                >
+                  {INCIDENT_CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
                 Priority <span className="text-red-500">*</span>
               </label>
-              <select
-                required
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'critical' | 'major' | 'minor' })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-              >
-                <option value="minor">Minor</option>
-                <option value="major">Major</option>
-                <option value="critical">Critical</option>
-              </select>
+              <div className="relative">
+                <select
+                  required
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'critical' | 'major' | 'minor' })}
+                  className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
+                >
+                  <option value="minor">Minor</option>
+                  <option value="major">Major</option>
+                  <option value="critical">Critical</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <AlertTriangle className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Incident Date <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
+                Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={formData.event_date}
                 onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -658,33 +703,33 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
               rows={5}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
+              className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700 resize-none"
               placeholder="Provide detailed information about the incident..."
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-4 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
+              className="flex-1 px-6 py-3 neomorphic-btn justify-center text-gray-600 hover:text-gray-800"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:from-yellow-600 hover:to-yellow-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  <span>Reporting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5" />
-                  Report Incident
+                  <Zap className="w-5 h-5 fill-current" />
+                  Report Incident Logic
                 </>
               )}
             </button>
@@ -869,8 +914,6 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
 
       if (error) throw error
 
-      // Optimistically update the UI. The real-time subscription will handle updates for other users.
-      // We also check to prevent duplicates in case the subscription fires for the same user.
       setComments(prev => prev.some(c => c.id === data.id) ? prev : [...prev, data])
       setNewComment('')
     } catch (error: any) {
@@ -886,67 +929,72 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="premium-modal max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <div className={`p-6 border-b border-gray-200 ${categoryConfig.color}`}>
+        <div className="p-6 border-b border-gray-100 bg-white/60 backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <Icon className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+                <Icon className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">{incident.title}</h2>
-                <p className="text-white/90 text-sm mt-1">{categoryConfig.name}</p>
+                <h2 className="text-2xl font-bold text-gray-800">{incident.title}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-yellow-600 uppercase tracking-widest">{categoryConfig.name}</span>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-sm text-gray-500">{new Date(incident.event_date).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {canEdit && !isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-2.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+                  className="neomorphic-btn p-2.5 justify-center hover:text-yellow-600"
                   title="Edit incident"
                 >
-                  <Edit3 className="w-5 h-5 text-white" />
+                  <Edit3 className="w-5 h-5" />
                 </button>
               )}
-              <button onClick={onClose} className="p-2.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors">
-                <X className="w-5 h-5 text-white" />
+              <button
+                onClick={onClose}
+                className="neomorphic-btn p-2.5 justify-center hover:text-red-500"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="p-6 max-h-[calc(90vh-100px)] overflow-y-auto">
-          <div className="space-y-6">
+        <div className="p-8 max-h-[calc(90vh-100px)] overflow-y-auto bg-[#e0e5ec]">
+          <div className="space-y-8">
             {isEditing ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Title</label>
+                  <textarea
                     value={editForm.title}
                     onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
-                    placeholder="Title"
+                    className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700 resize-none"
+                    rows={2}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Description</label>
                   <textarea
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 resize-none transition-all"
-                    rows={5}
-                    placeholder="Description"
+                    className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700 resize-none"
+                    rows={6}
                   />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Category</label>
                     <select
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
+                      className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                     >
                       {INCIDENT_CATEGORIES.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -954,11 +1002,11 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Priority</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Priority</label>
                     <select
                       value={editForm.priority}
                       onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as any })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
+                      className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                     >
                       <option value="minor">Minor</option>
                       <option value="major">Major</option>
@@ -966,11 +1014,11 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Status</label>
                     <select
                       value={editForm.status}
                       onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
+                      className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                     >
                       <option value="open">Open</option>
                       <option value="assigned">Assigned</option>
@@ -980,44 +1028,45 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Date</label>
                     <input
                       type="date"
                       value={editForm.event_date}
                       onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
+                      className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                     />
                   </div>
                 </div>
               </div>
             ) : (
               <>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5">
-                  <h3 className="font-bold text-gray-900 mb-3 text-lg">Description</h3>
-                  <p className="text-gray-700 leading-relaxed">{incident.description}</p>
+                <div className="neomorphic-card p-6">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Incident Description</h3>
+                  <p className="text-gray-700 leading-loose">{incident.description}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Incident Date</h4>
-                    <p className="text-gray-700 font-medium">{new Date(incident.event_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="neomorphic-card p-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Reported Date</h4>
+                    <p className="text-gray-800 font-bold">{new Date(incident.event_date).toLocaleDateString()}</p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Created</h4>
-                    <p className="text-gray-700 font-medium">{new Date(incident.created_at).toLocaleString()}</p>
+                  <div className="neomorphic-card p-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Created At</h4>
+                    <p className="text-gray-800 font-bold">{new Date(incident.created_at).toLocaleDateString()}</p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Priority</h4>
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold ${PRIORITY_CONFIG[incident.priority].color} shadow-sm`}>
-                      <div className={`w-2 h-2 rounded-full ${PRIORITY_CONFIG[incident.priority].dot} animate-pulse`}></div>
-                      {PRIORITY_CONFIG[incident.priority].label}
-                    </span>
+                  <div className="neomorphic-card p-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Priority Level</h4>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-3 h-3 rounded-full ${PRIORITY_CONFIG[incident.priority].dot} animate-pulse`}></span>
+                      <span className={`font-bold capitalize ${PRIORITY_CONFIG[incident.priority].color.split(' ')[1]}`}>{incident.priority}</span>
+                    </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Status</h4>
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${STATUS_CONFIG[incident.status].color}`}>
-                      {STATUS_CONFIG[incident.status].label}
-                    </span>
+                  <div className="neomorphic-card p-4">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Status</h4>
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-600" />
+                      <span className="font-bold capitalize text-gray-800">{incident.status.replace('_', ' ')}</span>
+                    </div>
                   </div>
                 </div>
               </>
@@ -1025,29 +1074,34 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
 
             {/* Comments Section */}
             {!isEditing && (
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <MessageSquare className="w-6 h-6 text-gray-600" />
-                  <h3 className="text-xl font-bold text-gray-800">Comment Thread</h3>
+              <div className="pt-8 border-t border-gray-300/50">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-[#e0e5ec] shadow-[inset_2px_2px_4px_#bec3c9,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Operational Log & Comments</h3>
                 </div>
 
-                <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar mb-6">
                   {loadingComments ? (
-                    <p className="text-gray-500">Loading comments...</p>
+                    <p className="text-gray-500 text-sm">Loading logs...</p>
                   ) : comments.length === 0 ? (
-                    <p className="text-gray-500 italic text-center py-4">No comments yet.</p>
+                    <div className="text-center py-8 opacity-50">
+                      <MessageSquare className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500 italic">No comments recorded yet.</p>
+                    </div>
                   ) : (
                     comments.map(comment => (
-                      <div key={comment.id} className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 flex-shrink-0">
+                      <div key={comment.id} className="flex items-start gap-4 group">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center font-bold text-gray-600 text-sm shadow-md flex-shrink-0">
                           {comment.author_full_name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex-1 bg-gray-100 rounded-xl p-3">
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm text-gray-800">{comment.author_full_name}</p>
-                            <p className="text-xs text-gray-500">{new Date(comment.created_at).toLocaleString()}</p>
+                        <div className="flex-1 neomorphic-card p-4 !rounded-tl-none">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-bold text-sm text-gray-800">{comment.author_full_name}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{new Date(comment.created_at).toLocaleString()}</p>
                           </div>
-                          <p className="text-sm text-gray-700 mt-1 break-words">{comment.body}</p>
+                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{comment.body}</p>
                         </div>
                       </div>
                     ))
@@ -1055,40 +1109,45 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                 </div>
 
                 {incident.status !== 'closed' ? (
-                  <form onSubmit={handleCommentSubmit} className="mt-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center font-bold text-white flex-shrink-0">
+                  <form onSubmit={handleCommentSubmit} className="flex items-start gap-4 relative">
+                    <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-white text-sm shadow-md flex-shrink-0">
                       {profile?.full_name?.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 relative">
                       <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all resize-none"
-                        rows={2}
+                        placeholder="Add an operational update..."
+                        className="w-full px-6 py-4 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700 resize-none pr-14"
+                        rows={3}
                         disabled={submittingComment}
                       />
-                      <button type="submit" disabled={submittingComment || !newComment.trim()} className="absolute right-2 bottom-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 transition-colors">
+                      <button
+                        type="submit"
+                        disabled={submittingComment || !newComment.trim()}
+                        className="absolute right-3 bottom-3 p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-lg hover:rotate-12"
+                      >
                         <Send className="w-4 h-4" />
                       </button>
                     </div>
                   </form>
                 ) : (
-                  <div className="mt-4 text-center text-sm text-gray-600 bg-gray-100 p-3 rounded-lg">
-                    Commenting is disabled because this incident is closed.
+                  <div className="neomorphic-card p-4 text-center text-sm font-medium text-gray-500 flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Incident resolved. Comments are locked.
                   </div>
                 )}
               </div>
             )}
 
 
-            <div className="flex gap-3 pt-6 border-t border-gray-200">
+            <div className="flex gap-4 pt-4 border-t border-gray-300/50">
               {isEditing ? (
                 <>
                   <button
                     onClick={handleUpdate}
                     disabled={updating}
-                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {updating ? (
                       <>
@@ -1104,17 +1163,16 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-semibold transition-all"
+                    className="flex-1 px-6 py-3 neomorphic-btn justify-center text-gray-600"
                   >
                     Cancel
                   </button>
                   {canEdit && (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="ml-auto px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
+                      className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete Incident
                     </button>
                   )}
                 </>
@@ -1124,23 +1182,26 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                     <>
                       <button
                         onClick={() => handleStatusChange('in_progress')}
-                        className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold shadow-md"
+                        className="flex-1 px-5 py-3 neomorphic-btn justify-center text-blue-600 hover:text-blue-700"
                       >
+                        <Activity className="w-4 h-4 mr-2" />
                         Mark In Progress
                       </button>
                       <button
                         onClick={() => handleStatusChange('closed')}
-                        className="px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-semibold shadow-md"
+                        className="flex-1 px-5 py-3 neomorphic-btn justify-center text-green-600 hover:text-green-700"
                       >
-                        Mark as Closed
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Close Incident
                       </button>
                     </>
                   )}
                   {incident.status === 'closed' && (
                     <button
                       onClick={() => handleStatusChange('open')}
-                      className="px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-all font-semibold shadow-md"
+                      className="flex-1 px-5 py-3 neomorphic-btn justify-center text-orange-600 hover:text-orange-700"
                     >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
                       Reopen Incident
                     </button>
                   )}
@@ -1153,36 +1214,36 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
 
       {/* Delete Confirmation */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            className="neomorphic-card bg-[#e0e5ec] max-w-md w-full p-8"
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center shadow-inner">
                 <AlertTriangle className="w-7 h-7 text-red-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Delete Incident</h3>
-                <p className="text-sm text-gray-600">This action cannot be undone</p>
+                <h3 className="text-xl font-bold text-gray-800">Delete Incident?</h3>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Irreversible Action</p>
               </div>
             </div>
-            <p className="text-sm text-gray-700 mb-6 leading-relaxed">
-              Are you sure you want to permanently delete this incident? All associated data will be removed from the system.
+            <p className="text-sm text-gray-600 mb-8 leading-relaxed">
+              Are you sure you want to permanently delete this incident record? All associated data including operational logs will be removed immediately.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-5 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-semibold transition-all"
+                className="flex-1 px-5 py-3 neomorphic-btn justify-center text-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold transition-all shadow-lg"
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
-                Delete
+                Confirm Delete
               </button>
             </div>
           </motion.div>

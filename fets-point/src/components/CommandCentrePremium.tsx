@@ -8,8 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChecklistFillModal } from './ChecklistFillModal'
 import { CreateCustomChecklistModal } from './CreateCustomChecklistModal'
 import { CustomChecklistSelector } from './CustomChecklistSelector'
-import { SevenDayCalendarWidget } from './SevenDayCalendarWidget'
-import { SevenDayRosterDisplay } from './SevenDayRosterDisplay'
+import { CommandCentreGraphs } from './CommandCentreGraphs'
 import { NewsTickerBar } from './NewsTickerBar'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
@@ -638,15 +637,8 @@ export default function CommandCentrePremium() {
             </motion.div>
           </div>
 
-          {/* 7 Days Calendar Widget */}
-          <div className="mb-12 neomorphic-card p-6">
-            <SevenDayCalendarWidget onNavigate={() => { }} />
-          </div>
-
-          {/* 7 Days Roster Display Widget */}
-          <div className="mb-12 neomorphic-card p-6">
-            <SevenDayRosterDisplay />
-          </div>
+          {/* Graphical Analytics Section */}
+          <CommandCentreGraphs />
 
           {/* Copyright Footer */}
           <div className="mt-12 text-center">

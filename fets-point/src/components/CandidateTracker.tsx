@@ -516,7 +516,7 @@ export function CandidateTracker() {
             className="mt-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
           >
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2 uppercase text-gold-gradient">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">
                 Candidate Tracker
               </h1>
               <p className="text-lg text-gray-600 font-medium">
@@ -548,7 +548,6 @@ export function CandidateTracker() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <input
                     type="text"
-                    placeholder="Search candidates..."
                     placeholder="Search candidates..."
                     className="w-full pl-10 pr-4 py-3 border-none rounded-xl bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#bec3c9,inset_-3px_-3px_6px_#ffffff] focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-700 placeholder-gray-500"
                     value={searchQuery}

@@ -1,13 +1,13 @@
-
-import { LogOut, Bell, Menu, X, Moon, Sun, User, Command } from 'lucide-react';
-import { useState } from 'react';
+import { FetsLogo } from './FetsLogo';
+import './HeaderTheme.css'; // Import the new theme
+import { Bell, Menu, X, ChevronDown, MapPin, Sparkles, User, Zap, Building2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../hooks/useTheme';
 import { useBranch } from '../hooks/useBranch';
-import { RealtimeIndicator } from './RealtimeIndicators';
-import { BranchSwitcher } from './BranchSwitcher';
 import { useUnreadCount } from '../hooks/useNotifications';
 import NotificationPanel from './iCloud/NotificationPanel';
+import { canSwitchBranches, formatBranchName, getAvailableBranches } from '../utils/authUtils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface HeaderProps {
   isMobile?: boolean;
@@ -16,152 +16,192 @@ interface HeaderProps {
 }
 
 export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen }: HeaderProps = {}) {
-  const { signOut, profile, user } = useAuth();
-  const { isDarkMode, toggleDarkMode } = useTheme();
-  const { activeBranch, setActiveBranch, userAccessLevel } = useBranch();
+  const { profile, user } = useAuth();
+  const { activeBranch, setActiveBranch } = useBranch();
   const unreadCount = useUnreadCount();
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
+  // Branch Switcher State (Integrated)
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const availableBranches = getAvailableBranches(profile?.email, profile?.role);
+  const canSwitch = canSwitchBranches(profile?.email, profile?.role);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsBranchDropdownOpen(false);
+      }
     }
-  };
+    if (isBranchDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isBranchDropdownOpen]);
 
   const getDisplayName = () => {
-    if (profile?.first_name) {
-      return profile.first_name;
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    if (profile?.full_name) {
+      return profile.full_name;
     }
     if (user?.email) {
-      return user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1);
+      const name = user.email.split('@')[0];
+      return name.split('.').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
     }
     return 'User';
   };
 
-  const getUserRole = () => {
-    if (profile?.role) {
-      return profile.role.charAt(0).toUpperCase() + profile.role.slice(1);
-    }
-    return 'Super Admin';
-  };
-
-  const getCurrentTime = () => {
-    return new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
+  const currentBranchName = activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : 'Global View';
 
   return (
     <>
-      {/* PREMIUM HEADER - Taller with seamless flow */}
-      <div className={`fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-500 backdrop-blur-lg shadow-2xl transition-all duration-300`}>
-        <div className="max-w-full mx-auto px-6 py-8">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left Side: Mobile Menu, Logo & Greeting */}
-            <div className="flex items-center gap-4">
-              {/* Mobile Menu Button */}
-              {isMobile && setSidebarOpen && (
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="p-2.5 rounded-xl hover:bg-black/10 transition-all duration-200 shadow-sm"
-                  aria-label="Toggle navigation menu"
-                >
-                  {sidebarOpen ? (
-                    <X className="h-5 w-5 text-black" />
-                  ) : (
-                    <Menu className="h-5 w-5 text-black" />
-                  )}
-                </button>
-              )}
+      {/* PREMIUM HEADER - Nano Banana Design */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-[#FFD700] shadow-md transition-all duration-300">
 
-              {/* Logo - Enhanced */}
-              <div className="w-10 h-10 bg-gradient-to-br from-black/30 to-black/20 rounded-xl flex items-center justify-center shadow-lg border border-black/10">
-                <Command className="h-5 w-5 text-black font-bold" />
-              </div>
+        {/* Subtle Pattern Overlay */}
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
-              {/* Greeting - Enhanced typography */}
-              <div className="hidden sm:block">
-                <div className="text-lg font-extrabold text-black tracking-tight" style={{ fontFamily: "'Inter', 'Poppins', system-ui, sans-serif" }}>
-                  {getGreeting()}, {getDisplayName()}
-                </div>
-                <div className="text-sm text-black/70 font-medium">
-                  All Centres • {getCurrentTime()}
-                </div>
-              </div>
-            </div>
+        {/* Glassmorphism Shine */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
 
-            {/* Center: Branch Display (Read-only) */}
-            {!isMobile && (
-              <div className="flex items-center gap-2 bg-black/15 backdrop-blur-md rounded-2xl px-6 py-3 border border-black/20 shadow-xl">
-                <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-                </svg>
-                <span className="text-sm font-bold text-black">
-                  {activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : 'Global'}
-                </span>
-              </div>
+        <div className="max-w-[1920px] mx-auto px-6 h-28 relative z-10 flex items-center justify-between gap-8">
+
+          {/* LEFT: Branding */}
+          <div className="flex items-center gap-6 shrink-0">
+            {/* Mobile Menu */}
+            {isMobile && setSidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="fets-panel p-3 text-yellow-950 transition-colors"
+                style={{ borderRadius: '12px' }}
+              >
+                {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
             )}
 
-            {/* Right Side: Actions - Enhanced */}
-            <div className="flex items-center gap-3">
-              {/* Branch Switcher (Super Admin Only) */}
-              <BranchSwitcher />
+            {/* FETS.LIVE Logo - Animated Button Edition */}
+            <div className="flex flex-col justify-center h-full py-2">
+              <FetsLogo />
+            </div>
+          </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                {/* Notifications */}
-                <button
-                  onClick={() => setShowNotificationPanel(!showNotificationPanel)}
-                  className="p-2.5 rounded-xl hover:bg-black/10 transition-all duration-200 relative shadow-sm"
-                  title="Notifications"
-                >
-                  <Bell className="h-5 w-5 text-black" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                      <span className="text-white text-[10px] font-bold">{unreadCount}</span>
-                    </span>
-                  )}
-                </button>
-
-                {/* User Avatar - Enhanced */}
-                <div className="w-10 h-10 bg-gradient-to-br from-black/30 to-black/20 rounded-xl flex items-center justify-center shadow-lg border border-black/10">
-                  <span className="text-black text-base font-extrabold">
-                    {getDisplayName().charAt(0).toUpperCase()}
-                  </span>
-                </div>
-
-                {/* Sign Out - Enhanced */}
-                <button
-                  onClick={handleSignOut}
-                  className="hidden sm:block p-2.5 rounded-xl hover:bg-black/10 transition-all duration-200 shadow-sm"
-                  title="Sign Out"
-                >
-                  <LogOut className="h-5 w-5 text-black" />
-                </button>
+          {/* CENTER: Quick Command Search */}
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-auto">
+            <div className="fets-search-container group">
+              <div className="pointer-events-none pl-2 pr-3">
+                <Sparkles className="h-5 w-5 text-yellow-800/40 group-focus-within:text-yellow-800 transition-colors" />
+              </div>
+              <input
+                type="text"
+                placeholder="Type / to search commands, candidates, or staff..."
+                className="fets-search-input"
+              />
+              <div className="pointer-events-none pr-2">
+                <kbd className="hidden sm:inline-block px-2 py-1 bg-yellow-500/10 border border-yellow-600/10 rounded-md text-[10px] font-bold text-yellow-900/60 uppercase tracking-wider">CTRL + K</kbd>
               </div>
             </div>
           </div>
+
+          {/* RIGHT: Unified Action Bar */}
+          <div className="flex items-center gap-4 shrink-0">
+
+            {/* Branch Control */}
+            <div ref={dropdownRef} className="relative hidden md:block">
+              <motion.div
+                className="fets-panel flex items-center p-1.5 pr-4 cursor-pointer"
+                onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="w-9 h-9 rounded-xl bg-yellow-500 text-white flex items-center justify-center shadow-inner">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col ml-3">
+                  <span className="text-[10px] uppercase font-bold text-yellow-900/60 tracking-wider mb-px">Location</span>
+                  <span className="text-sm font-bold text-yellow-950 leading-none">{currentBranchName}</span>
+                </div>
+                {canSwitch && <ChevronDown className="w-4 h-4 text-yellow-900/40 ml-2" />}
+              </motion.div>
+
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {isBranchDropdownOpen && canSwitch && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/60 overflow-hidden z-50 p-2"
+                  >
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 py-2">Select Branch</div>
+                    {availableBranches.map((branch) => (
+                      <button
+                        key={branch}
+                        onClick={() => {
+                          setActiveBranch(branch as any);
+                          setIsBranchDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeBranch === branch
+                          ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-950 shadow-md'
+                          : 'hover:bg-gray-100 text-gray-700'
+                          }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${activeBranch === branch ? 'bg-black' : 'bg-gray-400'}`}></div>
+                        <span className="font-semibold text-sm">{formatBranchName(branch)}</span>
+                        {activeBranch === branch && <Sparkles className="w-4 h-4 ml-auto text-yellow-900/50" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Divider */}
+            <div className="w-[1px] h-10 bg-black/5 hidden md:block"></div>
+
+            {/* Notifications */}
+            <div className="relative">
+              <motion.button
+                onClick={() => setShowNotificationPanel(!showNotificationPanel)}
+                className="fets-panel p-3 text-yellow-950 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="relative">
+                  <Bell className="w-6 h-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#FDB931]"></span>
+                  )}
+                </div>
+              </motion.button>
+            </div>
+
+            {/* User Profile */}
+            <div className="fets-panel hidden sm:flex items-center pl-1 pr-4 py-1 cursor-default group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-100 to-orange-50 flex items-center justify-center text-yellow-900 shadow-sm group-hover:scale-105 transition-transform">
+                <User className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col mx-3">
+                <span className="text-sm font-bold text-yellow-950 leading-none">{getDisplayName()}</span>
+                <span className="text-[10px] font-bold text-yellow-900/60 uppercase tracking-widest leading-tight mt-0.5">
+                  {profile?.role?.replace('_', ' ') || 'Staff'}
+                </span>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        {/* Rounded bottom edge with subtle shadow */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-b from-transparent to-black/5 rounded-b-3xl"></div>
+        {/* Notification Panel Overlay */}
+        <AnimatePresence>
+          {showNotificationPanel && (
+            <NotificationPanel onClose={() => setShowNotificationPanel(false)} />
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Notification Panel */}
-      {showNotificationPanel && (
-        <NotificationPanel onClose={() => setShowNotificationPanel(false)} />
-      )}
     </>
   )
 }

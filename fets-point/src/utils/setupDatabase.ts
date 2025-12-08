@@ -74,6 +74,7 @@ export async function setupFetsConnectTables() {
     ]
 
     for (const command of commands) {
+      // @ts-ignore
       const { error } = await supabase.rpc('exec_sql', { sql: command })
       if (error) {
         console.error('❌ Database setup error:', error)
@@ -97,7 +98,7 @@ export async function checkTablesExist() {
 
     for (const table of tables) {
       try {
-        const { error } = await supabase.from(table).select('id').limit(1)
+        const { error } = await supabase.from(table as any).select('id').limit(1)
         results.push({ table, exists: !error })
       } catch {
         results.push({ table, exists: false })

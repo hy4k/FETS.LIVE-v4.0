@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   Users,
   Search,
   Filter,
@@ -36,7 +36,7 @@ function BaseCentreBadge({ centre, size = 'sm' }: BaseCentreBadgeProps) {
       </span>
     )
   }
-  
+
   const configMap: Record<string, { bg: string; text: string; border: string; name: string }> = {
     calicut: {
       bg: 'bg-yellow-100',
@@ -99,13 +99,13 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
   const [nameInput, setNameInput] = useState('')
   const [error, setError] = useState('')
   const [deleting, setDeleting] = useState(false)
-  
+
   const handleConfirm = async () => {
     if (nameInput.trim() !== staff.full_name) {
       setError('Entered name does not match. Please try again.')
       return
     }
-    
+
     setDeleting(true)
     try {
       await onConfirm()
@@ -116,16 +116,16 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
       setDeleting(false)
     }
   }
-  
+
   useEffect(() => {
     if (isOpen) {
       setNameInput('')
       setError('')
     }
   }, [isOpen])
-  
+
   if (!isOpen) return null
-  
+
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={onClose} />
@@ -147,7 +147,7 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
               </div>
             </div>
           </div>
-          
+
           <div className="p-6 space-y-4">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-sm text-amber-800 font-medium mb-2">
@@ -157,7 +157,7 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
                 This will remove them from all active staff lists, user login/permissions, and future assignments. Historical data will remain intact.
               </p>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 To confirm, type the staff member's exact name:
@@ -173,9 +173,8 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
                   setError('')
                 }}
                 placeholder="Enter staff name to confirm"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 ${
-                  error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
               />
               {error && (
                 <p className="text-sm text-red-600 mt-2 flex items-center space-x-1">
@@ -185,7 +184,7 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
               )}
             </div>
           </div>
-          
+
           <div className="p-6 border-t border-gray-200 flex space-x-3">
             <button
               onClick={onClose}
@@ -218,7 +217,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
   const [formData, setFormData] = useState<Partial<StaffProfile>>({})
   const [saving, setSaving] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  
+
   useEffect(() => {
     if (staff) {
       setFormData({
@@ -229,10 +228,10 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
       })
     }
   }, [staff])
-  
+
   const handleSave = async () => {
     if (!staff) return
-    
+
     setSaving(true)
     try {
       await onSave(formData)
@@ -244,10 +243,10 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
       setSaving(false)
     }
   }
-  
+
   const handleDelete = async () => {
     if (!staff) return
-    
+
     try {
       await onDelete(staff.id)
       toast.success(`Staff member ${staff.full_name} has been successfully deleted`)
@@ -256,9 +255,9 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
       toast.error('Failed to delete staff member')
     }
   }
-  
+
   if (!isOpen || !staff) return null
-  
+
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
@@ -280,7 +279,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </button>
             </div>
           </div>
-          
+
           <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -293,7 +292,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Role
@@ -305,7 +304,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Department
@@ -317,15 +316,15 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Base Centre
               </label>
               <select
                 value={formData.branch_assigned || ''}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
+                onChange={(e) => setFormData({
+                  ...formData,
                   branch_assigned: e.target.value as 'calicut' | 'cochin' | null
                 })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -336,7 +335,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </select>
             </div>
           </div>
-          
+
           <div className="p-6 border-t border-gray-200">
             <div className="flex space-x-3 mb-3">
               <button
@@ -370,7 +369,7 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </button>
             )}
           </div>
-          
+
           <AnimatePresence>
             {showDeleteModal && (
               <DeleteConfirmationModal
@@ -471,7 +470,7 @@ export function StaffManagement() {
   const [editingStaff, setEditingStaff] = useState<StaffProfile | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
-  
+
   useEffect(() => {
     if (isError) {
       toast.error(`Failed to load staff: ${error.message}`)
@@ -501,19 +500,19 @@ export function StaffManagement() {
         return true
       })
   }, [staff, searchTerm, selectedCentre, activeBranch, userAccessLevel])
-  
+
   const handleEditStaff = (staffMember: StaffProfile) => {
     setEditingStaff(staffMember)
     setShowEditModal(true)
   }
-  
+
   const handleSaveStaff = async (updatedData: Partial<Omit<StaffProfile, 'id'>>) => {
     if (!editingStaff) return
     await updateStaff({ id: editingStaff.id, ...updatedData })
     setShowEditModal(false)
     setEditingStaff(null)
   }
-  
+
   const handleDeleteStaff = async (staffId: string) => {
     await deleteStaff(staffId)
     setShowEditModal(false)
@@ -524,18 +523,18 @@ export function StaffManagement() {
     await addStaff(newStaffData)
     setShowAddModal(false)
   }
-  
+
   const getStaffStats = () => {
     const total = filteredStaff.length
     const calicut = filteredStaff.filter(s => s.branch_assigned === 'calicut').length
     const cochin = filteredStaff.filter(s => s.branch_assigned === 'cochin').length
     const global = filteredStaff.filter(s => !s.branch_assigned).length
-    
+
     return { total, calicut, cochin, global }
   }
-  
+
   const stats = getStaffStats()
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -543,13 +542,13 @@ export function StaffManagement() {
       </div>
     )
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Staff Directory</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">Staff Directory</h1>
           <p className="text-gray-600 mt-1">Manage staff assignments and base centre allocations</p>
         </div>
         {userAccessLevel === 'super_admin' && (
@@ -562,7 +561,7 @@ export function StaffManagement() {
           </button>
         )}
       </div>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 border border-gray-200">
@@ -574,7 +573,7 @@ export function StaffManagement() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <div className="flex items-center space-x-3">
             <Building className="w-8 h-8 text-yellow-600" />
@@ -584,7 +583,7 @@ export function StaffManagement() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <div className="flex items-center space-x-3">
             <Building className="w-8 h-8 text-green-600" />
@@ -594,7 +593,7 @@ export function StaffManagement() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <div className="flex items-center space-x-3">
             <Shield className="w-8 h-8 text-purple-600" />
@@ -605,7 +604,7 @@ export function StaffManagement() {
           </div>
         </div>
       </div>
-      
+
       {/* Filters */}
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
@@ -621,7 +620,7 @@ export function StaffManagement() {
               />
             </div>
           </div>
-          
+
           <div className="md:w-64">
             <select
               value={selectedCentre}
@@ -636,7 +635,7 @@ export function StaffManagement() {
           </div>
         </div>
       </div>
-      
+
       {/* Staff Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -686,7 +685,7 @@ export function StaffManagement() {
                   </td>
                   <td className="px-6 py-4">
                     {userAccessLevel === 'super_admin' || (
-                      userAccessLevel === 'admin' && 
+                      userAccessLevel === 'admin' &&
                       (staffMember.branch_assigned === activeBranch || activeBranch === 'global')
                     ) ? (
                       <button
@@ -704,7 +703,7 @@ export function StaffManagement() {
               ))}
             </tbody>
           </table>
-          
+
           {filteredStaff.length === 0 && (
             <div className="p-12 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -714,7 +713,7 @@ export function StaffManagement() {
           )}
         </div>
       </div>
-      
+
       {/* Edit Modal */}
       <AnimatePresence>
         {showEditModal && (

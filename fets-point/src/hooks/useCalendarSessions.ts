@@ -7,12 +7,12 @@ import { Session } from '../types' // Assuming a shared Session type
 const fetchCalendarSessions = async (currentDate: Date, activeBranch: string, applyFilter: (q: any) => any, isGlobalView: boolean) => {
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-  
+
   const startDateIST = formatDateForIST(startOfMonth)
   const endDateIST = formatDateForIST(endOfMonth)
-  
+
   let query = supabase
-    .from('sessions')
+    .from('sessions' as any)
     .select('*')
     .gte('date', startDateIST)
     .lte('date', endDateIST)
@@ -30,13 +30,13 @@ const fetchCalendarSessions = async (currentDate: Date, activeBranch: string, ap
     const isMissingColumnError = (error as any)?.message?.includes('branch_location')
     if ((isMissingColumnError || data?.length === 0) && activeBranch === 'calicut' && !isGlobalView) {
       const fallbackQuery = supabase
-        .from('sessions')
+        .from('sessions' as any)
         .select('*')
         .gte('date', startDateIST)
         .lte('date', endDateIST)
         .order('date', { ascending: true })
         .order('start_time', { ascending: true })
-      
+
       const { data: fallbackData, error: fallbackError } = await fallbackQuery
       if (!fallbackError && fallbackData) {
         data = fallbackData
@@ -46,13 +46,13 @@ const fetchCalendarSessions = async (currentDate: Date, activeBranch: string, ap
   }
 
   if (error) throw new Error(error.message)
-  
+
   return (data as Session[]) || []
 }
 
 export const useCalendarSessions = (currentDate: Date, activeBranch: string, applyFilter: (q: any) => any, isGlobalView: boolean) => {
   const queryKey = ['sessions', 'calendar', currentDate.getFullYear(), currentDate.getMonth(), activeBranch]
-  
+
   return useQuery<Session[], Error>({
     queryKey,
     queryFn: () => fetchCalendarSessions(currentDate, activeBranch, applyFilter, isGlobalView),
@@ -60,17 +60,17 @@ export const useCalendarSessions = (currentDate: Date, activeBranch: string, app
 }
 
 const addSession = async (sessionData: Omit<Session, 'id'>) => {
-  const { error } = await supabase.from('sessions').insert([sessionData])
+  const { error } = await supabase.from('sessions' as any).insert([sessionData])
   if (error) throw error
 }
 
 const updateSession = async (sessionData: Partial<Session> & { id: number }) => {
-  const { error } = await supabase.from('sessions').update(sessionData).eq('id', sessionData.id)
+  const { error } = await supabase.from('sessions' as any).update(sessionData).eq('id', sessionData.id)
   if (error) throw error
 }
 
 const deleteSession = async (sessionId: number) => {
-  const { error } = await supabase.from('sessions').delete().eq('id', sessionId)
+  const { error } = await supabase.from('sessions' as any).delete().eq('id', sessionId)
   if (error) throw error
 }
 

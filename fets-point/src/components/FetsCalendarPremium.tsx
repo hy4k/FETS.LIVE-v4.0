@@ -92,25 +92,48 @@ export function FetsCalendarPremium() {
     return sessions.filter(session => session.date === dateStr)
   }
 
+  const normalizeClientName = (name: string): string => {
+    const upper = name.toUpperCase()
+    if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON'
+    if (upper.includes('ETS') || upper.includes('TOEFL') || upper.includes('GRE')) return 'ETS'
+    if (upper.includes('PROMETRIC')) return 'PROMETRIC'
+    if (upper.includes('PSI')) return 'PSI'
+    return upper
+  }
+
+  const getClientAggregates = (date: Date) => {
+    const daySessions = getSessionsForDate(date)
+    const aggregates: { [key: string]: { candidates: number, sessions: number, displayName: string } } = {}
+
+    daySessions.forEach(session => {
+      const normalizedKey = normalizeClientName(session.client_name)
+      if (!aggregates[normalizedKey]) {
+        aggregates[normalizedKey] = {
+          candidates: 0,
+          sessions: 0,
+          displayName: session.client_name
+        }
+      }
+      aggregates[normalizedKey].candidates += session.candidate_count
+      aggregates[normalizedKey].sessions += 1
+    })
+
+    return aggregates
+  }
+
   const getClientType = (clientName: string): ClientType => {
-    const upperName = clientName.toUpperCase()
-    if (upperName.includes('PEARSON')) return 'PEARSON'
-    if (upperName.includes('VUE')) return 'VUE'
-    if (upperName.includes('ETS')) return 'ETS'
-    if (upperName.includes('PSI')) return 'PSI'
-    if (upperName.includes('PROMETRIC')) return 'PROMETRIC'
+    const normalized = normalizeClientName(clientName)
+    if (normalized in CLIENT_COLORS) return normalized as ClientType
     return 'OTHER'
   }
 
-  const getClientCounts = (date: Date) => {
-    const daySessions = getSessionsForDate(date)
-    const clientCounts: { [key: string]: number } = {}
-
-    daySessions.forEach(session => {
-      clientCounts[session.client_name] = (clientCounts[session.client_name] || 0) + session.candidate_count
-    })
-
-    return clientCounts
+  const getClientLogo = (clientName: string) => {
+    const upperName = clientName.toUpperCase()
+    if (upperName.includes('PROMETRIC')) return '/client-logos/prometric.png'
+    if (upperName.includes('ETS') || upperName.includes('TOEFL') || upperName.includes('GRE')) return '/client-logos/ets.png'
+    if (upperName.includes('PEARSON') || upperName.includes('VUE')) return '/client-logos/pearson.png'
+    if (upperName.includes('PSI')) return '/client-logos/psi.png'
+    return null
   }
 
   const getRemainingSeats = (candidateCount: number) => {
@@ -262,15 +285,15 @@ export function FetsCalendarPremium() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#e0e5ec]">
-        <div className="neomorphic-card p-8 flex flex-col items-center space-y-6">
+      <div className="flex items-center justify-center min-h-screen bg-[#F0F4F8]">
+        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/50 flex flex-col items-center space-y-6">
           <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-rose-200"></div>
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-rose-500 border-t-transparent absolute inset-0"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent absolute inset-0"></div>
           </div>
           <div className="text-center">
-            <p className="text-gray-800 font-semibold text-lg mb-1">Loading Calendar</p>
-            <p className="text-gray-500 text-sm">Fetching latest sessions...</p>
+            <p className="text-slate-800 font-bold text-lg mb-1 font-rajdhani">Loading Calendar</p>
+            <p className="text-slate-500 text-sm">Fetching latest sessions...</p>
           </div>
         </div>
       </div>
@@ -331,7 +354,7 @@ export function FetsCalendarPremium() {
 
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="neomorphic-btn px-4 py-2 text-sm font-semibold text-gray-600"
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm"
             >
               Today
             </button>
@@ -341,7 +364,7 @@ export function FetsCalendarPremium() {
             {/* Add Session Button */}
             <button
               onClick={() => openModal()}
-              className="neomorphic-btn px-4 py-2 text-rose-700 flex items-center space-x-2 font-bold hover:text-rose-800 transition-colors"
+              className="px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center space-x-2 font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
             >
               <Plus className="h-4 w-4" />
               <span>Add Session</span>
@@ -349,88 +372,113 @@ export function FetsCalendarPremium() {
           </div>
         </div>
 
-        {/* Main Grid Conatiner - Neumorphic */}
-        <div className="neomorphic-card p-6 min-h-[600px] border-t-4 border-t-rose-500">
+        {/* Main Grid Conatiner - Clean & Premium */}
+        <div className="bg-[#F0F4F8] rounded-3xl p-6 min-h-[600px]">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 bg-gradient-to-r from-rose-50 to-pink-50 border-b border-rose-100">
+          <div className="grid grid-cols-7 mb-4">
             {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
-              <div key={day} className="p-6 text-center">
-                <div className="font-bold text-rose-700 text-sm uppercase tracking-widest mb-1">{day.substring(0, 3)}</div>
-                <div className="text-rose-600 text-xs font-medium">{day}</div>
+              <div key={day} className="text-center">
+                <div className="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">{day.substring(0, 3)}</div>
               </div>
             ))}
           </div>
 
           {/* Calendar Days Grid */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-rose-100">
+          <div className="grid grid-cols-7 gap-3">
             {days.map((date, index) => {
               if (!date) {
                 return (
-                  <div key={index} className="h-36 bg-gray-50/50"></div>
+                  <div key={index} className="h-40 rounded-2xl bg-slate-100/50 border border-transparent"></div>
                 )
               }
 
               const daySessions = getSessionsForDate(date)
-              const clientCounts = getClientCounts(date)
+              const clientAggregates = getClientAggregates(date)
               const isCurrentDay = isToday(date)
-              const hasEvents = Object.keys(clientCounts).length > 0
+              const hasEvents = Object.keys(clientAggregates).length > 0
 
+              // Neumorphic / Premium Card Style
               return (
                 <div
                   key={index}
                   onClick={() => openDetailsModal(date)}
-                  className={`h-36 p-4 cursor-pointer transition-all duration-200 group ${isCurrentDay
-                      ? 'bg-gradient-to-br from-rose-50 to-pink-50 ring-2 ring-rose-400 ring-inset'
-                      : hasEvents
-                        ? 'bg-white hover:bg-rose-50/50'
-                        : 'bg-gray-50'
+                  className={`h-48 p-3 flex flex-col justify-between cursor-pointer transition-all duration-300 rounded-2xl border ${isCurrentDay
+                    ? 'bg-white border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.2)] ring-1 ring-amber-400'
+                    : hasEvents
+                      ? 'bg-white border-white shadow-[-5px_-5px_10px_rgba(255,255,255,0.8),5px_5px_10px_rgba(209,213,219,0.5)] hover:transform hover:scale-[1.02]'
+                      : 'bg-[#F0F4F8] border-transparent hover:bg-white hover:border-slate-100 hover:shadow-sm'
                     }`}
                 >
-                  <div className="h-full flex flex-col">
+                  <div className="w-full">
                     {/* Date Number */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`text-lg font-bold transition-colors ${isCurrentDay
-                          ? 'text-rose-700'
-                          : date.getMonth() === currentDate.getMonth()
-                            ? 'text-gray-900'
-                            : 'text-gray-400'
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`text-lg font-bold font-rajdhani transition-colors ${isCurrentDay
+                        ? 'text-amber-600'
+                        : date.getMonth() === currentDate.getMonth()
+                          ? 'text-slate-700'
+                          : 'text-slate-400'
                         }`}>
                         {date.getDate()}
                       </div>
-                      {isCurrentDay && <div className="w-2 h-2 bg-rose-700 rounded-full"></div>}
-                      {hasEvents && !isCurrentDay && (<div className="w-2 h-2 bg-rose-300 rounded-full"></div>)}
+                      {isCurrentDay && <div className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]"></div>}
+                      {hasEvents && !isCurrentDay && (<div className="w-2 h-2 bg-slate-400 rounded-full"></div>)}
                     </div>
 
-                    {/* Session Indicators */}
-                    <div className="flex-1 space-y-2 overflow-hidden">
-                      {Object.entries(clientCounts).slice(0, 2).map(([client, count]) => {
-                        const clientType = getClientType(client)
-                        const clientColor = CLIENT_COLORS[clientType]
+                    {/* Session Indicators - Logos */}
+                    <div className="mt-1 space-y-1 overflow-hidden flex flex-col items-center flex-1 w-full justify-start">
+                      {Object.entries(clientAggregates).slice(0, 2).map(([key, stat]) => {
+                        const logoSrc = getClientLogo(key)
+                        // Use key (normalized) to look up colors to be safe
+                        const clientColor = CLIENT_COLORS[key as ClientType] || CLIENT_COLORS['OTHER']
 
+                        if (logoSrc) {
+                          return (
+                            <div key={key} className="w-full relative flex items-center justify-between p-2 rounded-xl bg-white/60 border border-slate-200/60 shadow-sm transition-all hover:bg-white hover:shadow-md group" title={`${stat.displayName}: ${stat.candidates} candidates in ${stat.sessions} sessions`}>
+                              {/* Logo Area */}
+                              <div className="flex-1 flex justify-center items-center h-8 px-1">
+                                <img src={logoSrc} alt={stat.displayName} className="h-full w-auto object-contain mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity" />
+                              </div>
+
+                              {/* Stats Badge */}
+                              <div className="flex flex-col items-end space-y-0.5 min-w-[36px]">
+                                <div className="text-[11px] font-bold text-slate-700 leading-none">
+                                  {stat.candidates}
+                                </div>
+                                {stat.sessions > 1 && (
+                                  <div className="text-[8px] font-semibold text-amber-600 bg-amber-50 px-1 py-0.5 rounded border border-amber-100 leading-none whitespace-nowrap">
+                                    {stat.sessions} Sessions
+                                  </div>
+                                )}
+                                {stat.sessions === 1 && (
+                                  <div className="text-[8px] font-medium text-slate-400 leading-none">
+                                    Cands.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        // Fallback for non-logo clients
                         return (
                           <div
-                            key={client}
-                            className="text-xs rounded-lg px-3 py-2 font-medium truncate transition-all duration-200 border border-rose-200"
-                            style={{ borderLeft: `4px solid ${clientColor.border}`, color: clientColor.text, background: clientColor.tint }}
-                            title={`${client}: ${count} candidates`}
+                            key={key}
+                            className="w-full text-[10px] rounded-lg px-2 py-1.5 font-semibold truncate flex items-center justify-between shadow-sm border border-slate-100 group transition-all hover:shadow-md"
+                            style={{ background: clientColor.bg, color: clientColor.text }}
+                            title={`${stat.displayName}: ${stat.candidates} candidates`}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="truncate text-gray-800">{client.substring(0, 10)}</span>
-                              <span className="ml-2 font-semibold text-gray-900">{count}</span>
+                            <span className="truncate opacity-90 font-bold">{stat.displayName.toUpperCase()}</span>
+                            <div className="flex items-center space-x-1">
+                              {stat.sessions > 1 && <span className="text-[9px] font-bold bg-black/5 px-1 rounded text-current opacity-80">{stat.sessions}</span>}
+                              <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${stat.sessions > 1 ? 'bg-white shadow-sm' : ''}`}>{stat.candidates}</span>
                             </div>
                           </div>
                         )
                       })}
 
-                      {Object.keys(clientCounts).length > 2 && (
-                        <div className="text-xs text-gray-500 font-medium px-3 py-1 bg-rose-100/50 rounded-lg">
-                          +{Object.keys(clientCounts).length - 2} more
-                        </div>
-                      )}
-
-                      {daySessions.length === 0 && date.getMonth() === currentDate.getMonth() && (
-                        <div className="text-xs text-gray-400 px-3 py-2 italic text-center">
-                          No sessions
+                      {Object.keys(clientAggregates).length > 2 && (
+                        <div className="text-[9px] text-slate-400 font-bold px-1 pt-1 flex items-center justify-center bg-slate-50/50 rounded-full py-0.5">
+                          +{Object.keys(clientAggregates).length - 2} more
                         </div>
                       )}
                     </div>
@@ -444,73 +492,61 @@ export function FetsCalendarPremium() {
 
       {/* Session Details Modal */}
       {showDetailsModal && selectedDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="absolute inset-0 backdrop-blur-2xl bg-black/30" onClick={closeModal} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className="absolute inset-0" onClick={closeModal} />
 
-          <div className="relative w-full max-w-6xl unified-card rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto border-t-4 border-t-rose-500">
-            <div className="px-8 py-6 border-b border-rose-100 bg-gradient-to-r from-rose-50 to-pink-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-h3 font-bold text-gray-900 flex items-center mb-1">
-                    <Calendar className="h-6 w-6 mr-3 text-rose-600" />
-                    {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </h3>
-                  <div className="flex items-center space-x-6 text-gray-600">
-                    <div className="flex items-center space-x-2">
-                      <Building className="h-5 w-5 text-rose-600" />
-                      <span className="font-semibold">{getSessionsForDate(selectedDate).length} Sessions</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-5 w-5 text-rose-600" />
-                      <span className="font-semibold">{getSessionsForDate(selectedDate).reduce((sum, s) => sum + s.candidate_count, 0)} Total Candidates</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-5 w-5 text-rose-600" />
-                      <span className="font-semibold">{getRemainingSeats(getSessionsForDate(selectedDate).reduce((sum, s) => sum + s.candidate_count, 0))} Seats Available</span>
-                    </div>
+          <div className="relative w-full max-w-6xl bg-white rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto border border-white/50">
+            <div className="px-8 py-6 border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-sm z-10 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold font-rajdhani text-slate-800 flex items-center mb-1">
+                  <Calendar className="h-6 w-6 mr-3 text-amber-500" />
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </h3>
+                <div className="flex items-center space-x-6 text-slate-500 text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <Building className="h-4 w-4" />
+                    <span>{getSessionsForDate(selectedDate).length} Sessions</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-4 w-4" />
+                    <span>{getSessionsForDate(selectedDate).reduce((sum, s) => sum + s.candidate_count, 0)} Total Candidates</span>
                   </div>
                 </div>
-                <button onClick={closeModal} className="p-2 hover:bg-rose-100 rounded-lg">
-                  <X className="h-6 w-6 text-gray-700" />
-                </button>
               </div>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="h-6 w-6 text-slate-400 hover:text-slate-600" />
+              </button>
             </div>
 
             {/* Client Sessions Display */}
-            <div className="p-8">
-              {Object.entries(getClientCounts(selectedDate)).length > 0 ? (
+            <div className="p-8 bg-slate-50/50 min-h-[400px]">
+              {Object.keys(getClientAggregates(selectedDate)).length > 0 ? (
                 <div className="space-y-8">
-                  {Object.entries(getClientCounts(selectedDate)).map(([client, totalCount]) => {
-                    const clientSessions = getSessionsForDate(selectedDate).filter(s => s.client_name === client)
-                    const clientType = getClientType(client)
-                    const clientColor = CLIENT_COLORS[clientType]
+                  {Object.entries(getClientAggregates(selectedDate)).map(([key, stat]) => {
+                    // key is normalized
+                    const clientSessions = getSessionsForDate(selectedDate).filter(s => normalizeClientName(s.client_name) === key)
+                    const clientType = getClientType(stat.displayName)
+                    const clientColor = CLIENT_COLORS[clientType] || CLIENT_COLORS['OTHER']
+                    const totalCount = stat.candidates
                     const remainingSeats = getRemainingSeats(totalCount)
 
                     return (
-                      <div key={client} className="unified-card rounded-2xl border-l-4 border-l-rose-500 overflow-hidden">
+                      <div key={key} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                         {/* Client Header */}
                         <div
-                          className="p-5 relative border-b border-rose-100"
-                          style={{ borderLeft: `4px solid ${clientColor.border}`, background: clientColor.tint }}
+                          className="p-5 relative border-b border-slate-50"
                         >
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="text-xl font-bold text-gray-900 flex items-center mb-1">
-                                <Building className="h-5 w-5 mr-3 text-rose-600" />
-                                {client}
-                              </h4>
-                              <div className="flex items-center space-x-4 text-gray-600">
-                                <span className="font-semibold">{clientSessions.length} Sessions</span>
-                                <span>•</span>
-                                <span className="font-semibold">{totalCount} Candidates</span>
+                            <div className="flex items-center space-x-4">
+                              <div className={`h-10 w-1 rounded-full`} style={{ background: clientColor.border }}></div>
+                              <div>
+                                <h4 className="text-xl font-bold text-slate-800">{stat.displayName}</h4>
+                                <p className="text-sm text-slate-500">{clientSessions.length} Sessions · {totalCount} Candidates</p>
                               </div>
                             </div>
-                            <div className="text-center bg-white rounded-xl px-5 py-3 border border-rose-200">
-                              <div className="text-gray-600 text-sm font-medium mb-1">Remaining Seats</div>
-                              <div className={`text-2xl font-bold ${remainingSeats > 20 ? 'text-green-600' :
-                                  remainingSeats > 10 ? 'text-yellow-600' :
-                                    'text-red-600'
-                                }`}>
+                            <div className="text-right">
+                              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Seats Available</div>
+                              <div className={`text-xl font-bold ${remainingSeats > 20 ? 'text-emerald-500' : remainingSeats > 10 ? 'text-amber-500' : 'text-rose-500'}`}>
                                 {remainingSeats}
                               </div>
                             </div>
@@ -518,40 +554,35 @@ export function FetsCalendarPremium() {
                         </div>
 
                         {/* Client Sessions */}
-                        <div className="p-6">
+                        <div className="p-6 bg-slate-50/30">
                           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                             {clientSessions.map(session => (
-                              <div key={session.id} className="unified-card rounded-xl border-t-2 border-t-rose-400 p-6 hover:shadow-md transition-all duration-200">
+                              <div key={session.id} className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 hover:shadow-md transition-all duration-300 group">
                                 <div className="flex items-start justify-between mb-4">
                                   <div className="flex-1">
-                                    <h5 className="font-bold text-gray-900 text-lg mb-3 line-clamp-2">{session.exam_name}</h5>
-                                    <div className="space-y-3 text-sm">
-                                      <div className="flex items-center text-gray-600">
-                                        <Clock className="h-4 w-4 mr-3 text-rose-600" />
-                                        <span className="font-semibold">{formatTimeRange(session.start_time, session.end_time)}</span>
+                                    <h5 className="font-bold text-slate-800 font-rajdhani text-lg mb-2 line-clamp-2">{session.exam_name}</h5>
+                                    <div className="space-y-2 text-sm text-slate-600">
+                                      <div className="flex items-center">
+                                        <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                        <span>{formatTimeRange(session.start_time, session.end_time)}</span>
                                       </div>
-                                      <div className="flex items-center text-gray-600">
-                                        <Users className="h-4 w-4 mr-3 text-rose-600" />
-                                        <span className="font-semibold">{session.candidate_count} Candidates</span>
-                                      </div>
-                                      <div className="flex items-center text-gray-600">
-                                        <MapPin className="h-4 w-4 mr-3 text-rose-600" />
-                                        <span className="font-semibold">{getRemainingSeats(session.candidate_count)} Seats Available</span>
+                                      <div className="flex items-center">
+                                        <Users className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                                        <span>{session.candidate_count} Candidates</span>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex space-x-3 pt-4 border-t border-rose-100">
+                                <div className="flex space-x-2 pt-4 mt-2 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       openModal(selectedDate, session)
                                     }}
-                                    className="flex-1 p-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors duration-200 flex items-center justify-center font-medium"
+                                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
                                   >
-                                    <Edit className="h-4 w-4 mr-2" />
                                     Edit
                                   </button>
                                   <button
@@ -561,10 +592,9 @@ export function FetsCalendarPremium() {
                                         handleDelete(session.id)
                                       }
                                     }}
-                                    className="flex-1 p-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 flex items-center justify-center font-medium"
+                                    className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition-colors"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
+                                    <Trash2 className="h-3.5 w-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -576,32 +606,22 @@ export function FetsCalendarPremium() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-20">
-                  <div className="bg-rose-100 rounded-full p-8 w-28 h-28 mx-auto mb-6 flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-rose-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">No sessions scheduled</h3>
-                  <p className="text-gray-600 text-sm mb-6 max-w-md mx-auto">No sessions found for this date. Create your first session to get started.</p>
-                  <button
-                    onClick={() => openModal(selectedDate)}
-                    className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl transition-colors duration-200 flex items-center mx-auto"
-                  >
-                    <Plus className="h-6 w-6 mr-3" />
-                    Create session
-                  </button>
+                <div className="text-center py-24 flex flex-col items-center justify-center opacity-60">
+                  <Calendar className="h-16 w-16 text-slate-300 mb-4" />
+                  <p className="text-slate-500 font-medium">No sessions scheduled for this day</p>
                 </div>
               )}
             </div>
 
             {/* Bottom Action Bar */}
             {getSessionsForDate(selectedDate).length > 0 && (
-              <div className="px-8 py-6 bg-rose-50/80 backdrop-blur-xl border-t border-rose-100">
+              <div className="px-8 py-5 bg-white border-t border-gray-100 rounded-b-3xl">
                 <div className="flex items-center justify-center">
                   <button
                     onClick={() => openModal(selectedDate)}
-                    className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl transition-colors duration-200 flex items-center"
+                    className="px-6 py-2.5 bg-slate-800 hover:bg-black text-white font-semibold rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center text-sm"
                   >
-                    <Plus className="h-6 w-6 mr-3" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Add Another Session
                   </button>
                 </div>
@@ -613,28 +633,21 @@ export function FetsCalendarPremium() {
 
       {/* Add/Edit Session Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div
-            className="absolute inset-0 backdrop-blur-2xl bg-black/40"
-            onClick={closeModal}
-          />
-
-          <div className="relative w-full max-w-3xl unified-card rounded-2xl shadow-xl overflow-hidden border-t-4 border-t-rose-500">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
             {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-rose-100 bg-gradient-to-r from-rose-50 to-pink-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-h3 font-bold text-gray-900 mb-2">
-                    {editingSession ? 'Edit Session' : 'Create session'}
-                  </h3>
-                  <p className="text-gray-600">
-                    {editingSession ? 'Update session information' : 'Add a new session to the calendar'}
-                  </p>
-                </div>
-                <button onClick={closeModal} className="p-2 hover:bg-rose-100 rounded-lg">
-                  <X className="h-6 w-6 text-gray-700" />
-                </button>
+            <div className="px-8 py-6 border-b border-gray-100 bg-white flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold font-rajdhani text-slate-800">
+                  {editingSession ? 'Edit Session' : 'Create Session'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {editingSession ? 'Update session details.' : 'Add a new session to the current calendar.'}
+                </p>
               </div>
+              <button onClick={closeModal} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
             </div>
 
             {/* Modal Body */}
@@ -643,23 +656,26 @@ export function FetsCalendarPremium() {
                 {/* Client and Exam */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Client Name *</label>
-                    <input
-                      type="text"
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Client Name</label>
+                    <select
                       value={formData.client_name}
                       onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                      placeholder="e.g., Pearson VUE"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
-                    />
+                    >
+                      <option value="">Select Client</option>
+                      {Object.keys(CLIENT_COLORS).map(client => (
+                        <option key={client} value={client}>{client}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Exam Name *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Exam Name</label>
                     <input
                       type="text"
                       value={formData.exam_name}
                       onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       placeholder="e.g., CMA US Exam"
                       required
                     />
@@ -669,22 +685,22 @@ export function FetsCalendarPremium() {
                 {/* Date and Candidate Count */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Date *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Date</label>
                     <input
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Candidate Count *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Candidate Count</label>
                     <input
                       type="number"
                       value={formData.candidate_count}
                       onChange={(e) => setFormData({ ...formData, candidate_count: parseInt(e.target.value) })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       min="1"
                       required
                     />
@@ -694,22 +710,22 @@ export function FetsCalendarPremium() {
                 {/* Time Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Start Time</label>
                     <input
                       type="time"
                       value={formData.start_time}
                       onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">End Time *</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">End Time</label>
                     <input
                       type="time"
                       value={formData.end_time}
                       onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                      className="w-full px-4 py-3 border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
                   </div>
@@ -717,20 +733,22 @@ export function FetsCalendarPremium() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-4 mt-8">
+              <div className="flex space-x-4 mt-8 pt-6 border-t border-slate-50">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-6 py-3 border border-rose-300 text-rose-700 font-semibold rounded-lg hover:bg-rose-50 transition-colors"
+                  className="flex-1 px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isMutating}
-                  className="flex-1 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 px-6 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  {isMutating ? 'Saving...' : editingSession ? 'Update Session' : 'Create Session'}
+                  {isMutating ? (
+                    <span className="flex items-center"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div> Saving...</span>
+                  ) : editingSession ? 'Update Session' : 'Create Session'}
                 </button>
               </div>
             </form>

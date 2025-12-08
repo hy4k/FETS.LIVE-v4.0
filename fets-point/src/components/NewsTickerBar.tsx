@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, Megaphone, AlertTriangle, Info, Clock, CheckCircle2 } from 'lucide-react';
+import { Radio, Megaphone, AlertTriangle, Info, Clock, CheckCircle2, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useBranch } from '../hooks/useBranch';
 import { formatDistanceToNow } from 'date-fns';
@@ -47,7 +47,7 @@ export function NewsTickerBar() {
   const fetchActiveNews = async () => {
     try {
       const now = new Date().toISOString();
-      const branchName = activeBranch || 'calicut';
+      const currentBranch = typeof activeBranch === 'string' ? activeBranch : (activeBranch as any)?.name || 'calicut';
 
       const { data, error } = await supabase
         .from('news_updates')
@@ -59,9 +59,9 @@ export function NewsTickerBar() {
 
       if (error) throw error;
 
-      // Filter by branch - branch_location is now a single string
+      // Filter by branch
       const filteredNews = (data || []).filter(item =>
-        item.branch_location === branchName || item.branch_location === 'global'
+        item.branch_location === currentBranch || item.branch_location === 'global'
       );
 
       setNewsItems(filteredNews as NewsItem[]);
@@ -82,85 +82,84 @@ export function NewsTickerBar() {
   }
 
   return (
-    <div className="w-full mb-8">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/90 via-purple-900/90 to-indigo-900/90 backdrop-blur-xl border border-white/20 shadow-2xl">
-        {/* Glassy Shine Effect */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+    <div className="w-full mb-8 px-1">
+      <div className="relative overflow-hidden rounded-2xl bg-[#e0e5ec] shadow-[9px_9px_16px_rgba(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.8)] border border-white/20">
 
-        <div className="flex items-stretch">
-          {/* Live Badge Section */}
-          <div className="relative z-10 flex items-center px-6 py-4 bg-gradient-to-r from-red-600 to-pink-600 shadow-xl">
+        <div className="flex items-stretch h-14">
+          {/* Live Badge Section - Gold/Yellow Theme */}
+          <div className="relative z-10 flex items-center px-6 bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] shadow-[4px_0_15px_rgba(255,215,0,0.3)]">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <Radio className="w-5 h-5 text-white animate-pulse" />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping" />
+              <div className="relative flex items-center justify-center w-8 h-8">
+                <div className="absolute inset-0 bg-yellow-100 rounded-full animate-ping opacity-75"></div>
+                <div className="relative z-10 bg-white/20 backdrop-blur-sm rounded-full p-1.5 shadow-inner border border-white/40">
+                  <Zap className="w-full h-full text-yellow-900 fill-yellow-900" strokeWidth={2.5} />
+                </div>
               </div>
-              <span className="text-white font-black text-sm tracking-widest uppercase hidden sm:block">
+              <span className="text-yellow-950 font-black text-sm tracking-[0.2em] uppercase hidden sm:block drop-shadow-sm">
                 FETS LIVE
               </span>
             </div>
             {/* Angled Divider */}
-            <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-r from-pink-600 to-transparent translate-x-full" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-[#e0e5ec] translate-x-4 skew-x-12 opacity-90 blur-sm"></div>
           </div>
 
-          {/* Ticker Content */}
+          {/* Ticker Content - Neumorphic Inset */}
           <div
-            className="flex-1 flex items-center overflow-hidden relative py-3"
+            className="flex-1 flex items-center overflow-hidden relative shadow-[inset_3px_3px_6px_#bec3c9,inset_-3px_-3px_6px_#ffffff] bg-[#e0e5ec]/50"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
             <motion.div
-              className="flex gap-12 px-4 whitespace-nowrap"
+              className="flex gap-16 px-8 whitespace-nowrap"
               animate={{
-                x: isPaused ? 0 : [0, -1000] // Adjust distance based on content length dynamically if possible, but fixed is safer for simple loop
+                x: isPaused ? 0 : [0, -1000]
               }}
               transition={{
                 x: {
                   repeat: Infinity,
                   repeatType: "loop",
-                  duration: Math.max(20, newsItems.length * 10), // Slower speed for readability
+                  duration: Math.max(30, newsItems.length * 15), // Smoother scrolling
                   ease: "linear"
                 }
               }}
             >
-              {/* Triple the items to ensure smooth infinite scrolling without gaps */}
               {[...newsItems, ...newsItems, ...newsItems].map((item, index) => (
                 <div
                   key={`${item.id}-${index}`}
-                  className="inline-flex items-center gap-3 group"
+                  className="inline-flex items-center gap-4 group"
                 >
-                  {/* Priority Indicator */}
+                  {/* Priority Indicator - Neumorphic Pill */}
                   {item.priority === 'high' ? (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/20 border border-red-500/50 text-red-200 text-xs font-bold uppercase animate-pulse">
-                      <AlertTriangle size={12} />
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#bec3c9,-3px_-3px_6px_#ffffff] border border-red-200/30 text-red-600 text-[10px] font-bold uppercase tracking-wider">
+                      <AlertTriangle size={12} className="fill-red-600/20" />
                       Urgent
                     </span>
                   ) : isNew(item.created_at) ? (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/20 border border-blue-500/50 text-blue-200 text-xs font-bold uppercase">
-                      <Clock size={12} />
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#bec3c9,-3px_-3px_6px_#ffffff] border border-blue-200/30 text-blue-600 text-[10px] font-bold uppercase tracking-wider">
+                      <Clock size={12} className="fill-blue-600/20" />
                       New
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-white/10 border border-white/20 text-white/70 text-xs font-bold uppercase">
+                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#bec3c9,-3px_-3px_6px_#ffffff] border border-gray-200/30 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
                       <Info size={12} />
                       Info
                     </span>
                   )}
 
                   {/* Content */}
-                  <span className="text-white/90 font-medium text-base group-hover:text-white transition-colors">
+                  <span className="text-gray-700 font-medium text-sm tracking-wide group-hover:text-amber-900 transition-colors cursor-pointer select-none">
                     {item.content}
                   </span>
 
-                  {/* Separator */}
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/20 mx-2" />
+                  {/* Separator - Small golden dot */}
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/30 shadow-[1px_1px_2px_rgba(0,0,0,0.1)]" />
                 </div>
               ))}
             </motion.div>
 
             {/* Fade Gradients */}
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-indigo-900/90 to-transparent z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-indigo-900/90 to-transparent z-10" />
+            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#e0e5ec] via-[#e0e5ec]/80 to-transparent z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#e0e5ec] via-[#e0e5ec]/80 to-transparent z-10" />
           </div>
         </div>
       </div>

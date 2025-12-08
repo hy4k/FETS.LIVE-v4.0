@@ -331,7 +331,7 @@ export function FetsRosterPremium() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#e0e5ec]">
         <div className="neomorphic-card p-8 flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
           <p className="text-gray-600 font-medium">Loading roster data...</p>
         </div>
       </div>
@@ -368,8 +368,8 @@ export function FetsRosterPremium() {
         {/* Notification System */}
         {notification && (
           <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl neomorphic-card ${notification.type === 'success' ? 'border-l-4 border-l-green-500 text-green-700' :
-              notification.type === 'error' ? 'border-l-4 border-l-red-500 text-red-700' :
-                'border-l-4 border-l-yellow-500 text-yellow-700'
+            notification.type === 'error' ? 'border-l-4 border-l-red-500 text-red-700' :
+              'border-l-4 border-l-yellow-500 text-yellow-700'
             }`}>
             <div className="flex items-center space-x-3">
               {notification.type === 'success' && <CheckCircle className="h-5 w-5" />}
@@ -414,13 +414,13 @@ export function FetsRosterPremium() {
             <div className="neomorphic-inset p-1 rounded-xl flex items-center">
               <button
                 onClick={() => setViewMode('month')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'month' ? 'neomorphic-card text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'month' ? 'neomorphic-card text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Timeline
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'list' ? 'neomorphic-card text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'list' ? 'neomorphic-card text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 List
               </button>
@@ -430,7 +430,7 @@ export function FetsRosterPremium() {
             <div className="relative">
               <button
                 onClick={() => setShowFilter(!showFilter)}
-                className={`neomorphic-btn-icon ${showFilter ? 'text-emerald-600' : 'text-gray-600'}`}
+                className={`neomorphic-btn-icon ${showFilter ? 'text-amber-600' : 'text-gray-600'}`}
                 title="Filter staff"
               >
                 <Filter className="h-5 w-5" />
@@ -469,7 +469,7 @@ export function FetsRosterPremium() {
             <button
               onClick={() => setShowQuickAddModal(true)}
               disabled={!isAdmin}
-              className="neomorphic-btn px-4 py-2 text-emerald-700 flex items-center space-x-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="neomorphic-btn px-4 py-2 text-amber-700 flex items-center space-x-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Quick Add</span>
@@ -477,7 +477,7 @@ export function FetsRosterPremium() {
 
             <button
               onClick={() => setCurrentView(currentView === 'analysis' ? 'roster' : 'analysis')}
-              className={`neomorphic-btn px-4 py-2 flex items-center space-x-2 font-bold ${currentView === 'analysis' ? 'text-emerald-700' : 'text-gray-600'}`}
+              className={`neomorphic-btn px-4 py-2 flex items-center space-x-2 font-bold ${currentView === 'analysis' ? 'text-amber-700' : 'text-gray-600'}`}
             >
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analysis</span>

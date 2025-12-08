@@ -116,31 +116,8 @@ export function Sidebar({
       {/* Brand Area - Premium Bold Design */}
       {/* Brand Area - Premium Bold Design */}
       <div className="reference-brand-area">
-        {!isCollapsed || isMobile ? (
-          <>
-            <div className="reference-brand-logo group">
-              <div className="relative w-full overflow-hidden" style={{ borderTopRightRadius: '24px' }}>
-                <img
-                  src="/fets-header-premium.png"
-                  alt="FETS.LIVE"
-                  className="w-full object-cover relative z-10 transition-transform duration-500 group-hover:scale-105"
-                  style={{ height: '140px' }}
-                />
-                {/* Subtle sheen effect overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="text-center group py-6">
-            {/* Collapsed state - simplified icon if available, or scaled down part of banner */}
-            <div className="relative inline-block">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <span className="text-white font-bold text-xl font-['Rajdhani']">F</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Logo handled by Unified Header. Spacer for controls. */}
+        <div className="h-2 w-full"></div>
 
         {/* Desktop Collapse Toggle */}
         {!isMobile && setIsCollapsed && (

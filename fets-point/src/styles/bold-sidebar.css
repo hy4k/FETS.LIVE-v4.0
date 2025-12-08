@@ -19,7 +19,7 @@
 
   /* Borders - subtle and refined */
   border-right: 1px solid rgba(255, 255, 255, 0.6) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.3) !important;
+  /* border-left removed as it's attached to side */
   /* For floating effect if needed */
   border-radius: 0 24px 24px 0 !important;
   /* Rounded corners on the right */
@@ -29,14 +29,17 @@
     20px 0 40px rgba(0, 0, 0, 0.05),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
 
-  /* Layout */
+  /* Layout - Positioned BELOW the Header on Desktop */
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 80px) !important;
+  /* Subtract Header Height */
   position: fixed;
-  top: 0;
+  top: 80px !important;
+  /* Header Height */
   left: 0;
-  z-index: 50;
+  z-index: 30 !important;
+  /* Below Header (z-40) */
   transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
@@ -106,6 +109,7 @@
    The core interactive elements.
 */
 /* Menu Items - Unselected State */
+/* Menu Items - Unselected State */
 .reference-menu-item {
   display: flex !important;
   align-items: center !important;
@@ -113,56 +117,57 @@
   min-height: 48px !important;
   height: auto !important;
 
-  /* Thinner border as requested */
+  /* Button Feel: Visible structure for default state */
   padding: 12px 20px !important;
   border-radius: 12px !important;
-  border: 1px solid rgba(255, 193, 7, 0.6) !important;
-
-  /* Much subtler shadow so the Active state pops */
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.03),
-    0 1px 0 rgba(198, 136, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  /* Definitive border */
 
   margin-bottom: 12px !important;
+  /* Increased spacing for button separation */
 
-  background: rgba(255, 255, 255, 0.1) !important;
-  /* Slight glass feel */
-  color: #b4860b !important;
-  /* Darker Gold for better readability */
+  background: rgba(255, 255, 255, 0.6) !important;
+  /* Distinct button background */
+  color: #52525b !important;
+  /* Slate-600 */
 
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative;
   overflow: visible !important;
+
+  /* Tactile button shadow */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
 /* Hover State for Unselected */
 .reference-menu-item:not(.active):hover {
-  border-color: #ffc107 !important;
-  background: rgba(255, 193, 7, 0.1) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05) !important;
-  color: #d4a017 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.05) !important;
+  color: #1a1a1a !important;
 }
 
-/* Active State - Stands out with solid color and depth */
+/* Active State - Fills with current Yellow */
 .reference-menu-item.active {
-  background: #ffcc00 !important;
-  color: #1a1a1a !important;
-  /* Strong dark contrast */
-  border: 1px solid #ffcc00 !important;
+  background: #FFD700 !important;
+  /* Matching Header Yellow */
+  color: #000000 !important;
+  border: 1px solid #E5C100 !important;
   padding: 12px 20px !important;
-  /* Match layout padding */
   border-radius: 12px !important;
 
-  /* Strong shadow to create 'Selected' attention */
-  box-shadow:
-    0 4px 12px rgba(255, 204, 0, 0.4),
-    0 0 0 1px rgba(255, 160, 0, 0.5) !important;
+  /* Subtle shadow */
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3) !important;
 
-  transform: scale(1.02) !important;
-  /* Slight pop */
+  transform: scale(1.0) !important;
   z-index: 10;
+  font-weight: 700 !important;
 }
 
 /* Pressed State */
@@ -180,25 +185,24 @@
   margin-right: 12px;
   transition: all 0.3s ease;
   color: inherit;
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
+.reference-menu-item:hover .reference-menu-icon,
 .reference-menu-item.active .reference-menu-icon {
   opacity: 1;
 }
 
 /* Text */
 .reference-menu-text {
-  /* Site standard font - Non-bold but unique */
+  /* Premium Capital Font */
   font-family: 'Rajdhani', sans-serif !important;
   font-weight: 600 !important;
-  /* Medium weight */
   font-size: 16px !important;
-  letter-spacing: 0.05em !important;
+  letter-spacing: 0.1em !important;
+  /* Increased spacing for premium feel */
   color: inherit !important;
   text-transform: uppercase !important;
-
-  /* Clean text, removed text-shadow for better legibility */
   text-shadow: none !important;
   transition: all 0.2s ease !important;
 }
@@ -206,9 +210,7 @@
 /* Active Text Override */
 .reference-menu-item.active .reference-menu-text {
   font-weight: 700 !important;
-  /* Bolder for active */
-  letter-spacing: 0.08em !important;
-  color: #1a1a1a !important;
+  color: #000000 !important;
 }
 
 /* Badges */
@@ -219,15 +221,14 @@
   font-size: 0.7rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em;
-  background: rgba(180, 134, 11, 0.1) !important;
-  color: #b4860b !important;
-  border: 1px solid rgba(180, 134, 11, 0.2);
+  background: #f4f4f5 !important;
+  color: #71717a !important;
+  border: none;
 }
 
 .reference-menu-item.active .reference-menu-badge {
-  background: rgba(0, 0, 0, 0.1) !important;
-  color: #1a1a1a !important;
-  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: #000000 !important;
 }
 
 .reference-sidebar-footer {
@@ -308,5 +309,14 @@
   .reference-glassmorphic-sidebar {
     width: 280px !important;
     border-radius: 0 24px 24px 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 50 !important;
+    /* Overlay on mobile */
+  }
+
+  /* Make sure brand area is collapsed on mobile too or handled differently if needed */
+  .reference-brand-area {
+    margin-top: 20px !important;
   }
 }

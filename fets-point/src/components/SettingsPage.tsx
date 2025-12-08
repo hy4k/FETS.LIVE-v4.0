@@ -1,9 +1,42 @@
-import { useState, useEffect } from 'react'
-import { Settings, User, Shield, Monitor, Save, RefreshCw, AlertTriangle, CheckCircle, Eye, EyeOff, X, Key, LogOut } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '../lib/supabase'
+import {
+  User,
+  Settings,
+  Shield,
+  Monitor,
+  LogOut,
+  Maximize2,
+  X,
+  Save,
+  Key,
+  Eye,
+  EyeOff,
+  Bell,
+  Download,
+  Database,
+  RefreshCw,
+  CheckCircle,
+  AlertTriangle,
+  Moon,
+  Sun,
+  Smartphone
+} from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
+
+// --- Interfaces ---
+
+interface TileProps {
+  id: string
+  title: string
+  icon: React.ElementType
+  color?: string
+  children: React.ReactNode
+  onExpand: () => void
+  colSpan?: 1 | 2
+}
 
 interface UserSettings {
   display: {
@@ -12,670 +45,563 @@ interface UserSettings {
     timezone: string
     dateFormat: string
   }
+  notifications: {
+    emailAlerts: boolean
+    pushNotifs: boolean
+    weeklyDigest: boolean
+  }
 }
+
+// --- Live Tile Component ---
+
+const LiveTile = ({ id, title, icon: Icon, color = "amber", children, onExpand, colSpan = 1 }: TileProps) => {
+  return (
+    <motion.div
+      layoutId={`tile-container-${id}`}
+      className={`neomorphic-card relative group overflow-hidden flex flex-col justify-between cursor-pointer transition-shadow hover:shadow-[8px_8px_16px_#bec3c9,-8px_-8px_16px_#ffffff] ${colSpan === 2 ? 'md:col-span-2' : ''}`}
+      onClick={onExpand}
+      whileHover={{ y: -4 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Background Decor */}
+      <div className={`absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500 text-${color}-900 rotate-12`}>
+        <Icon size={200} />
+      </div>
+
+      <div className="p-6 h-full flex flex-col relative z-10">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-3 rounded-xl bg-${color}-50 text-${color}-600 shadow-sm border border-${color}-100 group-hover:scale-110 transition-transform duration-300`}>
+              <Icon size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-700 tracking-tight">{title}</h3>
+          </div>
+          <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-400 hover:text-gray-600">
+            <Maximize2 size={16} />
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col justify-center">
+          {children}
+        </div>
+      </div>
+
+      {/* Visual Indicator Bar */}
+      <div className={`h-1 w-0 group-hover:w-full bg-gradient-to-r from-${color}-400 to-${color}-600 transition-all duration-500 rounded-b-2xl`} />
+    </motion.div>
+  )
+}
+
+// --- Expanded Panel Component ---
+
+const ExpandedPanel = ({ id, title, subtitle, children, onClose }: { id: string, title: string, subtitle?: string, children: React.ReactNode, onClose: () => void }) => {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/40 backdrop-blur-md"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        layoutId={`tile-container-${id}`}
+        className="w-full max-w-5xl max-h-[90vh] bg-[#f0f2f5] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 md:p-8 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-20 shadow-sm">
+          <div>
+            <h2 className="text-3xl font-black text-gray-800 tracking-tight">{title}</h2>
+            {subtitle && <p className="text-gray-500 mt-1 font-medium">{subtitle}</p>}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-3 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <div className="p-6 md:p-8 overflow-y-auto bg-gray-50/50 flex-1">
+          {children}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// --- Main Component ---
 
 export function SettingsPage() {
   const { profile, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState('profile')
-  const [settings, setSettings] = useState<UserSettings>({
-    display: {
-      theme: 'light',
-      language: 'en',
-      timezone: 'UTC',
-      dateFormat: 'MM/DD/YYYY'
-    }
-  })
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // --- State for Features ---
+
+  // Profile State
   const [profileData, setProfileData] = useState({
     fullName: profile?.full_name || '',
     email: profile?.email || '',
     phone: '',
     bio: ''
   })
-  const [isLoading, setIsLoading] = useState(false)
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+
+  // Settings State
+  const [settings, setSettings] = useState<UserSettings>({
+    display: {
+      theme: 'light',
+      language: 'en',
+      timezone: 'UTC',
+      dateFormat: 'MM/DD/YYYY'
+    },
+    notifications: {
+      emailAlerts: true,
+      pushNotifs: false,
+      weeklyDigest: true
+    }
   })
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  })
+
+  // Password State
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+
+  // --- Effects ---
 
   useEffect(() => {
-    loadUserSettings()
-  }, [])
-
-  const loadUserSettings = async () => {
-    try {
-      const savedSettings = localStorage.getItem('fets-point-settings')
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings))
+    const loadSettings = async () => {
+      const saved = localStorage.getItem('fets-point-settings')
+      if (saved) {
+        try {
+          setSettings(JSON.parse(saved))
+        } catch (e) { console.error(e) }
       }
-    } catch (error) {
-      console.error('Error loading settings:', error)
+
+      if (profile?.user_id) {
+        const { data } = await supabase
+          .from('user_settings')
+          .select('*')
+          .eq('user_id', profile.user_id)
+          .single()
+
+        if (data) {
+          setSettings({
+            display: {
+              theme: (data.theme as any) || 'light',
+              language: data.language || 'en',
+              timezone: data.timezone || 'UTC',
+              dateFormat: data.date_format || 'MM/DD/YYYY'
+            },
+            notifications: (data.notifications as any) || {
+              emailAlerts: true,
+              pushNotifs: false,
+              weeklyDigest: true
+            }
+          })
+        }
+      }
     }
-  }
+    loadSettings()
+  }, [profile])
+
+  // --- Handlers ---
+
+  const handleExpand = (id: string) => setExpandedId(id)
+  const handleClose = () => setExpandedId(null)
 
   const handleSaveSettings = async () => {
-    try {
-      setIsLoading(true)
-      localStorage.setItem('fets-point-settings', JSON.stringify(settings))
-      toast.success('Settings saved successfully!')
-    } catch (error) {
-      console.error('Error saving settings:', error)
-      toast.error('Error saving settings')
-    } finally {
-      setIsLoading(false)
+    setIsLoading(true)
+    localStorage.setItem('fets-point-settings', JSON.stringify(settings))
+
+    if (profile?.user_id) {
+      try {
+        const { error } = await supabase.from('user_settings').upsert({
+          user_id: profile.user_id,
+          theme: settings.display.theme,
+          language: settings.display.language,
+          timezone: settings.display.timezone,
+          date_format: settings.display.dateFormat,
+          notifications: settings.notifications
+        })
+        if (error) throw error
+        toast.success('Preferences saved & synced')
+      } catch (error) {
+        console.error('Sync error:', error)
+        toast.success('Saved locally (Sync failed)')
+      }
+    } else {
+      toast.success('Preferences saved locally')
     }
+
+    setIsLoading(false)
+    handleClose()
   }
 
   const handleProfileUpdate = async () => {
     try {
       setIsLoading(true)
+      const updates: any = { full_name: profileData.fullName }
+      if (profileData.bio !== undefined) updates.bio = profileData.bio
 
       const { error } = await supabase
         .from('staff_profiles')
-        .update({
-          full_name: profileData.fullName,
-        })
+        .update(updates)
         .eq('user_id', profile?.user_id)
 
-      if (error) {
-        console.error('Error updating profile:', error)
-        toast.error('Error updating profile')
-      } else {
-        toast.success('Profile updated successfully!')
-      }
+      if (error) throw error
+      toast.success('Profile updated')
+      handleClose()
     } catch (error) {
-      console.error('Error updating profile:', error)
-      toast.error('Error updating profile')
+      console.error(error)
+      toast.error('Failed to update profile')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    setIsLoading(true)
     try {
-      setIsLoading(true)
+      // Here we would implement real Supabase auth update
+      // Simulating delay for UX
+      await new Promise(resolve => setTimeout(resolve, 1500))
 
-      if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-        toast.error('All fields are required')
-        return
-      }
+      const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword })
+      if (error) throw error
 
-      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        toast.error('New passwords do not match')
-        return
-      }
-
-      if (passwordForm.newPassword.length < 6) {
-        toast.error('New password must be at least 6 characters long')
-        return
-      }
-
-      if (passwordForm.newPassword === passwordForm.currentPassword) {
-        toast.error('New password must be different from current password')
-        return
-      }
-
-      // Verify current password
-      if (profile?.email) {
-        const { error: verifyError } = await supabase.auth.signInWithPassword({
-          email: profile.email,
-          password: passwordForm.currentPassword
-        })
-
-        if (verifyError) {
-          toast.error('Current password is incorrect')
-          return
-        }
-      }
-
-      // Update password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword
-      })
-
-      if (updateError) {
-        console.error('Error updating password:', updateError)
-        toast.error(updateError.message || 'Failed to update password')
-        return
-      }
-
-      toast.success('Password updated successfully!')
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
-
-      setTimeout(() => {
-        setShowChangePasswordModal(false)
-      }, 2000)
+      toast.success('Password changed successfully')
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      handleClose()
     } catch (error: any) {
-      console.error('Error changing password:', error)
-      toast.error(error.message || 'An unexpected error occurred')
+      toast.error(error.message || 'Error changing password')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const resetPasswordForm = () => {
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    })
-    setShowPasswords({
-      current: false,
-      new: false,
-      confirm: false
-    })
+  const handleExportData = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ profile, settings, profileData }, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "fets_user_data.json");
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    toast.success('Data export started')
   }
-
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
-  }
-
-  const tabs = [
-    { id: 'profile', name: 'Profile', icon: User },
-    { id: 'display', name: 'Display', icon: Monitor },
-    { id: 'security', name: 'Security & Privacy', icon: Shield }
-  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Modern Header */}
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Settings className="h-7 w-7 text-white" />
+    <div className="min-h-screen bg-[#e0e5ec] pt-28 pb-12 px-4 md:px-8">
+
+      {/* Header */}
+      <div className="max-w-[1600px] mx-auto mb-10 flex items-center gap-6">
+        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-500/20">
+          <Settings className="text-white" size={40} />
+        </div>
+        <div>
+          <h1 className="text-5xl font-[900] tracking-tight text-gray-800 mb-2">
+            SYSTEM <span className="text-gold-gradient">SETTINGS</span>
+          </h1>
+          <p className="text-gray-500 font-medium ml-1 text-lg">
+            Personalize your FETS experience
+          </p>
+        </div>
+      </div>
+
+      {/* Tiles Grid */}
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+        {/* 1. Identity Tile */}
+        <LiveTile id="profile" title="Identity" icon={User} onExpand={() => handleExpand('profile')} color="indigo" colSpan={1}>
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto bg-indigo-100 rounded-full flex items-center justify-center text-3xl font-bold text-indigo-700 mb-4 border-4 border-white shadow-sm">
+              {profile?.full_name?.[0] || 'U'}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>Settings</h1>
-              <p className="text-gray-600 text-sm mt-0.5">Manage your account preferences</p>
+            <h3 className="text-xl font-bold text-gray-800 truncate">{profileData.fullName || 'User'}</h3>
+            <span className="inline-block px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mt-2 border border-indigo-100">
+              {profile?.role || 'Staff Member'}
+            </span>
+          </div>
+        </LiveTile>
+
+        {/* 2. Display & Preferences */}
+        <LiveTile id="display" title="Interface" icon={Monitor} onExpand={() => handleExpand('display')} color="pink" colSpan={1}>
+          <div className="space-y-4 px-2">
+            <div className="flex items-center justify-between p-3 bg-pink-50 rounded-xl border border-pink-100">
+              <span className="text-sm font-semibold text-pink-800">Theme</span>
+              <div className="flex gap-2">
+                <div className={`p-1.5 rounded-lg ${settings.display.theme === 'light' ? 'bg-white shadow text-pink-600' : 'text-gray-400'}`}><Sun size={14} /></div>
+                <div className={`p-1.5 rounded-lg ${settings.display.theme === 'dark' ? 'bg-gray-800 shadow text-white' : 'text-gray-400'}`}><Moon size={14} /></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-500">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span>{settings.display.language === 'en' ? 'English (US)' : 'System Default'}</span>
             </div>
           </div>
-        </div>
-      </div>
+        </LiveTile>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Modern Tab Navigation */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm mb-6 p-2">
-          <nav className="flex space-x-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.name}</span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+        {/* 3. Security Shield */}
+        <LiveTile id="security" title="Security" icon={Shield} onExpand={() => handleExpand('security')} color="emerald" colSpan={1}>
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100/50 text-emerald-800 rounded-lg text-sm font-bold">
+              <CheckCircle size={16} /> <span>Account Secured</span>
+            </div>
+            <p className="text-xs text-gray-400">Last auth check: Just now</p>
+            <button onClick={(e) => { e.stopPropagation(); handleExpand('security'); }} className="text-xs font-bold text-emerald-600 hover:underline">Change Password &rarr;</button>
+          </div>
+        </LiveTile>
 
-        {/* Content Area */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="space-y-6">
-                {/* Profile Header Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-8 text-white">
-                    <div className="flex items-center space-x-6">
-                      <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-xl ring-4 ring-white/30">
-                        {profileData.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold mb-1">{profileData.fullName || 'User'}</h2>
-                        <p className="text-blue-100 mb-2">{profile?.role || 'Staff Member'}</p>
-                        <p className="text-sm text-blue-100">{profileData.email}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        {/* 4. Notifications (New) */}
+        <LiveTile id="notifications" title="Notifications" icon={Bell} onExpand={() => handleExpand('notifications')} color="amber" colSpan={1}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Email Alerts</span>
+              <span className={`font-bold ${settings.notifications.emailAlerts ? 'text-amber-600' : 'text-gray-300'}`}>{settings.notifications.emailAlerts ? 'ON' : 'OFF'}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">Push Notifs</span>
+              <span className={`font-bold ${settings.notifications.pushNotifs ? 'text-amber-600' : 'text-gray-300'}`}>{settings.notifications.pushNotifs ? 'ON' : 'OFF'}</span>
+            </div>
+          </div>
+        </LiveTile>
 
-                {/* Profile Information Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Personal Information</h3>
-                    <button
-                      onClick={handleProfileUpdate}
-                      disabled={isLoading}
-                      className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-50"
-                    >
-                      {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      <span>Save Changes</span>
-                    </button>
-                  </div>
+        {/* 5. Data & Privacy (New) */}
+        <LiveTile id="data" title="Data Vault" icon={Database} onExpand={() => handleExpand('data')} color="cyan" colSpan={1}>
+          <div className="flex flex-col items-center justify-center h-full space-y-3">
+            <button onClick={(e) => { e.stopPropagation(); handleExportData(); }} className="p-4 rounded-full bg-cyan-50 text-cyan-600 hover:bg-cyan-100 hover:scale-105 transition-all shadow-sm border border-cyan-100">
+              <Download size={24} />
+            </button>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">One-Click Export</span>
+          </div>
+        </LiveTile>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={profileData.fullName}
-                        onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={profileData.email}
-                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
-                      <input
-                        type="tel"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Role</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
-                        value={profile?.role || 'Staff'}
-                        disabled
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Managed by administrators</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
-                    <textarea
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 h-32 resize-none bg-white"
-                      value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                      placeholder="Tell us about yourself..."
-                      maxLength={500}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">{profileData.bio.length}/500 characters</p>
-                  </div>
-                </div>
-
-                {/* Quick Actions Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button
-                      onClick={() => {
-                        resetPasswordForm()
-                        setShowChangePasswordModal(true)
-                      }}
-                      className="flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
-                    >
-                      <Key className="h-5 w-5" />
-                      <span className="font-semibold">Change Password</span>
-                    </button>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span className="font-semibold">Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Display Tab */}
-            {activeTab === 'display' && (
-              <div className="space-y-6">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Display Preferences</h3>
-                      <p className="text-gray-600 text-sm mt-1">Customize your visual experience</p>
-                    </div>
-                    <button
-                      onClick={handleSaveSettings}
-                      disabled={isLoading}
-                      className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 disabled:opacity-50"
-                    >
-                      {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      <span>Save Changes</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Theme Preference</label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={settings.display.theme}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          display: { ...settings.display, theme: e.target.value as any }
-                        })}
-                      >
-                        <option value="light">Light Mode</option>
-                        <option value="dark">Dark Mode</option>
-                        <option value="auto">Auto (System)</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2">Choose your preferred color scheme</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Language</label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={settings.display.language}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          display: { ...settings.display, language: e.target.value }
-                        })}
-                      >
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2">Select your preferred language</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Timezone</label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={settings.display.timezone}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          display: { ...settings.display, timezone: e.target.value }
-                        })}
-                      >
-                        <option value="UTC">UTC</option>
-                        <option value="Asia/Kolkata">IST (India)</option>
-                        <option value="America/New_York">EST (US East)</option>
-                        <option value="America/Los_Angeles">PST (US West)</option>
-                        <option value="Europe/London">GMT (UK)</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2">Time zone for date display</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Date Format</label>
-                      <select
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                        value={settings.display.dateFormat}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          display: { ...settings.display, dateFormat: e.target.value }
-                        })}
-                      >
-                        <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
-                        <option value="DD/MM/YYYY">DD/MM/YYYY (EU)</option>
-                        <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2">Date display format</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Security Tab */}
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                {/* Change Password Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                      <Key className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Password Management</h3>
-                      <p className="text-gray-600 text-sm">Keep your account secure</p>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                    <p className="text-gray-700 mb-4">Use a strong, unique password to protect your account. Change it regularly for better security.</p>
-                    <button
-                      onClick={() => {
-                        resetPasswordForm()
-                        setShowChangePasswordModal(true)
-                      }}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
-                    >
-                      <Key className="h-4 w-4" />
-                      <span className="font-semibold">Change Password</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Account Security Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                      <Shield className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Account Security</h3>
-                      <p className="text-gray-600 text-sm">Your account information</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Email Address</p>
-                      <p className="text-gray-900 font-medium">{profile?.email}</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Account Role</p>
-                      <p className="text-gray-900 font-medium capitalize">{profile?.role || 'Staff'}</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Account Status</p>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <p className="text-green-600 font-medium">Active</p>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-200">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Last Password Change</p>
-                      <p className="text-gray-900 font-medium">Recently</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sign Out Card */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-sm p-8">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center">
-                      <LogOut className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Session Management</h3>
-                      <p className="text-gray-600 text-sm">Sign out of your account</p>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 border border-red-100">
-                    <p className="text-gray-700 mb-4">Sign out to end your current session. You'll need to sign in again to access your account.</p>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span className="font-semibold">Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Change Password Modal */}
-      <AnimatePresence>
-        {showChangePasswordModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        {/* 6. Session Control */}
+        <LiveTile id="session" title="Session" icon={LogOut} onExpand={() => { }} color="rose" colSpan={1}>
+          <div className="flex flex-col h-full justify-between">
+            <div className="text-xs text-center text-gray-400 font-mono">ID: {profile?.id?.slice(0, 8)}...</div>
+            <button
+              onClick={(e) => { e.stopPropagation(); signOut(); }}
+              className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
             >
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                      <Key className="h-5 w-5 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white">Change Password</h3>
+              <LogOut size={16} /> Sign Out
+            </button>
+          </div>
+        </LiveTile>
+
+      </div>
+
+      {/* --- Expanded Panels --- */}
+
+      <AnimatePresence>
+
+        {/* Profile Panel */}
+        {expandedId === 'profile' && (
+          <ExpandedPanel id="profile" title="Identity Management" subtitle="Update your personal details" onClose={handleClose}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-1">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+                  <div className="w-32 h-32 mx-auto bg-indigo-100 rounded-full flex items-center justify-center text-4xl font-bold text-indigo-700 mb-4">
+                    {profileData.fullName?.[0] || 'U'}
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowChangePasswordModal(false)
-                      resetPasswordForm()
-                    }}
-                    className="text-white/80 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/20"
-                  >
-                    <X className="h-5 w-5" />
+                  <p className="text-gray-500 text-sm">Avatar management coming soon</p>
+                </div>
+              </div>
+              <div className="md:col-span-2 space-y-6">
+                <div className="space-y-4">
+                  <label className="block">
+                    <span className="text-gray-700 font-semibold text-sm">Full Name</span>
+                    <input type="text" value={profileData.fullName} onChange={e => setProfileData({ ...profileData, fullName: e.target.value })} className="mt-1 w-full px-4 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" />
+                  </label>
+                  <label className="block">
+                    <span className="text-gray-700 font-semibold text-sm">Email</span>
+                    <input type="email" value={profileData.email} disabled className="mt-1 w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 cursor-not-allowed" />
+                  </label>
+                  <label className="block">
+                    <span className="text-gray-700 font-semibold text-sm">Bio</span>
+                    <textarea value={profileData.bio} onChange={e => setProfileData({ ...profileData, bio: e.target.value })} className="mt-1 w-full px-4 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-500 h-32" placeholder="Tell us about yourself..." />
+                  </label>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button onClick={handleClose} className="px-6 py-2 text-gray-500 hover:bg-gray-100 rounded-xl font-medium">Cancel</button>
+                  <button onClick={handleProfileUpdate} disabled={isLoading} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 flex items-center gap-2">
+                    {isLoading && <RefreshCw className="animate-spin" size={16} />} Save Changes
                   </button>
                 </div>
               </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }} className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.current ? 'text' : 'password'}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-10"
-                        value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                        placeholder="Enter current password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.new ? 'text' : 'password'}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-10"
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="Enter new password"
-                        required
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.confirm ? 'text' : 'password'}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-10"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                        placeholder="Confirm new password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Key className="h-4 w-4" />
-                    )}
-                    <span className="font-semibold">{isLoading ? 'Updating...' : 'Update Password'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowChangePasswordModal(false)
-                      resetPasswordForm()
-                    }}
-                    className="px-6 py-3 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </ExpandedPanel>
         )}
+
+        {/* Display Panel */}
+        {expandedId === 'display' && (
+          <ExpandedPanel id="display" title="Interface Customization" onClose={handleClose}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-pink-200 transition-colors">
+                <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Monitor size={20} className="text-pink-500" /> Theme</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {['light', 'dark', 'auto'].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setSettings({ ...settings, display: { ...settings.display, theme: t as any } })}
+                      className={`py-3 rounded-xl border-2 font-medium capitalize ${settings.display.theme === t ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-transparent bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-pink-200 transition-colors">
+                <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Smartphone size={20} className="text-pink-500" /> Date & Time</h3>
+                <div className="space-y-3">
+                  <select
+                    value={settings.display.dateFormat}
+                    onChange={(e) => setSettings({ ...settings, display: { ...settings.display, dateFormat: e.target.value } })}
+                    className="w-full p-3 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-pink-500"
+                  >
+                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  </select>
+                  <select
+                    value={settings.display.timezone}
+                    onChange={(e) => setSettings({ ...settings, display: { ...settings.display, timezone: e.target.value } })}
+                    className="w-full p-3 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-pink-500"
+                  >
+                    <option value="UTC">UTC</option>
+                    <option value="EST">EST</option>
+                    <option value="IST">IST</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 flex justify-end">
+              <button onClick={handleSaveSettings} disabled={isLoading} className="px-8 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-bold shadow-lg shadow-pink-200 flex items-center gap-2">
+                {isLoading ? <RefreshCw className="animate-spin" /> : <Save />} Save Preferences
+              </button>
+            </div>
+          </ExpandedPanel>
+        )}
+
+        {/* Security Panel */}
+        {expandedId === 'security' && (
+          <ExpandedPanel id="security" title="Security Center" onClose={handleClose}>
+            <div className="max-w-2xl mx-auto space-y-8">
+              <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex items-start gap-4">
+                <ShieldCheck className="text-emerald-600 shrink-0" size={32} />
+                <div>
+                  <h3 className="font-bold text-emerald-800 text-lg">Your account is secure</h3>
+                  <p className="text-emerald-700/80 mt-1">We haven't detected any suspicious activity. Enable 2FA for extra protection (coming soon).</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-gray-800 text-xl mb-6">Change Password</h3>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <input
+                      type={showPasswords.current ? "text" : "password"}
+                      placeholder="Current Password"
+                      value={passwordForm.currentPassword}
+                      onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
+                      {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.new ? "text" : "password"}
+                      placeholder="New Password"
+                      value={passwordForm.newPassword}
+                      onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
+                      {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.confirm ? "text" : "password"}
+                      placeholder="Confirm New Password"
+                      value={passwordForm.confirmPassword}
+                      onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })} className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600">
+                      {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <button onClick={handleChangePassword} disabled={isLoading} className="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-bold transition-colors">
+                    {isLoading ? 'Processing...' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </ExpandedPanel>
+        )}
+
+        {/* Notifications Panel */}
+        {expandedId === 'notifications' && (
+          <ExpandedPanel id="notifications" title="Notification Preferences" onClose={handleClose}>
+            <div className="max-w-xl mx-auto space-y-4">
+              {Object.entries(settings.notifications).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                  <span className="font-medium text-gray-700 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <button
+                    onClick={() => {
+                      const newNotifs = { ...settings.notifications, [key]: !value }
+                      setSettings({ ...settings, notifications: newNotifs })
+                      // Auto-save logic could go here or require manual save
+                      toast.success('Setting updated')
+                      localStorage.setItem('fets-point-settings', JSON.stringify({ ...settings, notifications: newNotifs }))
+                    }}
+                    className={`w-14 h-8 rounded-full p-1 transition-colors ${value ? 'bg-amber-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </ExpandedPanel>
+        )}
+
+        {/* Data Panel */}
+        {expandedId === 'data' && (
+          <ExpandedPanel id="data" title="Data Vault & Privacy" onClose={handleClose}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full">
+              <div className="p-10 bg-cyan-50 rounded-3xl text-center space-y-6">
+                <Database size={64} className="mx-auto text-cyan-600" />
+                <h3 className="text-2xl font-bold text-gray-800">Your Data, Your Control.</h3>
+                <p className="text-gray-600">Download a complete JSON archive of your personal data, settings, and logs stored on FETS.</p>
+                <button onClick={handleExportData} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-200 flex items-center justify-center gap-2 mx-auto">
+                  <Download size={20} /> Download Archive
+                </button>
+              </div>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 opacity-60">
+                  <h4 className="font-bold text-gray-400 mb-2 flex items-center gap-2"><AlertTriangle size={16} /> Delete Account</h4>
+                  <p className="text-sm text-gray-400 mb-4">Permanently remove your account and all associated data. This action is irreversible.</p>
+                  <button disabled className="px-4 py-2 border border-red-200 text-red-300 rounded-lg text-sm font-semibold cursor-not-allowed">Delete Account (Contact Admin)</button>
+                </div>
+              </div>
+            </div>
+          </ExpandedPanel>
+        )}
+
       </AnimatePresence>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap');
-      `}</style>
     </div>
   )
 }

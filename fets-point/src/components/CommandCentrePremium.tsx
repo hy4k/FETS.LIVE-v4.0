@@ -138,10 +138,10 @@ export default function CommandCentrePremium() {
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
         const { data, error } = await supabase
-          .from('calendar_sessions')
+          .from('sessions')
           .select('*')
-          .gte('session_date', today.toISOString().split('T')[0])
-          .lte('session_date', nextWeek.toISOString().split('T')[0])
+          .gte('date', today.toISOString().split('T')[0])
+          .lte('date', nextWeek.toISOString().split('T')[0])
           .limit(7)
 
         if (!error && data) {

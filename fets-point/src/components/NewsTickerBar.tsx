@@ -25,13 +25,13 @@ export function NewsTickerBar() {
 
     // Subscribe to real-time updates
     const channel = supabase
-      .channel('news_updates_ticker')
+      .channel('news_ticker_updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'news_updates'
+          table: 'news_ticker'
         },
         () => {
           fetchActiveNews();
@@ -50,11 +50,11 @@ export function NewsTickerBar() {
       const currentBranch = typeof activeBranch === 'string' ? activeBranch : (activeBranch as any)?.name || 'calicut';
 
       const { data, error } = await supabase
-        .from('news_updates')
+        .from('news_ticker')
         .select('*')
         .eq('is_active', true)
         .or(`expires_at.is.null,expires_at.gt.${now}`)
-        .order('priority', { ascending: false }) // High priority first
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;

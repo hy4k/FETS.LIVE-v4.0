@@ -3,8 +3,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import { useInView } from 'react-intersection-observer';
 import { useMarkMessagesAsRead } from '../../hooks/useChat';
+import { ChatMessage } from '../../types';
 
-const Message = ({ message }) => {
+interface MessageProps {
+  message: ChatMessage & { conversation?: { members: any[] } };
+}
+
+const Message: React.FC<MessageProps> = ({ message }) => {
   const { user } = useAuth();
   const { author, content, created_at, id: messageId, read_receipts, conversation_id } = message;
   const isYou = author.id === user.id;
@@ -23,7 +28,9 @@ const Message = ({ message }) => {
     }
   }, [inView, isYou, messageId, user.id, read_receipts, markAsRead, conversation_id]);
 
-  const isReadByAll = read_receipts.length === message.conversation.members.length - 1;
+  const isReadByAll = read_receipts && message.conversation?.members 
+    ? read_receipts.length === message.conversation.members.length - 1 
+    : false;
 
   return (
     <div ref={ref} className={`flex items-start gap-4 my-4 ${isYou ? 'flex-row-reverse' : ''}`}>
@@ -50,4 +57,4 @@ const Message = ({ message }) => {
   );
 };
 
-export default Message;
+export default Message as React.FC<MessageProps>;

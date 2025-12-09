@@ -5,8 +5,13 @@ import Message from './Message';
 import MessageInput from './MessageInput';
 import { supabase } from '../../lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
+import { Conversation as ConversationType } from '../../types';
 
-const Conversation = ({ conversation }) => {
+interface ConversationProps {
+  conversation: ConversationType;
+}
+
+const Conversation: React.FC<ConversationProps> = ({ conversation }) => {
   const { user } = useAuth();
   const { data: messages, isLoading } = useMessages(conversation.id);
   const sendMessage = useSendMessage();
@@ -27,8 +32,8 @@ const Conversation = ({ conversation }) => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversation.id}` },
-        (payload) => {
-          queryClient.setQueryData(['messages', conversation.id], (oldData) => [...(oldData || []), payload.new]);
+        (payload: any) => {
+          queryClient.setQueryData(['messages', conversation.id], (oldData: any) => [...(oldData || []), payload.new]);
         }
       )
       .subscribe();
@@ -39,7 +44,9 @@ const Conversation = ({ conversation }) => {
   }, [conversation.id, queryClient]);
 
   const handleSendMessage = (content: string) => {
-    sendMessage.mutate({ conversationId: conversation.id, authorId: user.id, content });
+    if (user?.id) {
+      sendMessage.mutate({ conversationId: conversation.id, senderId: user.id, content });
+    }
   };
 
   if (isLoading) {
@@ -59,4 +66,4 @@ const Conversation = ({ conversation }) => {
   );
 };
 
-export default Conversation;
+export default Conversation as React.FC<ConversationProps>;

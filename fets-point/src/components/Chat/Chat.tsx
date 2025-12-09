@@ -3,9 +3,10 @@ import ConversationList from './ConversationList';
 import UserList from './UserList';
 import Conversation from './Conversation';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { Conversation as ConversationType } from '../../types';
 
-const Chat = () => {
-  const [selectedConversation, setSelectedConversation] = useState(null);
+const Chat: React.FC = () => {
+  const [selectedConversation, setSelectedConversation] = useState<ConversationType | null>(null);
   const { subscribe } = usePushNotifications();
 
   return (
@@ -26,7 +27,7 @@ const Chat = () => {
       <div className="w-1/4 bg-gray-100 p-4">
         <button
           className="p-2 bg-blue-500 text-white rounded-md mb-4 w-full"
-          onClick={subscribe}
+          onClick={() => subscribe()}
         >
           Enable Push Notifications
         </button>

@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { QuestionType, ChecklistPriority } from '../types';
 
 interface ChecklistCreatorProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ interface ChecklistCreatorProps {
   onSuccess: () => void;
 }
 
-type AnswerType = 'checkbox' | 'text' | 'number' | 'dropdown' | 'radio' | 'textarea' | 'date';
+type AnswerType = QuestionType;
 
 interface QuestionItem {
   id: string;
@@ -232,7 +233,7 @@ export function ChecklistCreator({ isOpen, onClose, onSuccess }: ChecklistCreato
         template_id: template.id,
         title: question.question_text,
         description: null,
-        priority: 'medium',
+        priority: 'medium' as ChecklistPriority,
         estimated_time_minutes: 5,
         responsible_role: 'staff',
         sort_order: index,

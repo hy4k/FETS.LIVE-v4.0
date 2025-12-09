@@ -8,8 +8,45 @@ export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row
 export type CandidateMetrics = { total: number; present: number; absent: number; };
 export type IncidentStats = { open: number; closed: number; critical: number; };
 
+export type QuestionType = 'checkbox' | 'text' | 'number' | 'dropdown' | 'radio' | 'textarea' | 'date';
+export type ChecklistPriority = 'low' | 'medium' | 'high';
+
 export type Inserts<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
 export type Updates<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+
+export interface ChatMessage {
+  id: string;
+  content: string;
+  sender_id: string;
+  conversation_id: string;
+  created_at: string | null;
+  is_deleted?: boolean | null;
+  is_edited?: boolean | null;
+  author?: StaffProfile;
+  read_receipts?: Array<{ user_id: string; read_at: string | null }>;
+}
+
+export interface Conversation {
+  id: string;
+  created_by: string;
+  name?: string | null;
+  is_group?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_message_at?: string | null;
+  last_message_preview?: string | null;
+  members?: ConversationMember[];
+}
+
+export interface ConversationMember {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  is_admin?: boolean | null;
+  is_muted?: boolean | null;
+  joined_at?: string | null;
+  last_read_at?: string | null;
+}
 
 // Shared types for FETS application
 
@@ -107,6 +144,32 @@ export interface KPIData {
 }
 
 export type BranchType = 'global' | string
+
+export type UserSettings = Database['public']['Tables']['user_settings']['Row'];
+export type NewsTicker = Database['public']['Tables']['news_ticker']['Row'];
+
+export interface ChecklistTemplateItem {
+  id: string;
+  template_id: string;
+  title: string;
+  description?: string | null;
+  priority?: ChecklistPriority | null;
+  question_type?: QuestionType | null;
+  dropdown_options?: string[] | null;
+  is_required?: boolean | null;
+  estimated_time_minutes?: number | null;
+  responsible_role?: string | null;
+  sort_order?: number | null;
+  created_at: string;
+}
+
+export const PRIORITY_LEVELS = {
+  'low': { label: 'Low', color: 'bg-blue-100 text-blue-700', value: 'low' },
+  'medium': { label: 'Medium', color: 'bg-yellow-100 text-yellow-700', value: 'medium' },
+  'high': { label: 'High', color: 'bg-red-100 text-red-700', value: 'high' }
+} as const
+
+export type PriorityLevel = keyof typeof PRIORITY_LEVELS
 
 // Apple-inspired shift color scheme
 export const SHIFT_CODES = {

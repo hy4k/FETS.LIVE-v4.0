@@ -34,7 +34,7 @@ const ConversationList = ({ setSelectedConversation }) => {
           <div className="flex-1">
             <p className="font-semibold">{convo.name}</p>
             <p className="text-sm text-gray-500 truncate">
-              {convo.last_message?.[0]?.content}
+              {convo.last_message_preview}
             </p>
           </div>
         </div>

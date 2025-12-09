@@ -145,7 +145,7 @@ export function ChecklistManagement() {
           .order('sort_order', { ascending: true })
 
         if (preItemsError) throw preItemsError
-        setPreExamItems(preItems.map(item => ({ ...item, priority: item.priority as 'low' | 'medium' | 'high' })) || [])
+        setPreExamItems((preItems || []).map(item => ({ ...item, priority: (item.priority || 'medium') as 'low' | 'medium' | 'high' })))
       }
 
       // Load Post-Exam Template
@@ -168,7 +168,7 @@ export function ChecklistManagement() {
           .order('sort_order', { ascending: true })
 
         if (postItemsError) throw postItemsError
-        setPostExamItems(postItems.map(item => ({ ...item, priority: item.priority as 'low' | 'medium' | 'high' })) || [])
+        setPostExamItems((postItems || []).map(item => ({ ...item, priority: (item.priority || 'medium') as 'low' | 'medium' | 'high' })))
       }
 
       // Load Custom Templates

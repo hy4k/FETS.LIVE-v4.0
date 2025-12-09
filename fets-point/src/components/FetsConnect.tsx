@@ -36,9 +36,7 @@ import TaskBoard from './TaskBoard';
 import Chat from './Chat/Chat';
 import MyTasks from './MyTasks';
 import Feed from './Feed';
-import KudosBoard from './KudosBoard';
 import TaskModal from './TaskModal';
-import KudosModal from './KudosModal';
 
 interface FetsConnectProps {
   onNavigate?: (tab: string) => void;
@@ -48,7 +46,6 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // --- Data Fetching with React Query ---
   const { data: posts = [], isLoading: isLoadingPosts, error: postsError } = usePosts();
   const { data: kudos = [], isLoading: isLoadingKudos, error: kudosError } = useKudos();
   const { data: tasks = [], isLoading: isLoadingTasks, error: tasksError } = useTasks(profile?.id);
@@ -58,16 +55,10 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
   const { addTask, updateTask } = useTaskMutations(profile?.id);
   const { addKudos } = useKudosMutations();
 
-  // --- Local UI State ---
-  const [activeTab, setActiveTab] = useState('feed'); // 'feed', 'tasks', 'chat', 'kudos'
-
-  // Task Modal State
+  const [activeTab, setActiveTab] = useState('feed');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-
-  // Kudos Modal State
   const [isKudosModalOpen, setIsKudosModalOpen] = useState(false);
-
 
   const openTaskModal = (task = null) => {
     setSelectedTask(task);
@@ -81,7 +72,6 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
 
   return (
     <div className="h-full w-full grid grid-cols-12 bg-slate-50 font-sans">
-      {/* Left Panel: Navigation & My Tasks */}
       <aside className="col-span-3 bg-white border-r border-slate-200 p-6 flex flex-col">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -90,7 +80,6 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
           <h1 className="text-2xl font-bold text-slate-800">FETS Connect</h1>
         </div>
 
-        {/* Navigation */}
         <nav className="space-y-2">
           <button
             onClick={() => setActiveTab('feed')}
@@ -154,19 +143,19 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
         <MyTasks tasks={tasks} isLoading={isLoadingTasks} error={tasksError} openTaskModal={openTaskModal} />
       </aside>
 
-      {/* Center Panel: Main Content */}
       <main className="col-span-9 flex flex-col bg-slate-100 border-r border-slate-200">
         {activeTab === 'feed' && (
           <Feed posts={posts} isLoading={isLoadingPosts} error={postsError} profile={profile} />
         )}
         {activeTab === 'kudos' && (
-          <KudosBoard kudos={kudos} isLoading={isLoadingKudos} error={kudosError} />
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <p>Kudos Board - Coming Soon</p>
+          </div>
         )}
         {activeTab === 'tasks' && <TaskBoard />}
         {activeTab === 'chat' && <Chat />}
       </main>
 
-      {/* Modals */}
       <AnimatePresence>
         {isTaskModalOpen && profile && (
           <TaskModal
@@ -178,13 +167,30 @@ const FetsConnect = ({ onNavigate }: FetsConnectProps = {}) => {
           />
         )}
         {isKudosModalOpen && (
-          <KudosModal
-            isOpen={isKudosModalOpen}
-            onClose={() => setIsKudosModalOpen(false)}
-            currentUserProfile={profile}
-            staffList={allStaff}
-            addKudos={addKudos}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setIsKudosModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white rounded-lg p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-bold mb-4">Give Kudos</h2>
+              <p className="text-gray-600 mb-4">Kudos feature coming soon!</p>
+              <button
+                onClick={() => setIsKudosModalOpen(false)}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

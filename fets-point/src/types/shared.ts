@@ -3,6 +3,13 @@ import { Database } from './database.types';
 export type StaffProfile = Database['public']['Tables']['staff_profiles']['Row'];
 export type RosterSchedule = Database['public']['Tables']['roster_schedules']['Row'];
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & { requestor_name?: string; target_name?: string; };
+export type Notification = Database['public']['Tables']['notifications']['Row'];
+export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];
+export type CandidateMetrics = { total: number; present: number; absent: number; };
+export type IncidentStats = { open: number; closed: number; critical: number; };
+
+export type Inserts<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
+export type Updates<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
 
 // Shared types for FETS application
 
@@ -25,9 +32,81 @@ export interface Session {
   end_time: string
   client_name: string
   candidate_count: number
+  exam_name: string
+  user_id: string
   branch?: string
   status?: string
 }
+
+export interface Event {
+  id: string
+  title: string
+  description?: string
+  event_date: string
+  priority: 'critical' | 'major' | 'minor'
+  status?: string
+  category?: string
+  assigned_to?: string
+  reporter_id?: string
+  branch_location?: string
+  closed_at?: string
+  closure_remarks?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Incident {
+  id: string
+  title: string
+  description: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  status?: string
+  category?: string
+  assigned_to?: string
+  reporter: string
+  user_id: string
+  branch_location?: string
+  due_date?: string
+  completed_at?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Comment {
+  id: string
+  body: string
+  author_id: string
+  author_full_name: string
+  incident_id: string
+  created_at: string
+}
+
+export interface Task {
+  id: string
+  title: string
+  description?: string
+  assigned_to: string
+  assigned_by: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  priority?: string
+  due_date?: string
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface KPIData {
+  sessions_scheduled: number
+  sessions_live: number
+  sessions_done: number
+  candidates_present: number
+  candidates_expected: number
+  incidents_open: number
+}
+
+export type BranchType = 'global' | string
 
 // Apple-inspired shift color scheme
 export const SHIFT_CODES = {

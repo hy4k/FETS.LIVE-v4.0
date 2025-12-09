@@ -2029,77 +2029,110 @@ export type Database = {
         ]
       }
     }
-    news_ticker: {
-      Row: {
-        branch_location: string | null
-        content: string
-        created_at: string | null
-        created_by: string | null
-        expires_at: string | null
-        id: string
-        is_active: boolean | null
-        priority: string | null
-      }
-      Insert: {
-        branch_location?: string | null
-        content: string
-        created_at?: string | null
-        created_by?: string | null
-        expires_at?: string | null
-        id?: string
-        is_active?: boolean | null
-        priority?: string | null
-      }
-      Update: {
-        branch_location?: string | null
-        content?: string
-        created_at?: string | null
-        created_by?: string | null
-        expires_at?: string | null
-        id?: string
-        is_active?: boolean | null
-        priority?: string | null
-      }
-      Relationships: [
-        {
-          foreignKeyName: "news_ticker_created_by_fkey"
-          columns: ["created_by"]
-          isOneToOne: false
-          referencedRelation: "staff_profiles"
-          referencedColumns: ["id"]
+      news_ticker: {
+        Row: {
+          branch_location: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: string | null
         }
-      ]
-    }
-    user_settings: {
-      Row: {
-        date_format: string | null
-        language: string | null
-        notifications: Json | null
-        theme: string | null
-        timezone: string | null
-        updated_at: string | null
-        user_id: string
+        Insert: {
+          branch_location?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+        }
+        Update: {
+          branch_location?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_ticker_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
-      Insert: {
-        date_format?: string | null
-        language?: string | null
-        notifications?: Json | null
-        theme?: string | null
-        timezone?: string | null
-        updated_at?: string | null
-        user_id: string
+      user_settings: {
+        Row: {
+          date_format: string | null
+          language: string | null
+          notifications: Json | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          date_format?: string | null
+          language?: string | null
+          notifications?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          date_format?: string | null
+          language?: string | null
+          notifications?: Json | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
-      Update: {
-        date_format?: string | null
-        language?: string | null
-        notifications?: Json | null
-        theme?: string | null
-        timezone?: string | null
-        updated_at?: string | null
-        user_id?: string
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          priority: string
+          is_read: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          priority?: string
+          is_read?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          title?: string
+          message?: string
+          type?: string
+          priority?: string
+          is_read?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
-      Relationships: []
-    }
     Views: {
       [_ in never]: never
     }

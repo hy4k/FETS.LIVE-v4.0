@@ -10,10 +10,7 @@ import { useBranch } from '../hooks/useBranch'
 import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule, useChecklistTemplates } from '../hooks/useCommandCentre'
 import { ExamScheduleWidget } from './ExamScheduleWidget'
-import { SevenDayCalendarWidget } from './SevenDayCalendarWidget'
-import { SevenDayRosterDisplay } from './SevenDayRosterDisplay'
 import { supabase } from '../lib/supabase' // Keep for mutations
-import { ChecklistFillModal } from './ChecklistFillModal'
 
 import { NotificationBanner } from './NotificationBanner'
 
@@ -29,14 +26,7 @@ interface DashboardData {
   todaysExams: Array<{ client_name: string; candidate_count: number }>;
 }
 
-interface KPIData {
-  sessions_scheduled: number
-  sessions_live: number
-  sessions_done: number
-  candidates_present: number
-  candidates_expected: number
-  incidents_open: number
-}
+import { KPIData } from '../types/shared'
 
 interface RosterDay {
   date: string
@@ -118,6 +108,8 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
   const [kpis, setKpis] = useState<KPIData>({
     sessions_scheduled: 0,
+    sessions_live: 0,
+    sessions_done: 0,
     candidates_present: 0,
     candidates_expected: 0,
     incidents_open: 0
@@ -184,6 +176,8 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
         setKpis({
           sessions_scheduled: todaysCandidates,
+          sessions_live: inProgress,
+          sessions_done: completed,
           candidates_present: completed,
           candidates_expected: todaysCandidates,
           incidents_open: 0
@@ -537,11 +531,7 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
         {/* FETS Calendar Widget */}
         <ExamScheduleWidget onNavigate={onNavigate} />
 
-        {/* 7 Days Calendar Widget */}
-        <SevenDayCalendarWidget onNavigate={onNavigate} />
 
-        {/* 7 Days Roster Schedule Display */}
-        <SevenDayRosterDisplay />
 
         {/* Main Dashboard Grid - New Neumorphic Style */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">

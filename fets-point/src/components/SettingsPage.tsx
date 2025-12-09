@@ -4,6 +4,7 @@ import {
   User,
   Settings,
   Shield,
+  ShieldCheck,
   Monitor,
   LogOut,
   Maximize2,

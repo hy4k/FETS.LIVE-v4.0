@@ -17,7 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { NewsManager } from './NewsManager';
 import { StaffManagement } from './StaffManagement';
-import { ChecklistManager } from './ChecklistManager';
+import { ChecklistManager } from './checklist/ChecklistManager';
 
 // --- Interfaces ---
 
@@ -263,7 +263,7 @@ export function FetsManager() {
       <AnimatePresence>
         {expandedId === 'checklists' && (
           <ExpandedPanel id="checklists" title="Checklist Management Protocols" onClose={handleClose}>
-            <ChecklistManager />
+            <ChecklistManager currentUser={profile} />
           </ExpandedPanel>
         )}
 

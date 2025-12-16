@@ -31,7 +31,7 @@ const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then
 const FetsRoster = lazy(() => import('./components/FetsRosterPremium'))
 const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium'))
 const IncidentManager = lazy(() => import('./components/IncidentManager').then(module => ({ default: module.default })))
-const ChecklistManagement = lazy(() => import('./components/ChecklistManagement').then(module => ({ default: module.ChecklistManagement })))
+const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager').then(module => ({ default: module.ChecklistManager })))
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
 const SettingsPage = lazy(() => import('./components/SettingsPage').then(module => ({ default: module.SettingsPage })))
 const FetsManager = lazy(() => import('./components/FetsManager').then(module => ({ default: module.default })))
@@ -53,14 +53,14 @@ const queryClient = new QueryClient({
 // Connection status component for debugging
 function ConnectionStatus() {
   const [connectionTest, setConnectionTest] = useState<string>('untested')
-  
+
   const testConnection = async () => {
     try {
       setConnectionTest('testing')
       console.log('🔄 Testing Supabase connection...')
-      
+
       const { error } = await supabase.from('staff_profiles').select('count', { count: 'exact', head: true })
-      
+
       if (error) {
         console.error('❌ Connection test failed:', error.message)
         setConnectionTest('failed')
@@ -73,14 +73,14 @@ function ConnectionStatus() {
       setConnectionTest('failed')
     }
   }
-  
+
   if (process.env.NODE_ENV === 'development') {
     return (
       <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border z-50">
         <div className="text-sm">
           <div className="font-medium mb-2">Supabase Connection</div>
           <div className="flex items-center space-x-2">
-            <button 
+            <button
               onClick={testConnection}
               className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
               disabled={connectionTest === 'testing'}
@@ -95,7 +95,7 @@ function ConnectionStatus() {
       </div>
     )
   }
-  
+
   return null
 }
 
@@ -131,9 +131,9 @@ function AppContent() {
       <div className="golden-theme flex items-center justify-center relative min-h-screen">
         <div className="text-center relative z-10 px-4">
           <div className="golden-logo inline-block mb-8 golden-pulse">
-            <img 
-              src="/fets-point-logo.png" 
-              alt="FETS POINT" 
+            <img
+              src="/fets-point-logo.png"
+              alt="FETS POINT"
               className="h-16 w-16 sm:h-20 sm:w-20"
             />
           </div>
@@ -201,7 +201,7 @@ function AppContent() {
         name: 'News Manager'
       },
       'checklist-management': {
-        component: <ChecklistManagement />,
+        component: <ChecklistManagement currentUser={profile} />,
         name: 'Checklist Management'
       },
       'settings': {
@@ -215,9 +215,9 @@ function AppContent() {
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center']
-    
+
     return (
-      <LazyErrorBoundary 
+      <LazyErrorBoundary
         routeName={currentRoute.name}
         onGoBack={() => setActiveTab('command-center')}
         onRetry={() => {
@@ -241,24 +241,24 @@ function AppContent() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
-      
 
-      
+
+
       {/* Desktop Sidebar */}
       {!isMobile && (
-        <Sidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           isMobile={false}
           isCollapsed={sidebarCollapsed}
           setIsCollapsed={setSidebarCollapsed}
         />
       )}
-      
+
       {/* Mobile Sidebar */}
       {isMobile && sidebarOpen && (
-        <Sidebar 
-          activeTab={activeTab} 
+        <Sidebar
+          activeTab={activeTab}
           setActiveTab={(tab) => {
             setActiveTab(tab)
             setSidebarOpen(false)
@@ -267,7 +267,7 @@ function AppContent() {
           onClose={() => setSidebarOpen(false)}
         />
       )}
-      
+
       {/* Main Content with proper spacing */}
       <div className="content-with-single-banner">
         <div className="dashboard-centered">
@@ -275,7 +275,7 @@ function AppContent() {
         </div>
       </div>
 
-      
+
       <ConnectionStatus />
       {process.env.NODE_ENV === 'development' && <DatabaseSetup />}
     </div>

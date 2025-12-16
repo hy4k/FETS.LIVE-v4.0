@@ -3,8 +3,8 @@ import { Database } from './database.types';
 export type StaffProfile = Database['public']['Tables']['staff_profiles']['Row'];
 export type RosterSchedule = Database['public']['Tables']['roster_schedules']['Row'];
 export type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'] & { requestor_name?: string; target_name?: string; };
-export type Notification = Database['public']['Tables']['notifications']['Row'];
-export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];
+export type Notification = any; // Database['public']['Tables']['notifications']['Row'];
+export type ChecklistItem = any; // Database['public']['Tables']['checklist_items']['Row'];
 export type CandidateMetrics = { total: number; present: number; absent: number; };
 export type IncidentStats = { open: number; closed: number; critical: number; };
 
@@ -145,8 +145,8 @@ export interface KPIData {
 
 export type BranchType = 'global' | string
 
-export type UserSettings = Database['public']['Tables']['user_settings']['Row'];
-export type NewsTicker = Database['public']['Tables']['news_ticker']['Row'];
+export type UserSettings = any; // Database['public']['Tables']['user_settings']['Row'];
+export type NewsTicker = any; // Database['public']['Tables']['news_ticker']['Row'];
 
 export interface ChecklistTemplateItem {
   id: string;

@@ -239,7 +239,7 @@ export const useGetOrCreateDM = () => {
     }) => {
       // Check if conversation already exists using RPC function
       const { data: existing, error: searchError } = await supabase
-        .rpc('get_direct_conversation', {
+        .rpc('get_direct_conversation' as any, {
           user1_id: userId1,
           user2_id: userId2
         });
@@ -441,7 +441,7 @@ export const usePresence = (conversationId: string, currentUserId: string) => {
         const presenceState = channel.presenceState();
         const users = Object.keys(presenceState).map(key => {
           const presence = presenceState[key];
-          return presence[0]?.user_id;
+          return (presence[0] as any)?.user_id;
         }).filter(Boolean);
         setOnlineUsers(users);
       })

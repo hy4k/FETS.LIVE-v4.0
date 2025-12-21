@@ -18,8 +18,7 @@ const TaskModal = ({
 }) => {
   const queryClient = useQueryClient();
   const { addTask, updateTask, isAdding, isUpdating } = useTaskMutations(
-    currentUserProfile?.id,
-    queryClient
+    currentUserProfile?.id
   );
   const [formData, setFormData] = useState({
     title: '',
@@ -67,6 +66,8 @@ const TaskModal = ({
       } else {
         await addTask({
           ...validatedData,
+          title: validatedData.title!, // Assert non-null since schema validates it
+          assigned_to: validatedData.assigned_to!,
           assigned_by: currentUserProfile.id,
         });
       }

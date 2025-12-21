@@ -34,23 +34,19 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
   const [timelineData, setTimelineData] = useState<DayData[]>([])
   const [loading, setLoading] = useState(true)
   const { activeBranch } = useBranch()
-  
-  useEffect(() => {
-    loadNext7DaysData()
-  }, [activeBranch, loadNext7DaysData])
-  
+
   const loadNext7DaysData = useCallback(async () => {
     try {
       setLoading(true)
       const data: DayData[] = []
       const today = new Date()
-      
+
       // Get next 7 days
       const startDate = formatDateForIST(today)
       const endDate = new Date(today)
       endDate.setDate(today.getDate() + 6)
       const endDateStr = formatDateForIST(endDate)
-      
+
       // Fetch real session data from database
       let query = supabase
         .from('sessions')
@@ -59,34 +55,34 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
         .lte('date', endDateStr)
         .order('date', { ascending: true })
         .order('start_time', { ascending: true })
-      
+
       // Apply branch filtering if not global view
       if (activeBranch !== 'global') {
         query = query.eq('branch_location', activeBranch)
       }
-      
+
       const { data: sessions, error } = await query
-      
+
       if (error) {
         console.error('Error loading timeline data:', error)
         return
       }
-      
+
       // Process data for next 7 days
       for (let i = 0; i < 7; i++) {
         const date = new Date(today)
         date.setDate(today.getDate() + i)
-        
+
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         const dateStr = formatDateForIST(date)
-        
+
         // Get sessions for this specific date
         const daySessions = sessions?.filter(session => session.date === dateStr) || []
-        
+
         // Calculate total candidates for the day
         const totalCandidates = daySessions.reduce((sum, session) => sum + session.candidate_count, 0)
-        
+
         data.push({
           date: `${months[date.getMonth()]} ${date.getDate()}`,
           dayName: dayNames[date.getDay()],
@@ -95,7 +91,7 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
           sessions: daySessions
         })
       }
-      
+
       setTimelineData(data)
     } catch (error) {
       console.error('Error loading timeline data:', error)
@@ -103,7 +99,11 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
       setLoading(false)
     }
   }, [activeBranch])
-  
+
+  useEffect(() => {
+    loadNext7DaysData()
+  }, [activeBranch, loadNext7DaysData])
+
   const formatTimeRange = (startTime: string, endTime: string) => {
     const formatTime = (time: string) => {
       const [hours, minutes] = time.split(':')
@@ -114,9 +114,9 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
     }
     return `${formatTime(startTime)} - ${formatTime(endTime)}`
   }
-  
+
   const maxCapacity = getBranchCapacity(activeBranch)
-  
+
   return (
     <GlassCard className="timeline-widget no-scroll-widget">
       <div className="timeline-header">
@@ -129,7 +129,7 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
             <p>Upcoming examination schedule - {activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} Centre</p>
           </div>
         </div>
-        <button 
+        <button
           className="timeline-action"
           onClick={() => onNavigate?.('fets-calendar')}
         >
@@ -137,7 +137,7 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
           <ChevronRight size={16} />
         </button>
       </div>
-      
+
       <div className="timeline-scroll no-scroll-widget" style={{ maxHeight: '320px', overflowY: 'hidden' }}>
         {loading ? (
           <div className="p-8 text-center">
@@ -170,7 +170,7 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
                     {index === 0 && <div className="today-badge">Today</div>}
                   </div>
                 </div>
-                
+
                 {selectedDay === index && (
                   <motion.div
                     className="day-details"

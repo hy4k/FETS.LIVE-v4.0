@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { Session } from '../types' // Assuming types are defined in src/types.ts
 import { SessionFilters } from '../types/filters'
@@ -38,7 +38,7 @@ const fetchSessions = async (filters: SessionFilters = {}) => {
   return data as Session[]
 }
 
-export function useSessions(filters: SessionFilters = {}) {
+export function useSessions(filters: SessionFilters = {}): UseQueryResult<Session[], Error> {
   return useQuery({
     // The query key now includes the filters object to ensure unique caching.
     queryKey: ['sessions', filters],

@@ -56,7 +56,7 @@ export async function askGemini(userPrompt: string) {
 
     // 2. Call Gemini API (Using Header for Auth)
     // Note: Removed ?key= param to rely on header
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent";
 
     const response = await fetch(url, {
         method: "POST",

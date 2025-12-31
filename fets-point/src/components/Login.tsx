@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase, config } from '../lib/supabase'
-import { Shield, MapPin } from 'lucide-react'
+import { Shield, MapPin, Mail, Lock, ArrowRight, ChevronLeft, Fingerprint, Globe } from 'lucide-react'
 import { getAvailableBranches, formatBranchName } from '../utils/authUtils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function Login() {
   const [email, setEmail] = useState('mithun@fets.in') // Pre-fill test credentials
@@ -35,12 +36,12 @@ export function Login() {
 
       setResetMessage({
         type: 'success',
-        text: 'Password reset link sent! Check your email.'
+        text: 'Security verification link dispatched. Check your terminal/inbox.'
       })
     } catch (err: any) {
       setResetMessage({
         type: 'error',
-        text: err.message || 'Failed to send reset link'
+        text: err.message || 'Transmission failure'
       })
     } finally {
       setLoading(false)
@@ -53,295 +54,283 @@ export function Login() {
     setError('')
 
     try {
-      if (import.meta.env.DEV) {
-        console.log('Login attempt for:', email)
-        console.log('Supabase config:', config)
-      }
-
-      // Test connection first if in development
-      if (import.meta.env.DEV) {
-        const { error: testError } = await supabase.from('staff_profiles').select('count', { count: 'exact', head: true })
-        if (testError) {
-          console.error('Connection test failed:', testError)
-          setError(`Connection failed: ${testError.message}`)
-          setLoading(false)
-          return
-        }
-        console.log('Connection test passed, proceeding with login')
-      }
-
       const { error } = await signIn(email, password)
       if (error) {
-        if (import.meta.env.DEV) {
-          console.error('Login failed:', error)
-        }
-        setError(`Login failed: ${error.message}`)
+        setError(`Access Denied: ${error.message}`)
       } else {
-        // After successful login, update user's selected branch
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          const { error: updateError } = await supabase
+          await supabase
             .from('staff_profiles')
             .update({ branch_assigned: selectedBranch })
             .eq('user_id', user.id)
-
-          if (updateError) {
-            console.error('❌ Error updating branch:', updateError.message)
-          } else {
-            console.log(`✅ Branch set to: ${selectedBranch}`)
-          }
-        }
-
-        if (import.meta.env.DEV) {
-          console.log('Login successful!')
         }
       }
     } catch (err: any) {
-      if (import.meta.env.DEV) {
-        console.error('Login exception:', err)
-      }
-      setError(`Exception: ${err.message || 'Login failed'}`)
+      setError(`System Fault: ${err.message || 'Login failed'}`)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Design Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-yellow-300 to-amber-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-amber-300 to-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute -top-40 left-1/2 transform -translate-x-1/2 w-80 h-80 bg-gradient-to-br from-yellow-200 to-amber-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen bg-[#e0e5ec] flex items-center justify-center p-6 relative overflow-hidden font-['Montserrat']">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-400/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-yellow-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-md mx-auto">
-        {/* Large Prominent Logo */}
-        <div className="text-center mb-12">
-          <div className="inline-block p-6 rounded-3xl bg-white/80 backdrop-blur-md shadow-2xl border border-white/30 mb-8">
-            <img
-              src="/fets-live-golden-logo.jpg"
-              alt="FETS.LIVE"
-              className="h-32 w-32 object-contain mx-auto"
-            />
-          </div>
-          <h1 className="text-6xl font-black bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-transparent mb-4 tracking-wider" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            FETS.LIVE
-          </h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent mx-auto"></div>
-        </div>
-
-        {/* 3D Login Card */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50 transform transition-all duration-500 hover:scale-105 hover:shadow-3xl">
-          {/* Development Debug Panel */}
-          {import.meta.env.DEV && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-xs">
-              <div className="font-medium mb-1 text-yellow-800">Development Mode</div>
-              <div className="text-yellow-700">
-                <div>URL: {config.url}</div>
-                <div>Key: {config.keyPreview}</div>
-                <div className="text-green-600 mt-1">Environment variables: {import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Fallback'}</div>
-              </div>
+      <div className="relative z-10 w-full max-w-lg">
+        {/* Branding Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-block relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-amber-600 to-yellow-400 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative flex items-center justify-center p-6 bg-[#e0e5ec] rounded-[2rem] shadow-[8px_8px_16px_#bec3c9,-8px_-8px_16px_#ffffff]">
+              <img
+                src="/fets-live-golden-logo.jpg"
+                alt="FETS.LIVE"
+                className="h-24 w-24 object-contain rounded-xl"
+              />
             </div>
-          )}
+          </div>
 
+          <h1 className="mt-8 text-5xl font-black text-slate-800 tracking-tighter uppercase">
+            FETS<span className="text-amber-600 inline-block px-1">.</span>LIVE
+          </h1>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <span className="h-1 w-8 bg-amber-500 rounded-full"></span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Security Grid v4.0</span>
+            <span className="h-1 w-8 bg-amber-500 rounded-full"></span>
+          </div>
+        </motion.div>
+
+        {/* Auth Module */}
+        <AnimatePresence mode="wait">
           {mode === 'login' ? (
-            /* Login Form */
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="font-medium text-sm text-red-800">Error:</div>
-                  <div className="text-xs mt-1 text-red-700">{error}</div>
-                </div>
-              )}
+            <motion.div
+              key="login"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="bg-[#e0e5ec] p-10 rounded-[2.5rem] shadow-[20px_20px_60px_#bec3c9,-20px_-20px_60px_#ffffff] border border-white/20"
+            >
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-600"
+                  >
+                    <Fingerprint className="h-5 w-5 shrink-0" />
+                    <p className="text-xs font-bold uppercase tracking-wider">{error}</p>
+                  </motion.div>
+                )}
 
-              {/* 3D Email Input */}
-              <div className="space-y-2">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl focus:ring-4 focus:ring-yellow-300/50 focus:border-yellow-400 transition-all duration-300 text-gray-800 placeholder-gray-500 font-medium shadow-inner text-lg"
-                  placeholder="Enter your email"
-                  style={{
-                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.5)'
-                  }}
-                  required
-                />
+                {/* Secure Inputs Group */}
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administrative Access</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-12 pr-6 py-5 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-2xl focus:outline-none text-slate-700 font-bold placeholder-slate-400/50"
+                        placeholder="EMAIL_HOST@FETS.IN"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Password</label>
+                      <button
+                        type="button"
+                        onClick={() => setMode('forgot_password')}
+                        className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:text-amber-700 hover:underline"
+                      >
+                        Reset Sequence?
+                      </button>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-12 pr-6 py-5 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-2xl focus:outline-none text-slate-700 font-bold placeholder-slate-400/50"
+                        placeholder="••••••••••••"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Branch Matrix */}
+                <div className="space-y-4">
+                  <label className="flex items-center text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    <Globe className="h-4 w-4 mr-2 text-amber-500" />
+                    Operational Grid Selection
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {availableBranches.map((branch) => (
+                      <button
+                        key={branch}
+                        type="button"
+                        onClick={() => setSelectedBranch(branch)}
+                        className={`
+                          p-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all duration-300
+                          ${selectedBranch === branch
+                            ? 'bg-[#e0e5ec] shadow-[inset_6px_6px_12px_#bec3c9,inset_-6px_-6px_12px_#ffffff] text-amber-600 border border-amber-500/30'
+                            : 'bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-slate-500 hover:scale-[1.02]'
+                          }
+                        `}
+                      >
+                        {formatBranchName(branch)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Launch Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full relative group overflow-hidden"
+                >
+                  <div className={`
+                    absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-500 rounded-2xl transition-transform duration-500 ease-out
+                    ${loading ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} origin-left
+                  `}></div>
+                  <div className={`
+                    relative py-5 rounded-2xl font-black text-sm uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-colors duration-500
+                    ${loading ? 'text-white' : 'bg-[#e0e5ec] shadow-[8px_8px_16px_#bec3c9,-8px_-8px_16px_#ffffff] text-slate-800 group-hover:text-white'}
+                  `}>
+                    {loading ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Initializing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="h-5 w-5" />
+                        <span>Enter System</span>
+                        <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
+                      </>
+                    )}
+                  </div>
+                </button>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="forgot_password"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="bg-[#e0e5ec] p-10 rounded-[2.5rem] shadow-[20px_20px_60px_#bec3c9,-20px_-20px_60px_#ffffff] border border-white/20"
+            >
+              <div className="flex flex-col items-center mb-8">
+                <div className="p-5 bg-[#e0e5ec] shadow-[inset_6px_6px_12px_#bec3c9,inset_-6px_-6px_12px_#ffffff] rounded-3xl text-amber-600 mb-6">
+                  <Fingerprint size={48} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Identity Recovery</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 text-center">Enter your credentials to initiate reset sequence</p>
               </div>
 
-              {/* 3D Password Input */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl focus:ring-4 focus:ring-yellow-300/50 focus:border-yellow-400 transition-all duration-300 text-gray-800 placeholder-gray-500 font-medium shadow-inner text-lg"
-                    placeholder="Enter your password"
-                    style={{
-                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.5)'
-                    }}
-                    required
-                  />
+              <form onSubmit={handleForgotPassword} className="space-y-8">
+                {resetMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-4 border rounded-2xl flex items-center gap-3 ${resetMessage.type === 'success'
+                        ? 'bg-green-500/10 border-green-500/20 text-green-600'
+                        : 'bg-red-500/10 border-red-500/20 text-red-600'
+                      }`}
+                  >
+                    <div className={`h-2 w-2 rounded-full animate-pulse ${resetMessage.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`} />
+                    <span className="text-xs font-bold uppercase tracking-wider">{resetMessage.text}</span>
+                  </motion.div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Recovery Email</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-amber-600 transition-colors" />
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full pl-12 pr-6 py-5 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-2xl focus:outline-none text-slate-700 font-bold placeholder-slate-400/50"
+                      placeholder="SECURE_ID@FETS.IN"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex justify-end mt-1">
+
+                <div className="flex flex-col gap-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-5 bg-amber-600 hover:bg-amber-700 text-white font-black text-sm uppercase tracking-[0.3em] rounded-2xl shadow-lg shadow-amber-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {loading ? 'Dispatched...' : 'Trigger Recovery'}
+                  </button>
+
                   <button
                     type="button"
-                    onClick={() => setMode('forgot_password')}
-                    className="text-sm font-medium text-amber-600 hover:text-amber-800 transition-colors"
+                    onClick={() => setMode('login')}
+                    className="w-full py-4 flex items-center justify-center gap-2 text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
                   >
-                    Forgot Password?
+                    <ChevronLeft size={16} />
+                    Back to Terminal
                   </button>
                 </div>
-              </div>
-
-              {/* Branch Selector */}
-              <div className="space-y-2">
-                <label htmlFor="branch" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4 mr-2 text-amber-500" />
-                  Select Your Branch
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {availableBranches.map((branch) => (
-                    <button
-                      key={branch}
-                      type="button"
-                      onClick={() => setSelectedBranch(branch)}
-                      className={`
-                        px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform
-                        ${selectedBranch === branch
-                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg scale-105 border-2 border-yellow-500'
-                          : 'bg-white border-2 border-yellow-200 text-gray-700 hover:border-yellow-400 hover:shadow-md'
-                        }
-                      `}
-                      style={{
-                        boxShadow: selectedBranch === branch
-                          ? '0 4px 12px rgba(251, 191, 36, 0.4)'
-                          : '0 2px 4px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      {formatBranchName(branch)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Premium GO LIVE Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 text-white font-black text-xl rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:transform-none shadow-lg"
-                style={{
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                  boxShadow: '0 8px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.1)'
-                }}
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center space-x-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                    <span>CONNECTING...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-3">
-                    <Shield className="h-6 w-6" />
-                    <span className="tracking-widest">GO LIVE</span>
-                  </div>
-                )}
-              </button>
-            </form>
-          ) : (
-            /* Forgot Password Form */
-            <form onSubmit={handleForgotPassword} className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Reset Password</h3>
-                <p className="text-sm text-gray-500">Enter your email address and we'll send you a link to reset your password.</p>
-              </div>
-
-              {resetMessage && (
-                <div className={`border rounded-xl p-4 ${resetMessage.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
-                  }`}>
-                  <div className="text-sm">{resetMessage.text}</div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <input
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-2xl focus:ring-4 focus:ring-yellow-300/50 focus:border-yellow-400 transition-all duration-300 text-gray-800 placeholder-gray-500 font-medium shadow-inner text-lg"
-                  placeholder="Enter your registered email"
-                  style={{
-                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.5)'
-                  }}
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 text-white font-black text-xl rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:transform-none shadow-lg"
-                style={{
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                  boxShadow: '0 8px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.1)'
-                }}
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center space-x-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                    <span>SENDING LINK...</span>
-                  </div>
-                ) : (
-                  <span>SEND RESET LINK</span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode('login')}
-                className="w-full py-3 text-amber-600 font-bold hover:text-amber-800 transition-colors"
-              >
-                Back to Login
-              </button>
-            </form>
+              </form>
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          {import.meta.env.DEV && (
-            <div className="mt-6 text-center text-xs text-gray-500">
-              Test Credentials: mithun@fets.in / 123456
+        {/* System Diagnostics (Dev Only) */}
+        {import.meta.env.DEV && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-12 p-6 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-3xl"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diagnostic Bridge Active</span>
             </div>
-          )}
-        </div>
+            <div className="grid grid-cols-2 gap-4 text-[9px] font-black text-slate-500 uppercase tracking-tighter">
+              <div className="space-y-1">
+                <span className="block text-slate-400">Endpoint Cluster</span>
+                <span className="block text-slate-700 truncate">{config.url}</span>
+              </div>
+              <div className="space-y-1">
+                <span className="block text-slate-400">Security Creds</span>
+                <span className="block text-slate-700">Mithun@fets.in / 123456</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <style>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
+        body {
+          background-color: #e0e5ec;
         }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
+        @keyframes pulse {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.2; transform: scale(1.1); }
         }
       `}</style>
     </div>

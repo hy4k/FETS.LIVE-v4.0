@@ -5,7 +5,7 @@ import {
   User, LogOut, ArrowRight, X, Sparkles,
   Maximize2, UserCog, Shield, Building2,
   LayoutDashboard, Menu, ChevronRight,
-  Terminal, Database, Radio, Bell, Globe, CPU, BarChart3
+  Terminal, Database, Radio, Bell, Globe, Cpu, BarChart3
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -257,7 +257,7 @@ export function FetsIntelligence() {
           <div className="mt-auto pt-8 border-t border-white/20">
             <div className="p-4 rounded-2xl bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] flex items-center gap-4">
               <div className="relative h-10 w-10 flex items-center justify-center bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] rounded-xl text-emerald-500">
-                <CPU size={20} className="animate-spin duration-3000" />
+                <Cpu size={20} className="animate-spin duration-3000" />
               </div>
               <div>
                 <div className="text-[9px] font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Grid Sync: OK</div>

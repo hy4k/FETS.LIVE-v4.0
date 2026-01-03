@@ -49,30 +49,10 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
 
   const canAccessBranch = useCallback((branch: BranchType): boolean => {
-
     if (!profile) return false;
-
-
-
-    // Super admins and admins can access all branches
-
-    if (userAccessLevel === 'super_admin' || userAccessLevel === 'admin') {
-
-      return true;
-
-    }
-
-
-
-    // Staff can only access their assigned branch
-
-    if (branch === 'global') return userAccessLevel === 'super_admin' || userAccessLevel === 'admin';
-
-
-
-    return userBranchAccess === branch;
-
-  }, [profile, userAccessLevel, userBranchAccess]);
+    // Allow all users to access all branches
+    return true;
+  }, [profile]);
 
 
 

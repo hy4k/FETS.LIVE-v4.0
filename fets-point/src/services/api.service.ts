@@ -476,13 +476,13 @@ export const postsService = {
   async getAll(filters?: { centre?: string; visibility?: string }) {
     try {
       let query = supabase
-        .from('posts')
+        .from('social_posts')
         .select(`
           *,
           staff_profiles(full_name),
-          post_media(*),
-          post_likes(count),
-          post_comments(count)
+          post_media:social_post_media(*),
+          post_likes:social_post_likes(count),
+          post_comments:social_post_comments(count)
         `)
 
       if (filters?.centre) {
@@ -503,10 +503,10 @@ export const postsService = {
     }
   },
 
-  async create(post: TablesInsert<'posts'>) {
+  async create(post: TablesInsert<'social_posts'>) {
     try {
       const { data, error } = await supabase
-        .from('posts')
+        .from('social_posts')
         .insert(post as any)
         .select()
         .single()
@@ -519,10 +519,10 @@ export const postsService = {
     }
   },
 
-  async update(id: string, updates: TablesUpdate<'posts'>) {
+  async update(id: string, updates: TablesUpdate<'social_posts'>) {
     try {
       const { data, error } = await supabase
-        .from('posts')
+        .from('social_posts')
         .update(updates as any)
         .eq('id', id)
         .select()
@@ -539,7 +539,7 @@ export const postsService = {
   async delete(id: string) {
     try {
       const { error } = await supabase
-        .from('posts')
+        .from('social_posts')
         .delete()
         .eq('id', id)
 

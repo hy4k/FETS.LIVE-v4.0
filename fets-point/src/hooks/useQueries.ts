@@ -451,7 +451,7 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (postData: TablesInsert<'posts'>) => {
+    mutationFn: async (postData: TablesInsert<'posts'> & { author_id: string; content: string }) => {
       try {
         return await postsService.create(postData)
       } catch (error) {

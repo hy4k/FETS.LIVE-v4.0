@@ -36,7 +36,7 @@ export const useDashboardStats = () => {
         applyBranchFilter(supabase.from('events').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
         applyBranchFilter((supabase as any).from('checklist_submissions').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'), activeBranch, 'branch_id'),
         applyBranchFilter(supabase.from('staff_schedules').select('staff_profiles(full_name)').eq('schedule_date', today), activeBranch),
-        applyBranchFilter(supabase.from('posts').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
+        applyBranchFilter(supabase.from('social_posts').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         // applyBranchFilter(supabase.from('chat_messages').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         applyBranchFilter(supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
         applyBranchFilter(supabase.from('sessions').select('client_name, candidate_count').eq('date', today), activeBranch),

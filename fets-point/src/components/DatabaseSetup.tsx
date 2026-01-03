@@ -12,12 +12,12 @@ export function DatabaseSetup() {
     try {
       // Check if tables exist first
       setSetupStatus('Checking existing tables...')
-      
+
       const tableChecks = [
         { name: 'chat_rooms', query: supabase.from('chat_rooms').select('id').limit(1) },
         { name: 'chat_messages', query: supabase.from('chat_messages').select('id').limit(1) },
-        { name: 'posts', query: supabase.from('posts').select('id').limit(1) },
-        { name: 'post_media', query: supabase.from('post_media').select('id').limit(1) }
+        { name: 'social_posts', query: supabase.from('social_posts').select('id').limit(1) },
+        { name: 'social_post_media', query: supabase.from('social_post_media').select('id').limit(1) }
       ]
 
       const missingTables = []
@@ -34,7 +34,7 @@ export function DatabaseSetup() {
       }
 
       setSetupStatus(`Missing tables: ${missingTables.join(', ')}. Please run the SQL migration manually.`)
-      
+
       // Display the SQL that needs to be run
       const sqlCommands = `
 -- Run these SQL commands in your Supabase SQL editor:
@@ -61,8 +61,8 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     CONSTRAINT chat_messages_content_check CHECK (text IS NOT NULL OR media_path IS NOT NULL)
 );
 
--- 3. Create posts table
-CREATE TABLE IF NOT EXISTS posts (
+-- 3. Create social_posts table
+CREATE TABLE IF NOT EXISTS social_posts (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     author_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
     content text NOT NULL,
@@ -73,10 +73,10 @@ CREATE TABLE IF NOT EXISTS posts (
     updated_at timestamp with time zone DEFAULT now()
 );
 
--- 4. Create post_media table
-CREATE TABLE IF NOT EXISTS post_media (
+-- 4. Create social_post_media table
+CREATE TABLE IF NOT EXISTS social_post_media (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    post_id uuid REFERENCES posts(id) ON DELETE CASCADE,
+    post_id uuid REFERENCES social_posts(id) ON DELETE CASCADE,
     path text NOT NULL,
     type text CHECK (type IN ('image', 'video', 'file')),
     created_at timestamp with time zone DEFAULT now()
@@ -92,16 +92,16 @@ ON CONFLICT (name) DO NOTHING;
 -- 6. Enable RLS
 ALTER TABLE chat_rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE post_media ENABLE ROW LEVEL SECURITY;
+ALTER TABLE social_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE social_post_media ENABLE ROW LEVEL SECURITY;
 
 -- 7. Create RLS policies
 CREATE POLICY "Users can view chat rooms" ON chat_rooms FOR SELECT USING (true);
 CREATE POLICY "Users can view chat messages" ON chat_messages FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can insert chat messages" ON chat_messages FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Users can view posts" ON posts FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can insert posts" ON posts FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Users can view post media" ON post_media FOR SELECT USING (true);
+CREATE POLICY "Users can view posts" ON social_posts FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can insert posts" ON social_posts FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Users can view post media" ON social_post_media FOR SELECT USING (true);
       `
 
       console.log('📋 SQL Commands to run:', sqlCommands)
@@ -122,7 +122,7 @@ CREATE POLICY "Users can view post media" ON post_media FOR SELECT USING (true);
         <div className="mb-3 text-xs text-gray-600">
           {setupStatus || 'Click to check and setup database tables for FETS Connect'}
         </div>
-        <button 
+        <button
           onClick={runDatabaseSetup}
           disabled={isSetupRunning}
           className="px-3 py-1 bg-blue-500 text-white rounded text-xs disabled:opacity-50"

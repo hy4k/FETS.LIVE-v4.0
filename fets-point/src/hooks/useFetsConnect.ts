@@ -9,12 +9,12 @@ const STALE_TIME = 30000 // 30 seconds
 
 const fetchPosts = async () => {
   const { data, error } = await supabase
-    .from('posts')
+    .from('social_posts')
     .select(`
       *,
       author:staff_profiles!posts_author_id_fkey(full_name, avatar_url, role, department),
-      likes:post_likes(user_id),
-      comments:post_comments(
+      likes:social_post_likes(user_id),
+      comments:social_post_comments(
         *,
         author:staff_profiles!post_comments_author_id_fkey(full_name, avatar_url)
       )
@@ -34,17 +34,17 @@ export const usePosts = () => {
       .channel('public:posts')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'posts' },
+        { event: '*', schema: 'public', table: 'social_posts' },
         () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_likes' },
+        { event: '*', schema: 'public', table: 'social_post_likes' },
         () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'post_comments' },
+        { event: '*', schema: 'public', table: 'social_post_comments' },
         () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
       )
       .subscribe()
@@ -68,7 +68,7 @@ export const usePostMutations = () => {
 
   const addPost = useMutation({
     mutationFn: async (newPost: { content: string; author_id: string, author: any }) => {
-      const { data, error } = await supabase.from('posts').insert({ content: newPost.content, author_id: newPost.author_id }).select().single()
+      const { data, error } = await supabase.from('social_posts').insert({ content: newPost.content, author_id: newPost.author_id }).select().single()
       if (error) throw error
       return data
     },
@@ -106,10 +106,10 @@ export const usePostMutations = () => {
   const toggleLike = useMutation({
     mutationFn: async ({ postId, userId, isLiked }: { postId: string; userId: string; isLiked: boolean }) => {
       if (isLiked) {
-        const { error } = await supabase.from('post_likes').delete().match({ post_id: postId, user_id: userId })
+        const { error } = await supabase.from('social_post_likes').delete().match({ post_id: postId, user_id: userId })
         if (error) throw error
       } else {
-        const { error } = await supabase.from('post_likes').insert({ post_id: postId, user_id: userId })
+        const { error } = await supabase.from('social_post_likes').insert({ post_id: postId, user_id: userId })
         if (error) throw error
       }
     },
@@ -142,7 +142,7 @@ export const usePostMutations = () => {
 
   const addComment = useMutation({
     mutationFn: async (newComment: { post_id: string; author_id: string; content: string; author: any }) => {
-      const { data, error } = await supabase.from('post_comments').insert({ post_id: newComment.post_id, author_id: newComment.author_id, content: newComment.content }).select().single()
+      const { data, error } = await supabase.from('social_post_comments').insert({ post_id: newComment.post_id, author_id: newComment.author_id, content: newComment.content }).select().single()
       if (error) throw error
       return data
     },
@@ -195,7 +195,7 @@ export const usePostMutations = () => {
   const updatePost = useMutation({
     mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
       const { error } = await supabase
-        .from('posts')
+        .from('social_posts')
         .update({ content })
         .eq('id', postId)
       if (error) throw error
@@ -227,7 +227,7 @@ export const usePostMutations = () => {
   const deletePost = useMutation({
     mutationFn: async (postId: string) => {
       const { error } = await supabase
-        .from('posts')
+        .from('social_posts')
         .delete()
         .eq('id', postId)
       if (error) throw error
@@ -254,7 +254,7 @@ export const usePostMutations = () => {
   const updateComment = useMutation({
     mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
       const { error } = await supabase
-        .from('post_comments')
+        .from('social_post_comments')
         .update({ content })
         .eq('id', commentId)
       if (error) throw error
@@ -291,7 +291,7 @@ export const usePostMutations = () => {
   const deleteComment = useMutation({
     mutationFn: async (commentId: string) => {
       const { error } = await supabase
-        .from('post_comments')
+        .from('social_post_comments')
         .delete()
         .eq('id', commentId)
       if (error) throw error

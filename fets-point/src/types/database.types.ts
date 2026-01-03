@@ -14,6 +14,154 @@ export type Database = {
   }
   public: {
     Tables: {
+      social_posts: {
+        Row: {
+          id: string
+          author_id: string
+          content: string
+          branch_location: string
+          visibility: string
+          pinned: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          author_id: string
+          content: string
+          branch_location?: string
+          visibility?: string
+          pinned?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          author_id?: string
+          content?: string
+          branch_location?: string
+          visibility?: string
+          pinned?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      social_post_media: {
+        Row: {
+          id: string
+          post_id: string
+          path: string
+          type: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          path: string
+          type: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          path?: string
+          type?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      social_post_likes: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      social_post_comments: {
+        Row: {
+          id: string
+          post_id: string
+          author_id: string
+          content: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          author_id: string
+          content: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          author_id?: string
+          content?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "staff_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       branch_status: {
         Row: {
           branch_name: string

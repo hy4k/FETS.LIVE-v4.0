@@ -14,7 +14,7 @@ import { StaffProfile } from '../types/shared'
 import { getAvailableBranches, formatBranchName } from '../utils/authUtils'
 
 const PERMISSION_KEYS = [
-    { key: 'roster_edit', label: 'Roster Management', icon: Users, description: 'Create and edit staff rosters' },
+    { key: 'can_edit_roster', label: 'Roster Management', icon: Users, description: 'Create and edit staff rosters' },
     { key: 'user_management_edit', label: 'User Management Authority', icon: Shield, description: 'Manage user profiles, roles and critical permissions' },
 ]
 

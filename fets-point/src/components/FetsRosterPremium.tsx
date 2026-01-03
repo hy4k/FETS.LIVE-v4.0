@@ -75,7 +75,7 @@ export function FetsRosterPremium() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
 
   const { hasPermission } = useAuth()
-  const canEdit = hasPermission('roster_edit')
+  const canEdit = hasPermission('can_edit_roster')
 
   // Notification system
   const showNotification = useCallback((type: 'success' | 'error' | 'warning', message: string) => {

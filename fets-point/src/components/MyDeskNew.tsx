@@ -45,26 +45,26 @@ const GlassInset = ({ children, className = "" }: { children: React.ReactNode, c
 
 const PremiumButton = ({ children, onClick, active = false, className = "", variant = "default" }: { children: React.ReactNode, onClick?: () => void, active?: boolean, className?: string, variant?: "default" | "danger" }) => {
   const baseClasses = `
-    relative overflow-hidden
-    px-5 py-2.5 rounded-xl
-    font-black text-[11px] uppercase tracking-widest
-    transition-all duration-300 ease-out
-    flex items-center gap-2 justify-center
-    border
+    relative group overflow-hidden
+    px-6 py-3 rounded-2xl
+    font-black text-[10px] uppercase tracking-[0.2em]
+    transition-all duration-500 ease-out
+    flex items-center gap-3 justify-center
     cursor-pointer
+    backdrop-blur-md
   `
 
   const variants = {
     default: active
-      ? 'bg-gradient-to-r from-[#ffbf00] to-[#ff9500] text-black border-[#ffbf00]/50 shadow-[0_0_30px_rgba(255,191,0,0.4)]'
-      : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20',
-    danger: 'bg-gradient-to-r from-rose-500/20 to-rose-600/20 text-rose-400 border-rose-500/30 hover:from-rose-500/30 hover:to-rose-600/30 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+      ? 'bg-gradient-to-r from-[#ffbf00] to-[#ff9500] text-black shadow-[0_0_40px_rgba(255,191,0,0.4)] border border-[#ffbf00]/50 translate-y-[-2px]'
+      : 'bg-white/5 text-white/40 border border-white/5 hover:bg-white/10 hover:text-white hover:border-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]',
+    danger: 'bg-gradient-to-r from-rose-500/10 to-rose-600/10 text-rose-400 border border-rose-500/20 hover:from-rose-500/20 hover:to-rose-600/20 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]'
   }
 
   return (
     <button onClick={onClick} className={`${baseClasses} ${variants[variant]} ${className}`}>
-      {active && <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer" />}
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
+      {active && <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent animate-shimmer opacity-50" />}
+      <span className="relative z-10 flex items-center gap-2.5">{children}</span>
     </button>
   )
 }
@@ -160,118 +160,169 @@ const PasswordModal = ({ onClose }: { onClose: () => void }) => {
 const ProfilePanel = ({ profile, onSignOut }: { profile: any, onSignOut: () => void }) => {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
+  // Helper for metrics
+  const trainingCount = (profile?.trainings_attended?.length || 0)
+  const certificateCount = (profile?.certificates?.length || 0)
+  const futureTrainingCount = (profile?.future_trainings?.length || 0)
+  const skillCount = (profile?.skills?.length || 0)
+
   return (
-    <div className="h-full flex flex-col">
-      <GlassCard className="flex-1 p-6 flex flex-col" glow>
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#ffbf00]/50 to-transparent" />
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#ffbf00]/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Profile Header */}
-        <div className="flex flex-col items-center text-center relative z-10 mb-6">
-          <div className="relative mb-4">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#ffbf00] to-[#ff9500] rounded-full blur-xl opacity-30 animate-pulse" />
-            <ProfilePictureUpload
-              staffId={profile?.id || ''}
-              staffName={profile?.full_name || 'User'}
-              currentAvatarUrl={profile?.avatar_url}
-              onAvatarUpdate={() => window.location.reload()}
-            />
-          </div>
-
-          <h2 className="text-xl font-black text-white tracking-tight mb-1 uppercase">{profile?.full_name}</h2>
-          <div className="flex items-center gap-2 text-white/50 text-xs font-medium">
-            <Mail size={12} className="text-[#ffbf00]" />
-            {profile?.email}
-          </div>
-          {profile?.branch_assigned && (
-            <div className="flex items-center gap-1.5 text-white/40 text-[10px] font-medium mt-1">
-              <MapPin size={10} />
-              {profile?.branch_assigned}
-            </div>
-          )}
+    <div className="h-full flex flex-col gap-4">
+      {/* IDENTITY CARD */}
+      <GlassCard className="p-6 relative overflow-hidden group" glow>
+        <div className="absolute top-0 right-0 p-3 opacity-30">
+          <ShieldCheck className="text-[#ffbf00] w-24 h-24 absolute -top-4 -right-4 blur-sm" />
         </div>
 
-        {/* Status Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
-          <GlassInset className="p-3 text-center">
-            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1">Role</span>
-            <span className="text-[#ffbf00] font-black uppercase text-xs">{profile?.role?.replace('_', ' ')}</span>
-          </GlassInset>
-          <GlassInset className="p-3 text-center">
-            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1">Status</span>
-            <span className="text-emerald-400 font-black uppercase text-xs flex items-center justify-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              {profile?.status || 'Active'}
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="relative mb-5 group-hover:scale-105 transition-transform duration-500">
+            <div className="absolute inset-0 bg-[#ffbf00] rounded-full blur-md opacity-20 animate-pulse" />
+            <div className="relative p-1 rounded-full border border-[#ffbf00]/30 bg-black/20 backdrop-blur-sm">
+              <ProfilePictureUpload
+                staffId={profile?.id || ''}
+                staffName={profile?.full_name || 'User'}
+                currentAvatarUrl={profile?.avatar_url}
+                onAvatarUpdate={() => window.location.reload()}
+              />
+            </div>
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-black rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" title="Online" />
+          </div>
+
+          <h2 className="text-xl font-black text-white uppercase tracking-tight text-center leading-none mb-2">
+            {profile?.full_name}
+          </h2>
+
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#ffbf00] to-[#ff9500] text-black text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#ffbf00]/20">
+              {profile?.role?.replace('_', ' ')}
             </span>
-          </GlassInset>
-        </div>
+            <span className="px-3 py-1 rounded-lg bg-white/10 border border-white/10 text-white/70 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <MapPin size={10} /> {profile?.branch_assigned || 'Global'}
+            </span>
+          </div>
 
-        {/* Info Sections - Scrollable */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 relative z-10 pr-1">
-          {/* Employment */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Briefcase size={12} className="text-white/40" />
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Employment</span>
-            </div>
-            <GlassInset className="p-3 space-y-1">
-              <DetailRow label="Dept" value={profile?.department} />
-              <DetailRow label="Position" value={profile?.position} />
+          <div className="grid grid-cols-2 gap-2 w-full mt-2">
+            <GlassInset className="p-2.5 flex flex-col items-center justify-center bg-black/40">
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">ID</span>
+              <span className="text-[10px] font-mono text-white/90 truncate max-w-full">#{profile?.id?.slice(0, 8)}</span>
+            </GlassInset>
+            <GlassInset className="p-2.5 flex flex-col items-center justify-center bg-black/40">
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Joined</span>
+              <span className="text-[10px] font-mono text-white/90">
+                {profile?.joining_date ? format(new Date(profile.joining_date), 'MMM yyyy') : '--'}
+              </span>
             </GlassInset>
           </div>
+        </div>
+      </GlassCard>
 
-          {/* Skills */}
+      {/* METRICS & DETAILS SCROLL AREA */}
+      <GlassCard className="flex-1 p-0 overflow-hidden flex flex-col" glow>
+        <div className="p-4 border-b border-white/5 bg-white/5 backdrop-blur-md">
+          <h3 className="text-xs font-black text-white/60 uppercase tracking-[0.2em] flex items-center gap-2">
+            <Info size={14} className="text-[#ffbf00]" />
+            Professional Vitals
+          </h3>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
+
+          {/* Contact & Position */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/item">
+              <div className="p-2 rounded-lg bg-[#ffbf00]/10 text-[#ffbf00] flex-shrink-0">
+                <Briefcase size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Designation</p>
+                <p className="text-xs font-bold text-white truncate">{profile?.position || 'Not Assigned'}</p>
+                <p className="text-[10px] text-white/50 truncate uppercase">{profile?.department || 'General'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/item">
+              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 flex-shrink-0">
+                <Mail size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Communication</p>
+                <p className="text-xs font-bold text-white truncate">{profile?.email}</p>
+                {profile?.contact_number && (
+                  <p className="text-[10px] text-white/50 mt-0.5 font-mono">{profile.contact_number}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Growth Metrics */}
+          <div>
+            <h4 className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 ml-1">Growth Index</h4>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center gap-1 text-emerald-400">
+                <GraduationCap size={16} />
+                <span className="text-xl font-black leading-none">{trainingCount}</span>
+                <span className="text-[7px] font-bold uppercase tracking-wider text-emerald-500/60">Training</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[#ffbf00]/10 border border-[#ffbf00]/20 flex flex-col items-center gap-1 text-[#ffbf00]">
+                <Sparkles size={16} />
+                <span className="text-xl font-black leading-none">{certificateCount}</span>
+                <span className="text-[7px] font-bold uppercase tracking-wider text-[#ffbf00]/60">Awards</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 flex flex-col items-center gap-1 text-purple-400">
+                <Brain size={16} />
+                <span className="text-xl font-black leading-none">{skillCount}</span>
+                <span className="text-[7px] font-bold uppercase tracking-wider text-purple-500/60">Skills</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Skills Tags */}
           {profile?.skills?.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <GraduationCap size={12} className="text-white/40" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Skills</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {profile.skills.slice(0, 4).map((s: string) => (
-                  <span key={s} className="px-2 py-1 bg-[#ffbf00]/10 border border-[#ffbf00]/20 rounded-lg text-[9px] font-bold text-[#ffbf00] uppercase">{s}</span>
+              <h4 className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 ml-1">Expertise Matrix</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {profile.skills.map((s: string, idx: number) => (
+                  <span key={idx} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-bold text-white/70 uppercase">
+                    {s}
+                  </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Permissions */}
-          {profile?.permissions && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck size={12} className="text-white/40" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Licenses</span>
+          {/* Upcoming Training Highlight */}
+          {profile?.future_trainings?.length > 0 && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <div className="flex items-center gap-2 mb-2 text-rose-400">
+                <History size={14} className="animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest">Next Up</span>
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                {Object.entries(profile.permissions).filter(([_, val]) => val === true).slice(0, 4).map(([key]) => (
-                  <GlassInset key={key} className="p-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                    <span className="text-[8px] font-bold text-white/70 uppercase truncate">{key.replace('_', ' ')}</span>
-                  </GlassInset>
-                ))}
-              </div>
+              <p className="text-xs font-bold text-white truncate">
+                {typeof profile.future_trainings[0] === 'string' ? profile.future_trainings[0] : 'Upcoming Session'}
+              </p>
+              {futureTrainingCount > 1 && (
+                <p className="text-[9px] text-white/40 mt-1">+{futureTrainingCount - 1} more scheduled</p>
+              )}
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3 mt-6 relative z-10">
+        {/* Action Footer */}
+        <div className="p-4 bg-black/20 border-t border-white/5 space-y-3">
           <PremiumButton onClick={() => setShowPasswordModal(true)} className="w-full">
-            <Lock size={14} /> CREDENTIALS
+            <Lock size={12} /> Manage Security
           </PremiumButton>
           <PremiumButton onClick={onSignOut} variant="danger" className="w-full">
-            <LogOut size={14} /> SECURE LOGOUT
+            <LogOut size={12} /> End Session
           </PremiumButton>
         </div>
-
-        <AnimatePresence>
-          {showPasswordModal && (
-            <PasswordModal onClose={() => setShowPasswordModal(false)} />
-          )}
-        </AnimatePresence>
       </GlassCard>
+
+      <AnimatePresence>
+        {showPasswordModal && (
+          <PasswordModal onClose={() => setShowPasswordModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -311,13 +362,13 @@ export function MyDeskNew() {
   const { activeBranch } = useBranch()
   const [activeRightTab, setActiveRightTab] = useState('todo')
   const [isFetchatDetached, setIsFetchatDetached] = useState(false)
+  const [fetchatActiveUser, setFetchatActiveUser] = useState<any>(null) // State for persisted chat session
 
   const menuItems = [
     { id: 'todo', label: 'TO DO', icon: CheckSquare },
     { id: 'fetchat', label: 'FETCHAT', icon: MessageSquare },
     { id: 'notes', label: 'NOTES', icon: BookOpen },
-    { id: 'vault', label: 'VAULT', icon: Key },
-    { id: 'log', label: 'DAILY LOG', icon: History }
+    { id: 'vault', label: 'VAULT', icon: Key }
   ]
 
   return (
@@ -375,30 +426,47 @@ export function MyDeskNew() {
           {/* RIGHT COLUMN: Feature Hub - Takes Remaining Space */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0">
             {/* Menu Bar */}
-            <div className="flex items-center justify-between mb-4 gap-4">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center justify-between mb-6 gap-4">
+              {/* Glass Container for Menu */}
+              <GlassCard className="flex-1 p-2 flex items-center gap-2 flex-wrap" glow>
                 {menuItems.map(item => (
                   <PremiumButton
                     key={item.id}
                     onClick={() => setActiveRightTab(item.id)}
                     active={activeRightTab === item.id}
+                    className="flex-1 min-w-[100px]"
                   >
-                    <item.icon size={14} />
-                    <span className="hidden sm:inline">{item.label}</span>
+                    <item.icon size={16} strokeWidth={2.5} />
+                    <span className="hidden xl:inline">{item.label}</span>
+                    <span className="xl:hidden">{item.label.split(' ')[0]}</span>
                     {item.id === 'fetchat' && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse absolute top-2 right-2" />
                     )}
                   </PremiumButton>
                 ))}
-              </div>
+              </GlassCard>
 
-              <div className="flex items-center gap-2">
-                <GlassInset className="px-3 py-1.5 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] animate-pulse" />
-                  <span className="text-[9px] font-bold text-white/50 uppercase hidden sm:inline">{activeBranch}</span>
+              {/* Status Indicators */}
+              <div className="flex flex-col gap-2">
+                <GlassInset className="px-5 py-2 flex items-center gap-2.5 bg-white/5 border-white/10">
+                  <div className="md:flex hidden items-center justify-center w-5 h-5 rounded-full bg-[#ffbf00]/10 text-[#ffbf00]">
+                    <MapPin size={10} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-white/30 uppercase tracking-widest">Location</span>
+                    <span className="text-[10px] font-black text-white uppercase tracking-wider">{activeBranch}</span>
+                  </div>
+                  <div className="ml-2 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
                 </GlassInset>
-                <GlassInset className="px-3 py-1.5">
-                  <span className="text-sm font-black text-white/70">{format(new Date(), 'HH:mm')}</span>
+
+                <GlassInset className="px-5 py-2 flex items-center gap-2.5 bg-white/5 border-white/10">
+                  <div className="md:flex hidden items-center justify-center w-5 h-5 rounded-full bg-purple-500/10 text-purple-400">
+                    <History size={10} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-white/30 uppercase tracking-widest">Time</span>
+                    <span className="text-[10px] font-mono font-bold text-white uppercase tracking-wider">{format(new Date(), 'HH:mm')}</span>
+                  </div>
                 </GlassInset>
               </div>
             </div>
@@ -414,7 +482,11 @@ export function MyDeskNew() {
                     exit={{ opacity: 0, x: -20 }}
                     className="h-full"
                   >
-                    <Fetchat onToggleDetach={() => setIsFetchatDetached(true)} />
+                    <Fetchat
+                      onToggleDetach={() => setIsFetchatDetached(true)}
+                      activeUser={fetchatActiveUser}
+                      onSelectUser={setFetchatActiveUser}
+                    />
                   </motion.div>
                 )}
 
@@ -499,6 +571,8 @@ export function MyDeskNew() {
             isDetached
             onToggleDetach={() => setIsFetchatDetached(false)}
             onClose={() => setIsFetchatDetached(false)}
+            activeUser={fetchatActiveUser}
+            onSelectUser={setFetchatActiveUser}
           />
         )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, BookOpen, Save, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2, ShieldCheck, Fingerprint } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
@@ -12,7 +12,7 @@ interface NotebookPage {
 }
 
 export const DigitalNotebook: React.FC = () => {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [isOpened, setIsOpened] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pages, setPages] = useState<Record<number, NotebookPage>>({});
@@ -43,7 +43,6 @@ export const DigitalNotebook: React.FC = () => {
             });
             setPages(pagesMap);
 
-            // If no pages exist, initialize page 1
             if (!pagesMap[1]) {
                 setPages({
                     1: { page_number: 1, content: '' }
@@ -60,8 +59,6 @@ export const DigitalNotebook: React.FC = () => {
     const savePageContent = async (pageNumber: number, content: string) => {
         if (!user) return;
         setSaving(true);
-
-        const pageData = pages[pageNumber];
 
         const { error } = await supabase
             .from('user_notebook_pages')
@@ -110,190 +107,201 @@ export const DigitalNotebook: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-20">
-                <Loader2 className="w-8 h-8 animate-spin text-yellow-600" />
+            <div className="flex items-center justify-center p-20 h-[600px]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-[#d4af37]" />
+                    <p className="text-[#d4af37] font-serif tracking-widest text-sm">AUTHENTICATING ACCESS...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="relative w-full max-w-4xl mx-auto perspective-1000 h-[700px] flex items-center justify-center py-10">
+        <div className="relative w-full max-w-[900px] mx-auto perspective-1000 h-[700px] flex items-center justify-center py-4">
             <AnimatePresence mode="wait">
                 {!isOpened ? (
                     <motion.div
                         key="cover"
                         initial={{ rotateY: 0 }}
-                        exit={{ rotateY: -110, transition: { duration: 0.8, ease: "easeInOut" } }}
+                        exit={{ rotateY: -90, opacity: 0, transition: { duration: 0.6, ease: "easeIn" } }}
                         onClick={() => setIsOpened(true)}
-                        className="relative w-[450px] h-[600px] cursor-pointer group shadow-2xl rounded-r-lg overflow-hidden border-y border-r border-black/10"
-                        style={{ transformOrigin: "left center" }}
+                        className="relative w-[500px] h-[650px] cursor-pointer group rounded-r-2xl overflow-hidden shadow-[20px_20px_60px_rgba(0,0,0,0.5)] transform-style-3d transition-transform duration-500 hover:rotate-y-[-5deg]"
                     >
-                        {/* Spiral Binder Visual */}
-                        <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-around py-4 z-20 bg-black/5">
-                            {[...Array(20)].map((_, i) => (
-                                <div key={i} className="w-6 h-1 bg-gradient-to-r from-gray-400 to-gray-200 rounded-full shadow-sm ml-1" />
-                            ))}
+                        {/* Leather Texture Background */}
+                        <div className="absolute inset-0 bg-[#1a1c20]" style={{
+                            backgroundImage: `url("https://www.transparenttextures.com/patterns/black-leather.png"), radial-gradient(circle at center, #2a2d35 0%, #111 100%)`,
+                            backgroundBlendMode: 'overlay'
+                        }} />
+
+                        {/* Gold Border / Stitching */}
+                        <div className="absolute inset-4 border border-[#d4af37]/30 rounded-r-xl" />
+                        <div className="absolute inset-5 border border-dashed border-[#d4af37]/20 rounded-r-lg" />
+
+                        {/* Spine */}
+                        <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-[#111] to-[#252525] shadow-2xl z-20 flex flex-col items-center justify-center border-r border-[#333]">
+                            <div className="w-[2px] h-full bg-[#d4af37]/20" />
                         </div>
 
-                        {/* Notebook Cover Content */}
-                        <div className="absolute inset-0 bg-[#FFD700] flex flex-col p-10 items-center justify-between z-10">
-                            <div className="w-full">
-                                <p className="text-black font-bold tracking-[0.3em] text-sm mb-8 text-center">NOTEBOOK</p>
+                        {/* Content */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-between py-12 px-12 z-10 ml-8">
 
-                                <div className="flex flex-col items-center mt-12">
-                                    <div className="flex items-center gap-4">
-                                        <div className="grid grid-cols-3 gap-1 mb-2">
-                                            {[...Array(9)].map((_, i) => (
-                                                <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#D93025', '#F9AB00', '#1A73E8', '#188038', '#A142F4', '#EA4335', '#FBBC04', '#4285F4', '#34A853'][i] }} />
-                                            ))}
-                                        </div>
-                                        <h1 className="text-6xl font-black text-black tracking-tighter">forun</h1>
-                                    </div>
-                                    <div className="text-center mt-2 relative">
-                                        <p className="font-bold text-sm tracking-widest text-[#333]">TESTING & EDUCATIONAL</p>
-                                        <p className="font-bold text-sm tracking-widest text-[#333]">SERVICES</p>
-
-                                        {/* Wavy dots decoration matching the branded image */}
-                                        <div className="absolute -left-24 -right-24 top-16 flex justify-center items-center gap-1.5 overflow-hidden opacity-40 pointer-events-none">
-                                            {[...Array(40)].map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
-                                                    style={{
-                                                        backgroundColor: ['#D93025', '#F9AB00', '#1A73E8', '#188038', '#A142F4'][i % 5],
-                                                        transform: `translateY(${Math.sin(i * 0.4) * 12}px)`
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-12 w-full flex justify-center gap-4">
-                                    <div className="h-[2px] w-12 bg-black/20" />
-                                    <div className="flex gap-2">
-                                        {[...Array(10)].map((_, i) => (
-                                            <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#D93025', '#F9AB00', '#1A73E8', '#188038', '#A142F4'][i % 5] }} />
-                                        ))}
-                                    </div>
-                                    <div className="h-[2px] w-12 bg-black/20" />
+                            {/* Top Badge */}
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="px-4 py-1 border border-[#d4af37]/40 rounded text-[#d4af37] text-[10px] tracking-[0.4em] font-serif uppercase bg-black/40 backdrop-blur-sm">
+                                    Confidential
                                 </div>
                             </div>
 
-                            <div className="w-full text-center space-y-4">
-                                <p className="text-[10px] font-black tracking-[0.2em] text-black">COCHIN • CALICUT • KANNUR</p>
-                                <div className="flex justify-center items-center gap-6 opacity-80 scale-75">
-                                    <span className="font-bold text-xs">Pearson VUE</span>
-                                    <span className="font-bold text-xs italic">PROMETRIC</span>
-                                    <span className="font-black text-xs border border-black px-1">psi</span>
+                            {/* Main Logo Image - Slightly Reduced */}
+                            <div className="relative w-52 h-52 flex items-center justify-center p-4">
+                                <div className="absolute inset-0 bg-[#d4af37] rounded-full blur-[60px] opacity-10" />
+                                <img
+                                    src="/fets-universe-enhanced.png"
+                                    alt="FETS Universe"
+                                    className="w-full h-full object-contain drop-shadow-2xl mix-blend-screen opacity-90"
+                                />
+                            </div>
+
+                            {/* Title Text */}
+                            <div className="text-center space-y-2">
+                                <h1 className="text-2xl font-serif text-[#d4af37] tracking-[0.2em] font-bold text-shadow-gold">OFFICIAL PORTFOLIO</h1>
+                                <p className="text-[#888] text-[9px] tracking-[0.3em] uppercase">Authorized Personnel Only</p>
+                            </div>
+
+                            {/* Auth Stamp */}
+                            <div className="mt-4 border-2 border-[#d4af37]/30 p-2 rounded rotate-[-2deg] opacity-70">
+                                <div className="border border-[#d4af37]/30 px-6 py-2 bg-[#d4af37]/5 backdrop-blur-sm">
+                                    <div className="flex items-center gap-3 text-[#d4af37]">
+                                        <ShieldCheck size={16} />
+                                        <span className="text-xs font-bold tracking-widest uppercase">Secured • {new Date().getFullYear()}</span>
+                                    </div>
                                 </div>
+                            </div>
+
+                            {/* User details - Enhanced Visibility */}
+                            <div className="w-full border-t border-[#d4af37]/20 pt-4 flex justify-between items-end">
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] text-[#888] tracking-widest uppercase mb-1">Assigned Agent</span>
+                                    <span className="text-[#d4af37] font-['Reenie_Beanie'] text-2xl tracking-widest shadow-black drop-shadow-md">
+                                        {profile?.full_name || 'UNKNOWN AGENT'}
+                                    </span>
+                                </div>
+                                <Fingerprint className="text-[#d4af37]/60 w-10 h-10" strokeWidth={1} />
                             </div>
                         </div>
 
-                        {/* Shine/Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none z-20" />
+                        {/* Reflective Sheen */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
                     </motion.div>
                 ) : (
                     <motion.div
                         key="pages"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative w-full max-w-4xl h-full flex bg-white shadow-2xl rounded-lg overflow-hidden border border-gray-200"
+                        initial={{ rotateY: 90, opacity: 0 }}
+                        animate={{ rotateY: 0, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } }}
+                        className="relative w-full h-full flex shadow-[0_30px_70px_rgba(0,0,0,0.5)] rounded-r-xl overflow-hidden"
+                        style={{ transformStyle: 'preserve-3d' }}
                     >
-                        {/* Spiral Binder (Center Binder) */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-8 -translate-x-1/2 flex flex-col justify-around py-4 z-30 pointer-events-none">
-                            {[...Array(20)].map((_, i) => (
-                                <div key={i} className="w-8 h-2 bg-gradient-to-b from-gray-400 via-gray-200 to-gray-400 rounded-lg shadow-md" />
-                            ))}
-                        </div>
+                        {/* Spine Overlay */}
+                        <div className="absolute top-0 bottom-0 left-0 w-8 bg-black/90 z-30 shadow-2xl" />
 
-                        {/* Left Page (Reference Only or Previous Content) */}
-                        <div className="flex-1 bg-slate-50 border-r border-gray-100 flex flex-col p-12 opacity-50 relative overflow-hidden">
-                            <div className="absolute inset-0 pointer-events-none" style={{ background: "repeating-linear-gradient(transparent, transparent 31px, #e5e7eb 31px, #e5e7eb 32px)", backgroundSize: "100% 32px", marginTop: "44px" }} />
-                            <div className="absolute left-12 top-0 bottom-0 w-[1px] bg-red-200" />
-                            <div className="relative z-10 font-medium text-gray-400 line-clamp-[20]">
-                                {currentPage > 2 ? pages[currentPage - 2]?.content : "Previous page index..."}
-                            </div>
-                        </div>
-
-                        {/* Right Page (Active Editor) */}
-                        <div className="flex-1 bg-white flex flex-col relative overflow-hidden">
-                            {/* Paper Lines */}
-                            <div className="absolute inset-0 pointer-events-none" style={{
-                                background: "repeating-linear-gradient(transparent, transparent 31px, #e5e7eb 31px, #e5e7eb 32px)",
-                                backgroundSize: "100% 32px",
-                                marginTop: "44px"
+                        {/* Left Page (Previous/Static) */}
+                        <div className="flex-1 bg-[#f0f0e0] border-r border-[#d0d0c0] relative overflow-hidden hidden md:block">
+                            <div className="absolute inset-0 opacity-[0.4]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cream-paper.png")' }} />
+                            <div className="absolute inset-0" style={{
+                                backgroundImage: 'linear-gradient(#e5e5d0 1px, transparent 1px)',
+                                backgroundSize: '100% 32px',
+                                marginTop: '32px'
                             }} />
+                            <div className="absolute top-0 bottom-0 right-12 w-[2px] bg-red-800/20" /> {/* Margin */}
 
-                            {/* Vertical Margin Line */}
-                            <div className="absolute left-12 top-0 bottom-0 w-[1px] bg-red-200" />
-
-                            {/* Editor Header */}
-                            <div className="relative z-20 flex justify-between items-center px-16 h-12 border-b border-gray-100 bg-white/80 backdrop-blur-sm">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Page {currentPage}</span>
-                                <div className="flex items-center gap-2">
-                                    {saving && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
-                                    <span className="text-[10px] font-bold text-gray-300">Auto-saving...</span>
-                                </div>
+                            <div className="relative z-10 p-12 pr-16 text-right font-['Reenie_Beanie'] text-2xl text-slate-500/50 rotate-[-1deg] overflow-hidden h-full">
+                                {currentPage > 2 ? (
+                                    <>
+                                        <div className="mb-4 text-sm font-sans tracking-widest text-slate-400 uppercase">Page {currentPage - 2} - Archive</div>
+                                        <div className="whitespace-pre-wrap">{pages[currentPage - 2]?.content}</div>
+                                    </>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center opacity-30">
+                                        <div className="w-32 h-32 border-4 border-slate-400 rounded-full flex items-center justify-center rotate-[-15deg]">
+                                            <span className="text-3xl font-black uppercase tracking-widest text-slate-400">VOID</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Content Area */}
+                            {/* Shadow Gradient from Spine */}
+                            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black/20 to-transparent pointer-events-none" />
+                        </div>
+
+                        {/* Right Page (Active) */}
+                        <div className="flex-1 bg-[#fdfbf7] relative shadow-inner overflow-hidden flex flex-col">
+                            {/* Paper Texture & Lines */}
+                            <div className="absolute inset-0 opacity-[0.5]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cream-paper.png")' }} />
+                            <div className="absolute inset-0 pointer-events-none" style={{
+                                backgroundImage: 'linear-gradient(#e1e8ed 1px, transparent 1px)',
+                                backgroundSize: '100% 32px',
+                                marginTop: '40px'
+                            }} />
+                            <div className="absolute top-0 bottom-0 left-12 w-[2px] bg-red-400/20" /> {/* Margin */}
+
+                            {/* Header */}
+                            <div className="relative z-10 px-16 pt-6 pb-2 flex justify-between items-end border-b border-transparent">
+                                <span className="font-['Reenie_Beanie'] text-2xl text-slate-400">
+                                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </span>
+                                <span className="font-sans text-[10px] font-bold text-slate-300 tracking-[0.2em] uppercase">NO. {currentPage.toString().padStart(3, '0')}</span>
+                            </div>
+
+                            {/* Text Area */}
                             <textarea
                                 value={pages[currentPage]?.content || ''}
                                 onChange={(e) => handleContentChange(e.target.value)}
-                                placeholder="Start writing..."
-                                className="flex-1 relative z-10 bg-transparent resize-none p-16 pt-3 outline-none font-medium text-slate-700 leading-[32px] overflow-y-auto scrollbar-hide"
+                                className="flex-1 relative z-20 bg-transparent resize-none px-16 py-2 outline-none font-['Reenie_Beanie'] text-3xl text-[#2c3e50] leading-[32px] overflow-y-auto w-full"
+                                placeholder="Start writing your thoughts..."
                                 spellCheck={false}
+                                style={{
+                                    textShadow: '0 1px 1px rgba(0,0,0,0.05)'
+                                }}
                             />
 
-                            {/* Navigation Controls */}
-                            <div className="relative z-20 flex items-center justify-between px-10 py-6 bg-slate-50 border-t border-gray-100">
+                            {/* Footer Controls */}
+                            <div className="relative z-20 px-8 py-4 flex justify-between items-center bg-[#fdfbf7]/80 backdrop-blur-sm border-t border-slate-100">
                                 <button
                                     onClick={prevPage}
                                     disabled={currentPage === 1}
-                                    className="p-2 rounded-full hover:bg-white hover:shadow-md transition-all disabled:opacity-30 disabled:hover:shadow-none"
+                                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-20"
                                 >
-                                    <ChevronLeft className="w-5 h-5" />
+                                    <ChevronLeft size={20} />
                                 </button>
 
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
-                                        <BookOpen size={14} className="text-yellow-500" />
-                                        <span>Page {currentPage}</span>
-                                    </div>
-                                    <button onClick={() => setIsOpened(false)} className="text-[9px] font-black hover:text-yellow-600 transition-colors uppercase tracking-[0.2em] px-3">Close Binder</button>
+                                    <button onClick={() => setIsOpened(false)} className="text-xs font-bold text-slate-400 hover:text-[#d4af37] transition-colors uppercase tracking-widest px-4 py-1 border border-slate-200 rounded hover:border-[#d4af37]">
+                                        Close Portfolio
+                                    </button>
+                                    {saving && <span className="text-[9px] font-bold text-slate-300 uppercase animate-pulse">Saving...</span>}
                                 </div>
 
                                 <button
                                     onClick={nextPage}
-                                    className="p-2 rounded-full hover:bg-white hover:shadow-md transition-all group"
+                                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
-                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    <ChevronRight size={20} />
                                 </button>
                             </div>
 
-                            {/* Texture Overlays */}
-                            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
+                            {/* Page Curl Shadow / Depth */}
+                            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-black/10 to-transparent pointer-events-none" />
                         </div>
-
-                        {/* Page Curl/Fold Shadow Effect */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-16 -translate-x-1/2 bg-gradient-to-r from-black/5 via-transparent to-black/5 z-20 pointer-events-none" />
                     </motion.div>
                 )}
             </AnimatePresence>
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        .perspective-1000 { perspective: 1500px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .text-shadow-gold { text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3); }
+        @import url('https://fonts.googleapis.com/css2?family=Reenie+Beanie&display=swap');
       `}} />
         </div>
     );

@@ -37,7 +37,7 @@ export function canAccessGlobalBranch(email: string | null | undefined, role: st
  * @returns true if user can switch branches
  */
 export function canSwitchBranches(email: string | null | undefined, role: string | null | undefined): boolean {
-  return isSuperAdmin(email, role)
+  return true; // Now open to all users
 }
 
 /**
@@ -47,13 +47,8 @@ export function canSwitchBranches(email: string | null | undefined, role: string
  * @returns Array of branch options
  */
 export function getAvailableBranches(email: string | null | undefined, role: string | null | undefined): string[] {
-  const baseBranches = ['calicut', 'cochin', 'kannur']
-
-  if (isSuperAdmin(email, role)) {
-    return [...baseBranches, 'global']
-  }
-
-  return baseBranches
+  // Allow everyone to see all branches now, including global
+  return ['calicut', 'cochin', 'kannur', 'global'];
 }
 
 /**

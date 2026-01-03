@@ -856,7 +856,7 @@ const SystemManager = () => {
                             return (
                                 <div key={type} className="relative">
                                     <div className="flex flex-col items-center">
-                                        <div className="mb-12 px-8 py-3 bg-white/40 backdrop-blur-md border-2 border-[#BBDED6] rounded-full text-[11px] font-black uppercase tracking-[0.5em] text-black text-center shadow-lg">
+                                        <div className="mb-6 px-8 py-3 bg-white/40 backdrop-blur-md border-2 border-[#BBDED6] rounded-full text-[11px] font-black uppercase tracking-[0.5em] text-black text-center shadow-lg">
                                             {type} List <span className="opacity-40 mx-2">|</span> 01 - {rosterSize.toString().padStart(2, '0')}
                                         </div>
 
@@ -913,7 +913,7 @@ const SystemManager = () => {
                                         </div>
                                     </div>
                                     {type !== 'workstation' && (
-                                        <div className="h-20 w-px bg-gradient-to-b from-[#BBDED6] to-transparent mx-auto mt-16" />
+                                        <div className="h-8 w-px bg-gradient-to-b from-[#BBDED6] to-transparent mx-auto mt-4" />
                                     )}
                                 </div>
                             );

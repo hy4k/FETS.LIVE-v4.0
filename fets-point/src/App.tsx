@@ -16,6 +16,7 @@ import { PageLoadingFallback } from './components/LoadingFallback';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { UpdatePassword } from './components/UpdatePassword';
+import { AiAssistant } from './components/AiAssistant'; // IMPORT ADDED
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
@@ -39,7 +40,7 @@ const UserManagement = lazy(() => import('./components/UserManagement').then(mod
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30000, // 30 seconds
+      staleTime: 30000,
       retry: 3,
       refetchOnWindowFocus: false,
     },
@@ -75,7 +76,7 @@ function ConnectionStatus() {
 
   if (process.env.NODE_ENV === 'development') {
     return (
-      <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border z-50">
+      <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border z-50 hidden md:block">
         <div className="text-sm">
           <div className="font-medium mb-2">Supabase Connection</div>
           <div className="flex items-center space-x-2">
@@ -103,7 +104,6 @@ function AppContent() {
   const { activeBranch, getBranchTheme } = useBranch()
   const [activeTab, setActiveTab] = useState('command-center')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const isMobile = useIsMobile()
   const screenSize = useScreenSize()
   const [isRecovering, setIsRecovering] = useState(false)
@@ -119,20 +119,6 @@ function AppContent() {
   console.log('📊 App state:', { userAuthenticated: !!user, loading, isMobile, screenSize })
 
   useEffect(() => {
-    // Role-based access control check
-
-    // FETS Roster Page Restriction
-    if (activeTab === 'fets-roster') {
-      const hasRosterPermission = profile?.role === 'super_admin' ||
-        (typeof profile?.permissions === 'object' && profile?.permissions?.roster_edit);
-
-      if (!hasRosterPermission) {
-        console.warn(`Access denied for tab: ${activeTab}. Requires roster_edit permission.`);
-        setActiveTab('command-center');
-      }
-    }
-
-    // User Management Page Restriction
     if (activeTab === 'user-management') {
       const isMithun = profile?.email === 'mithun@fets.in';
       const isSuperAdmin = profile?.role === 'super_admin';
@@ -143,8 +129,6 @@ function AppContent() {
         setActiveTab('command-center');
       }
     }
-
-    // All other pages (news-manager, staff-management, etc.) are now open to all users
   }, [activeTab, profile]);
 
   if (loading) {
@@ -186,60 +170,20 @@ function AppContent() {
   }
 
   const renderContent = () => {
-    // Map routes to components with proper error boundaries and loading states
     const routeComponents: { [key: string]: { component: JSX.Element; name: string } } = {
-      'command-center': {
-        component: <CommandCentre />,
-        name: 'Command Centre'
-      },
-      'dashboard': {
-        component: <Dashboard onNavigate={setActiveTab} />,
-        name: 'Dashboard'
-      },
-      'candidate-tracker': {
-        component: <CandidateTracker />,
-        name: 'Candidate Tracker'
-      },
-      'fets-roster': {
-        component: <FetsRoster />,
-        name: 'FETS Roster'
-      },
-      'fets-calendar': {
-        component: <FetsCalendar />,
-        name: 'FETS Calendar'
-      },
-      'my-desk': {
-        component: <MyDesk />,
-        name: 'My Desk'
-      },
-      'staff-management': {
-        component: <StaffManagement />,
-        name: 'Staff Management'
-      },
-      'fets-intelligence': {
-        component: <FetsIntelligence />,
-        name: 'FETS Intelligence'
-      },
-      'system-manager': {
-        component: <SystemManager />,
-        name: 'System Manager'
-      },
-      'news-manager': {
-        component: <NewsManager />,
-        name: 'News Manager'
-      },
-      'checklist-management': {
-        component: <ChecklistManagement currentUser={profile} />,
-        name: 'Checklist Management'
-      },
-      'settings': {
-        component: <FetsIntelligence />,
-        name: 'FETS Intelligence'
-      },
-      'user-management': {
-        component: <UserManagement />,
-        name: 'User Management'
-      }
+      'command-center': { component: <CommandCentre />, name: 'Command Centre' },
+      'dashboard': { component: <Dashboard onNavigate={setActiveTab} />, name: 'Dashboard' },
+      'candidate-tracker': { component: <CandidateTracker />, name: 'Candidate Tracker' },
+      'fets-roster': { component: <FetsRoster />, name: 'FETS Roster' },
+      'fets-calendar': { component: <FetsCalendar />, name: 'FETS Calendar' },
+      'my-desk': { component: <MyDesk />, name: 'My Desk' },
+      'staff-management': { component: <StaffManagement />, name: 'Staff Management' },
+      'fets-intelligence': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
+      'system-manager': { component: <SystemManager />, name: 'System Manager' },
+      'news-manager': { component: <NewsManager />, name: 'News Manager' },
+      'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
+      'settings': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
+      'user-management': { component: <UserManagement />, name: 'User Management' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center']
@@ -249,7 +193,6 @@ function AppContent() {
         routeName={currentRoute.name}
         onGoBack={() => setActiveTab('command-center')}
         onRetry={() => {
-          // Force re-render by changing state
           setActiveTab('')
           setTimeout(() => setActiveTab(activeTab), 100)
         }}
@@ -263,29 +206,26 @@ function AppContent() {
 
   return (
     <div className={`golden-theme min-h-screen relative branch-global`}>
-      {/* Single Unified Header */}
       <Header
         isMobile={isMobile}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        setActiveTab={setActiveTab} // Pass setActiveTab for Mode Switching
-        activeTab={activeTab} // Pass activeTab for highlighting
+        setActiveTab={setActiveTab}
+        activeTab={activeTab}
       />
 
-
-
-      {/* Main Content - Full Width since Sidebar is removed */}
       <div className="pt-32 px-4 md:px-8 pb-8 transition-all duration-300">
         <div className="max-w-[1920px] mx-auto">
           {renderContent()}
         </div>
       </div>
 
+      {/* Floating AI Assistant - ALWAYS VISIBLE */}
+      <AiAssistant />
 
       <ConnectionStatus />
       {process.env.NODE_ENV === 'development' && <DatabaseSetup />}
 
-      {/* Release Version Footer */}
       <div className="max-w-[1920px] mx-auto mt-8 mb-4 flex justify-center opacity-30 pointer-events-none">
         <span className={"font-['Rajdhani'] font-bold text-[10px] uppercase tracking-[0.5em] text-slate-800"}>
           F.E.T.S | GLOBAL OPERATIONAL GRID v4.0.1 - BUILD 2026.01
@@ -304,30 +244,10 @@ function App() {
           <BranchProvider>
             <ThemeProvider>
               <AppContent />
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#363636',
-                    color: '#fff',
-                  },
-                  success: {
-                    duration: 3000,
-                    iconTheme: {
-                      primary: '#4ade80',
-                      secondary: '#fff',
-                    },
-                  },
-                  error: {
-                    duration: 5000,
-                    iconTheme: {
-                      primary: '#f87171',
-                      secondary: '#fff',
-                    },
-                  },
-                }}
-              />
+              <Toaster position="top-right" toastOptions={{
+                duration: 4000,
+                style: { background: '#363636', color: '#fff' }
+              }} />
               {process.env.NODE_ENV === 'development' && (
                 <ReactQueryDevtools initialIsOpen={false} />
               )}

@@ -83,7 +83,9 @@ export function FetsRoster() {
 
   const currentStaffProfile = getCurrentUserStaffProfile()
   const isSuperAdmin = currentStaffProfile?.role === 'super_admin'
-  const isAdmin = currentStaffProfile?.role === 'admin' || isSuperAdmin
+
+  // Check for explicit roster edit permission in user profile or super_admin role
+  const canEditRoster = isSuperAdmin || (currentStaffProfile?.permissions as any)?.can_edit_roster === true
 
   // Notification system
   const showNotification = useCallback((type: 'success' | 'error' | 'warning', message: string) => {
@@ -235,7 +237,7 @@ export function FetsRoster() {
 
   // New handlers for ShiftCellPopup
   const handleShiftCellSave = async (shiftData: { shift_code: string; overtime_hours: number }) => {
-    if (!selectedCellData || !user || !isAdmin) {
+    if (!selectedCellData || !user || !canEditRoster) {
       showNotification('warning', 'Unable to save shift - permission or context issue')
       return
     }
@@ -291,7 +293,7 @@ export function FetsRoster() {
   }
 
   const handleShiftCellDelete = async () => {
-    if (!selectedCellData || !user || !isAdmin) {
+    if (!selectedCellData || !user || !canEditRoster) {
       showNotification('warning', 'Unable to delete shift - permission or context issue')
       return
     }
@@ -348,8 +350,8 @@ export function FetsRoster() {
       {/* Notification System */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl glassmorphic-card ${notification.type === 'success' ? 'border-green-200 bg-green-50/80' :
-            notification.type === 'error' ? 'border-red-200 bg-red-50/80' :
-              'border-yellow-200 bg-yellow-50/80'
+          notification.type === 'error' ? 'border-red-200 bg-red-50/80' :
+            'border-yellow-200 bg-yellow-50/80'
           }`}>
           <div className="flex items-center space-x-3">
             {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
@@ -416,7 +418,7 @@ export function FetsRoster() {
               </div>
               <button
                 onClick={() => setShowQuickAddModal(true)}
-                disabled={!isAdmin}
+                disabled={!canEditRoster}
                 className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 flex items-center space-x-2 font-semibold"
               >
                 <Plus className="h-4 w-4" />

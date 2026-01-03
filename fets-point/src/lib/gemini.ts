@@ -1,148 +1,153 @@
 import { supabase } from './supabase';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
- * FETS Intelligence v5.0
- * Multi-Model Neural Fallback Engine
- * 
- * Automatically cycles through available models to bypass 404/Quota issues.
+ * FETS Intelligence v6.2 - Model Resilience Edition
+ * Fixed Model 404 Error by implementing multi-model fallback.
  */
 
 const getApiKey = () => import.meta.env.VITE_AI_API_KEY;
+
+// Helper to safely fetch data without throwing
+async function safeFetch(promise: Promise<any>, tableName: string) {
+    try {
+        const { data, error } = await promise;
+        if (error) {
+            console.warn(`[Context Warning] Failed to fetch ${tableName}:`, error.message);
+            return [];
+        }
+        return data || [];
+    } catch (err) {
+        console.warn(`[Context Exception] Failed to fetch ${tableName}:`, err);
+        return [];
+    }
+}
 
 export async function askGemini(userPrompt: string) {
     const apiKey = getApiKey();
 
     if (!apiKey || apiKey === 'undefined' || apiKey.length < 10) {
-        console.error("Gemini API Key Check Failed. Value:", apiKey);
-        throw new Error("AI API Key is missing or invalid. Please configure VITE_AI_API_KEY in your environment.");
+        console.error("❌ CRITICAL: VITE_AI_API_KEY is missing or invalid.");
+        throw new Error("System Alert: AI Neural Key is missing. Please check your system configuration.");
     }
 
-    console.log("DEBUG: AI Engine Initializing with Key Length:", apiKey.length);
-    console.log("DEBUG: Gathering context from Supabase...");
-
-    // We fetch a comprehensive summary of the platform state to make the AI "Omniscient"
     const today = new Date().toISOString().split('T')[0];
 
     try {
+        // Parallel Data Fetching
+        console.log("📡 Gathering Operational Context...");
+
         const [
-            eventsRes,
-            healthRes,
-            newsRes,
-            sessionsRes,
-            incidentsRes,
-            candidatesRes,
-            staffRes,
-            noticesRes,
-            postsRes,
-            branchRes
+            events, sessions, incidents, candidates, staff,
+            roster, vault, notices, posts, branch
         ] = await Promise.all([
-            supabase.from('events').select('title, category, branch_location, priority, status').or(`status.eq.open,created_at.gte.${today}`).limit(5),
-            supabase.from('system_health_metrics').select('*'),
-            supabase.from('news').select('content, priority').eq('is_active', true).limit(3),
-            supabase.from('sessions').select('client_name, candidate_count, start_time, branch_location').eq('date', today),
-            supabase.from('incidents').select('title, status, priority, branch_location').neq('status', 'closed').limit(5),
-            supabase.from('candidates').select('*', { count: 'exact', head: true }),
-            supabase.from('staff_profiles').select('full_name, role, department, is_online'),
-            supabase.from('notices').select('title, content').limit(3),
-            supabase.from('social_posts').select('content, user_id').order('created_at', { ascending: false }).limit(3),
-            supabase.from('branch_status').select('*')
+            safeFetch(supabase.from('events').select('*').order('created_at', { ascending: false }).limit(20), 'events'),
+            safeFetch(supabase.from('sessions').select('*').eq('date', today), 'sessions'),
+            safeFetch(supabase.from('incidents').select('*').or(`status.neq.closed,updated_at.gte.${today}`).limit(20), 'incidents'),
+            safeFetch(
+                supabase.from('candidates')
+                    .select('full_name, exam_name, exam_date, status, branch_location, phone, confirmation_number')
+                    .gte('exam_date', today)
+                    .order('exam_date', { ascending: true })
+                    .limit(50),
+                'candidates'
+            ),
+            safeFetch(supabase.from('staff_profiles').select('full_name, role, department, is_online, email, phone'), 'staff_profiles'),
+            safeFetch(supabase.from('roster_schedules').select('*, staff_profiles(full_name)').eq('date', today), 'roster_schedules'),
+            safeFetch(supabase.from('fets_vault').select('title, category, username, site_id').limit(50), 'fets_vault'),
+            safeFetch(supabase.from('notices').select('*').limit(10), 'notices'),
+            safeFetch(supabase.from('social_posts').select('content, created_at').order('created_at', { ascending: false }).limit(10), 'social_posts'),
+            safeFetch(supabase.from('branch_status').select('*'), 'branch_status')
         ]);
 
-        const events = eventsRes.data || [];
-        const health = healthRes.data || [];
-        const news = newsRes.data || [];
-        const sessions = sessionsRes.data || [];
-        const incidents = incidentsRes.data || [];
-        const totalCandidates = candidatesRes.count || 0;
-        const staff = staffRes.data || [];
-        const onlineStaff = staff.filter((s: any) => s.is_online).length;
-        const notices = noticesRes.data || [];
-        const recentPosts = postsRes.data || [];
-        const branchStatus = branchRes.data || [];
+        const contextData = {
+            timestamp: new Date().toLocaleString(),
+            active_events: events,
+            exam_sessions_today: sessions,
+            active_incidents: incidents,
+            upcoming_candidates: candidates,
+            staff_directory: staff,
+            todays_roster: roster,
+            vault_assets_index: vault,
+            public_notices: notices,
+            recent_chatter: posts,
+            branch_status: branch
+        };
 
-        console.log("DEBUG: Context check:", {
-            events: events.length,
-            health: health.length,
-            news: news.length,
-            sessions: sessions.length,
-            incidents: incidents.length,
-            totalCandidates,
-            onlineStaff,
-            branches: branchStatus.length
-        });
-
-        const context = `
-            You are FETS Intelligence (v5.0), the elite operational backbone of the FETS.LIVE grid.
-            Persona: Highly professional, analytical, concise, and futuristic.
-            Current Time: ${new Date().toLocaleString()}
-
-            [OPERATIONAL SNAPSHOT]
-            - Total Candidates in System: ${totalCandidates}
-            - Staff Online Now: ${onlineStaff}
-            - Branches Monitored: ${branchStatus.length}
+        const systemInstruction = `
+            You are FETS Intelligence (v6.0 - Nano Banana Edition), the omniscient central AI of FETS.LIVE.
             
-            [LIVE DATA FEED]
-            1. ACTIVE EVENTS: ${JSON.stringify(events)}
-            2. PENDING INCIDENTS: ${JSON.stringify(incidents)}
-            3. TODAY'S EXAM SESSIONS: ${JSON.stringify(sessions)}
-            4. SYSTEM HEALTH: ${JSON.stringify(health)}
-            5. ACTIVE NOTICES: ${JSON.stringify(notices)}
-            6. RECENT STAFF ACTIVITY: ${JSON.stringify(recentPosts)}
-            7. BRANCH STATUS: ${JSON.stringify(branchStatus)}
+            [YOUR CAPABILITIES]
+            1. You have complete visibility of the current operation (Roster, Exams, Candidates, Incidents).
+            2. You MUST answer specific questions like "Who is working today?" or "Is John Doe registering?" using the data provided below.
+            3. If user asks "System check", perform a self-diagnostic based on the data available.
+            4. Be concise, professional, but slightly witty if the vibe permits.
+            5. Current Time: ${new Date().toLocaleString()}
 
-            INSTRUCTIONS:
-            - Provide data-driven answers using the snapshot above.
-            - If data is not present, use logical operational reasoning (e.g., "Current sessions are typically scheduled for 9AM and 2PM").
-            - Maintain an authoritative yet helpful tone.
+            [LIVE DATA CONTEXT]
+            ${JSON.stringify(contextData, null, 2)}
+            
+             [RESPONSE PROTOCOL]
+            - Answer directly based on the JSON data above.
+            - If data is missing, admit it.
         `;
 
-        // FALLBACK ENGINE: Attempt different models if one fails
-        const models = [
-            { id: 'gemini-2.0-flash-exp', endpoint: 'v1beta' },
-            { id: 'gemini-1.5-flash', endpoint: 'v1beta' },
-            { id: 'gemini-1.5-pro', endpoint: 'v1beta' },
-            { id: 'gemini-pro', endpoint: 'v1' }
+        // Initialize Google Generative AI
+        console.log("🚀 Connecting to Neural Core...");
+        const genAI = new GoogleGenerativeAI(apiKey);
+
+        // ROBUST MODEL SELECTOR
+        // If one model fails (e.g. 404 Not Found), we automatically try the next.
+        const modelPriorityList = [
+            "gemini-2.5-flash",        // User Requested
+            "gemini-2.0-flash-exp",    // Cutting Edge Experimental
+            "gemini-1.5-flash",        // Stable Standard
+            "gemini-1.5-flash-001",
+            "gemini-1.5-pro",
+            "gemini-pro"
         ];
 
         let lastError = null;
 
-        for (const model of models) {
+        for (const modelId of modelPriorityList) {
             try {
-                const url = `https://generativelanguage.googleapis.com/${model.endpoint}/models/${model.id}:generateContent?key=${apiKey}`;
+                console.log(`🔄 Attempting neural link with: ${modelId}`);
+                const model = genAI.getGenerativeModel({ model: modelId });
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: `Context: ${context}\n\nUser Query: ${userPrompt}\n\nStrict Output Mode: Answer concisely and accurately based on context.` }]
-                        }]
-                    })
-                });
+                const result = await model.generateContent([
+                    systemInstruction,
+                    `User Query: ${userPrompt}`
+                ]);
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.warn(`WARN: Model ${model.id} failed:`, errorText);
-                    lastError = new Error(`API Error ${response.status}: ${errorText}`);
-                    continue;
+                const response = await result.response;
+                const text = response.text();
+
+                if (text) {
+                    console.log(`✅ Neural Link Established (${modelId})`);
+                    return text;
                 }
-
-                const data = await response.json();
-                const aiResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (aiResponse) {
-                    return aiResponse;
-                }
-            } catch (err) {
-                console.warn(`WARN: Error calling ${model.id}:`, err);
-                lastError = err;
+            } catch (error: any) {
+                console.warn(`⚠️ Model [${modelId}] failed:`, error.message);
+                lastError = error;
+                // If the key itself is invalid, no model will work. Stop trying.
+                if (error.message?.includes("API key")) break;
             }
         }
 
-        throw lastError || new Error("All AI models failed to respond.");
+        // If loop finishes without success
+        throw lastError || new Error("All Neural Channels Unresponsive.");
 
     } catch (error: any) {
-        console.error("CRITICAL: FETS Intelligence Neural Failure:", error);
-        throw error;
+        console.error("❌ CRITICAL AI ERROR DETAILS:", error);
+
+        // User Friendly Error Translation
+        if (error.message?.includes("API key")) {
+            throw new Error("Neural Link Denied: API Key Rejected.");
+        }
+        if (error.message?.includes("404")) {
+            throw new Error("Neural Link Error: Model definitions out of date.");
+        }
+
+        throw new Error(`Neural Engine Malfunction: ${error.message || "Unknown Core Error"}`);
     }
 }

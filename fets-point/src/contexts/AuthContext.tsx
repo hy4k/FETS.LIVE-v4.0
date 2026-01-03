@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (profile.role === 'super_admin') return true;
 
     // These specific permissions are still restricted and must be explicitly granted
-    const restrictedPermissions = ['roster_edit', 'user_management_edit'];
+    const restrictedPermissions = ['can_edit_roster', 'user_management_edit'];
 
     if (restrictedPermissions.includes(permission)) {
       const permissions = typeof profile.permissions === 'object' && profile.permissions !== null

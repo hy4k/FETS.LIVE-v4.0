@@ -8,6 +8,7 @@ import { useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { BranchProvider } from './contexts/BranchContext';
 import { useBranch } from './hooks/useBranch';
+import { ChatProvider, useChat } from './contexts/ChatContext';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LazyErrorBoundary } from './components/LazyErrorBoundary';
@@ -16,16 +17,18 @@ import { PageLoadingFallback } from './components/LoadingFallback';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { UpdatePassword } from './components/UpdatePassword';
-import { AiAssistant } from './components/AiAssistant'; // IMPORT ADDED
+import { AiAssistant } from './components/AiAssistant';
+import { Fetchat } from './components/Fetchat';
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
+
 
 // Lazy load all page components for better performance
 const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard').then(module => ({ default: module.ICloudDashboard })))
 const CommandCentre = lazy(() => import('./components/CommandCentreFinal'))
 const CandidateTracker = lazy(() => import('./components/CandidateTracker').then(module => ({ default: module.CandidateTracker })))
-const MyDesk = lazy(() => import('./components/MyDeskNew').then(module => ({ default: module.MyDeskNew })))
+const MyDesk = lazy(() => import('./components/MyDesk').then(module => ({ default: module.MyDesk })))
 const StaffManagement = lazy(() => import('./components/StaffManagement').then(module => ({ default: module.StaffManagement })))
 const FetsVault = lazy(() => import('./components/FetsVault').then(module => ({ default: module.FetsVault })))
 const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then(module => ({ default: module.FetsIntelligence })))
@@ -99,6 +102,22 @@ function ConnectionStatus() {
   return null
 }
 
+function GlobalChatLayer() {
+  const { isDetached, setIsDetached, activeUser, setActiveUser, toggleDetach } = useChat();
+
+  if (!isDetached) return null;
+
+  return (
+    <Fetchat
+      isDetached={true}
+      onClose={() => setIsDetached(false)}
+      onToggleDetach={toggleDetach}
+      activeUser={activeUser}
+      onSelectUser={setActiveUser}
+    />
+  );
+}
+
 function AppContent() {
   const { user, loading, profile } = useAuth()
   const { activeBranch, getBranchTheme } = useBranch()
@@ -119,12 +138,17 @@ function AppContent() {
   console.log('📊 App state:', { userAuthenticated: !!user, loading, isMobile, screenSize })
 
   useEffect(() => {
-    if (activeTab === 'user-management') {
+    const restrictedTabs = ['user-management'];
+    if (restrictedTabs.includes(activeTab)) {
       const isMithun = profile?.email === 'mithun@fets.in';
       const isSuperAdmin = profile?.role === 'super_admin';
-      const hasUserMgmtPermission = typeof profile?.permissions === 'object' && profile?.permissions?.user_management_edit;
 
-      if (!isMithun && !isSuperAdmin && !hasUserMgmtPermission) {
+      let hasPermission = false;
+      if (activeTab === 'user-management') {
+        hasPermission = isMithun || isSuperAdmin || (typeof profile?.permissions === 'object' && profile?.permissions?.user_management_edit);
+      }
+
+      if (!hasPermission) {
         console.warn(`Access denied for tab: ${activeTab}. Restricted access.`);
         setActiveTab('command-center');
       }
@@ -222,6 +246,7 @@ function AppContent() {
 
       {/* Floating AI Assistant - ALWAYS VISIBLE */}
       <AiAssistant />
+      <GlobalChatLayer />
 
       <ConnectionStatus />
       {process.env.NODE_ENV === 'development' && <DatabaseSetup />}
@@ -243,7 +268,9 @@ function App() {
         <AuthProvider>
           <BranchProvider>
             <ThemeProvider>
-              <AppContent />
+              <ChatProvider>
+                <AppContent />
+              </ChatProvider>
               <Toaster position="top-right" toastOptions={{
                 duration: 4000,
                 style: { background: '#363636', color: '#fff' }

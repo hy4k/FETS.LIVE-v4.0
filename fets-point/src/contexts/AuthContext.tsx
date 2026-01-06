@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { AuthContext } from './AuthContextValue';
+import { canEditRoster as checkRosterEditPermission } from '../utils/authUtils';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -147,7 +148,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (profile.role === 'super_admin') return true;
 
     // These specific permissions are still restricted and must be explicitly granted
-    const restrictedPermissions = ['can_edit_roster', 'user_management_edit'];
+    const restrictedPermissions = ['user_management_edit'];
+
+    if (permission === 'can_edit_roster') {
+      return checkRosterEditPermission(profile.email, profile.role);
+    }
 
     if (restrictedPermissions.includes(permission)) {
       const permissions = typeof profile.permissions === 'object' && profile.permissions !== null

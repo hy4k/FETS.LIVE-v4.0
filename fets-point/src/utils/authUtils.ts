@@ -30,14 +30,45 @@ export function canAccessGlobalBranch(email: string | null | undefined, role: st
 }
 
 /**
+ * Automated Roster Handler Logic
+ * Only one authorized staff member can edit the roster at a time, rotating every two months.
+ */
+export function getActiveRosterHandlerEmail(): string {
+  const now = new Date();
+  const month = now.getMonth(); // 0-11 (Jan is 0)
+
+  // Schedule:
+  // Jan-Feb: jay@fets.in (Jayakanth Jayadevan)
+  // Mar-Apr: nilufer@fets.in
+  // May-Jun: raziya@fets.in
+  // Jul-Aug: aysha@fets.in
+
+  if (month < 2) return 'jay@fets.in';      // Jan - Feb
+  if (month < 4) return 'nilufer@fets.in';  // Mar - Apr
+  if (month < 6) return 'raziya@fets.in';   // May - Jun
+  if (month < 8) return 'aysha@fets.in';    // Jul - Aug
+
+  return 'mithun@fets.in'; // Default to super admin for rest of year or until specified
+}
+
+/**
+ * Check if a user can edit the roster.
+ * Restricted to super admins and the current active roster handler.
+ */
+export function canEditRoster(email: string | null | undefined, role: string | null | undefined): boolean {
+  if (!email) return false;
+  if (isSuperAdmin(email, role)) return true;
+  return email.toLowerCase() === getActiveRosterHandlerEmail().toLowerCase();
+}
+
+/**
  * Check if a user can switch branches after login
- * Only super admins can switch branches during their session
  * @param email - User's email address
  * @param role - User's role from profile
  * @returns true if user can switch branches
  */
 export function canSwitchBranches(email: string | null | undefined, role: string | null | undefined): boolean {
-  return true; // Now open to all users
+  return true; // Open to all users as per general permissions "All Staff: Full access"
 }
 
 /**
@@ -58,7 +89,9 @@ export function getAvailableBranches(email: string | null | undefined, role: str
  */
 export function canAccessFetsManager(profile: any | null): boolean {
   if (!profile) return false
-  return profile.role === 'super_admin'
+  // Open to all staff as per "Full access to view, edit, and create all features"
+  // But strictly excluded: Roster Editing (handled separately) and User Management
+  return true;
 }
 
 /**

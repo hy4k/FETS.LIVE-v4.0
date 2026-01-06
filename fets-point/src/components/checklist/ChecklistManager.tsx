@@ -19,9 +19,11 @@ import {
     CheckCircle2,
     Play,
     ChevronRight,
-    Search
+    Search,
+    ChevronLeft,
+    Calendar as CalendarIcon
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChecklistCreator } from './ChecklistCreator';
 import { ChecklistAnalysis } from './ChecklistAnalysis';
 import { ChecklistFormModal } from './ChecklistFormModal';
@@ -29,6 +31,18 @@ import { ChecklistTemplate } from '../../types/checklist';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+    format,
+    startOfMonth,
+    endOfMonth,
+    eachDayOfInterval,
+    isSameDay,
+    isSameMonth,
+    addMonths,
+    subMonths,
+    startOfWeek,
+    endOfWeek
+} from 'date-fns';
 
 // Add interface for history items
 interface ChecklistSubmission {
@@ -58,6 +72,8 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     const [history, setHistory] = useState<ChecklistSubmission[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [selectedSubmission, setSelectedSubmission] = useState<ChecklistSubmission | null>(null);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
     const [editingTemplate, setEditingTemplate] = useState<ChecklistTemplate | null>(null);
     const [submittingTemplate, setSubmittingTemplate] = useState<ChecklistTemplate | null>(null);
@@ -256,7 +272,7 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     });
 
     const groupedHistory = historyFiltered.reduce((acc: any, item) => {
-        const dateKey = new Date(item.created_at).toISOString().split('T')[0];
+        const dateKey = format(new Date(item.created_at), 'yyyy-MM-dd');
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(item);
         return acc;
@@ -377,23 +393,48 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                                         const typeTemplates = filteredTemplates.filter(t => (type === 'custom' ? t.type !== 'pre_exam' && t.type !== 'post_exam' : t.type === type));
                                         if (typeTemplates.length === 0) return null;
 
-                                        const sectionMeta = {
-                                            pre_exam: { title: 'Start Shift Protocols', sub: 'Hardware & facility verification', color: 'blue', icon: Play },
-                                            post_exam: { title: 'End Shift Protocols', sub: 'Post-session reconciliation', color: 'purple', icon: CheckCircle2 },
-                                            custom: { title: 'Ad-Hoc Operations', sub: 'Maintenance & specialized audits', color: 'amber', icon: Sparkles }
-                                        }[type] as any;
+                                        let sectionMeta = { title: '', sub: '', colorClass: '', icon: Play, borderColor: '', gradient: '' };
+
+                                        if (type === 'pre_exam') {
+                                            sectionMeta = {
+                                                title: 'Start Shift Protocols',
+                                                sub: 'Hardware & facility verification',
+                                                colorClass: 'text-blue-600',
+                                                icon: Play,
+                                                borderColor: 'border-blue-200 bg-blue-50 text-blue-600',
+                                                gradient: 'from-blue-200'
+                                            };
+                                        } else if (type === 'post_exam') {
+                                            sectionMeta = {
+                                                title: 'End Shift Protocols',
+                                                sub: 'Post-session reconciliation',
+                                                colorClass: 'text-purple-600',
+                                                icon: CheckCircle2,
+                                                borderColor: 'border-purple-200 bg-purple-50 text-purple-600',
+                                                gradient: 'from-purple-200'
+                                            };
+                                        } else {
+                                            sectionMeta = {
+                                                title: 'Ad-Hoc Operations',
+                                                sub: 'Maintenance & specialized audits',
+                                                colorClass: 'text-amber-600',
+                                                icon: Sparkles,
+                                                borderColor: 'border-amber-200 bg-amber-50 text-amber-600',
+                                                gradient: 'from-amber-200'
+                                            };
+                                        }
 
                                         return (
                                             <div key={type} className="space-y-8">
                                                 <div className="flex items-center gap-6">
-                                                    <div className={`flex items-center justify-center w-12 h-12 rounded-2xl bg-${sectionMeta.color}-100 text-${sectionMeta.color}-600 shadow-sm border border-${sectionMeta.color}-200`}>
+                                                    <div className={`flex items-center justify-center w-12 h-12 rounded-2xl shadow-sm border ${sectionMeta.borderColor}`}>
                                                         <sectionMeta.icon size={24} className={type === 'pre_exam' ? 'fill-current' : ''} />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <h2 className={`text-xl font-black text-${sectionMeta.color}-600 uppercase tracking-[0.2em]`}>{sectionMeta.title}</h2>
-                                                        <p className={`text-xs font-bold text-${sectionMeta.color}-400 uppercase tracking-widest mt-0.5`}>{sectionMeta.sub}</p>
+                                                        <h2 className={`text-xl font-black uppercase tracking-[0.2em] ${sectionMeta.colorClass}`}>{sectionMeta.title}</h2>
+                                                        <p className={`text-xs font-bold opacity-60 uppercase tracking-widest mt-0.5 ${sectionMeta.colorClass}`}>{sectionMeta.sub}</p>
                                                     </div>
-                                                    <div className={`h-px flex-[2] bg-gradient-to-r from-${sectionMeta.color}-200 to-transparent`}></div>
+                                                    <div className={`h-px flex-[2] bg-gradient-to-r ${sectionMeta.gradient} to-transparent`}></div>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
                                                     {typeTemplates.map((template, idx) => (
@@ -407,41 +448,145 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                             )}
                         </div>
                     ) : view === 'history' ? (
-                        <div className="space-y-12">
-                            {historyLoading ? (
-                                <div className="flex flex-col items-center justify-center py-24 opacity-50">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Retrieving Logs...</p>
-                                </div>
-                            ) : sortedDates.length === 0 ? (
-                                <div className={`${neumorphicCard} p-24 text-center border-4 border-dashed border-gray-200/50 flex flex-col items-center justify-center`}>
-                                    <div className="bg-gray-100 p-8 rounded-full mb-6">
-                                        <History size={48} className="text-gray-300" />
+                        <div className="space-y-8">
+                            {/* Calendar Navigation */}
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-xl text-amber-600">
+                                        <CalendarIcon size={24} />
                                     </div>
-                                    <h3 className="text-xl font-black text-gray-500 uppercase tracking-widest">No Operational History</h3>
-                                    <p className="text-gray-400 mt-2 font-medium">Recordings for this query window are empty.</p>
+                                    <h2 className="text-2xl font-black text-gray-700 uppercase tracking-tight">
+                                        {format(currentMonth, 'MMMM yyyy')}
+                                    </h2>
                                 </div>
-                            ) : (
-                                <div className="space-y-16">
-                                    {sortedDates.map(date => (
-                                        <div key={date} className="space-y-8">
-                                            <div className="flex items-center gap-6">
-                                                <div className="px-6 py-2 rounded-2xl bg-white shadow-sm border-2 border-gray-100">
-                                                    <span className="text-sm font-black text-gray-700 uppercase tracking-widest">
-                                                        {new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                                    </span>
-                                                </div>
-                                                <div className="h-px w-full bg-gradient-to-r from-gray-200 to-transparent"></div>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-6">
-                                                {groupedHistory[date].map((submission: any, idx: number) => (
-                                                    <HistoryItem key={submission.id} submission={submission} index={idx} onSelect={setSelectedSubmission} onDelete={deleteSubmission} />
-                                                ))}
-                                            </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+                                        className={neumorphicIconBtn}
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentMonth(new Date())}
+                                        className="px-4 py-2 font-bold text-xs uppercase tracking-widest bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] rounded-xl hover:text-amber-600 transition-colors"
+                                    >
+                                        Today
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                                        className={neumorphicIconBtn}
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Calendar Grid */}
+                            <div className="bg-[#e0e5ec] p-6 rounded-[2rem] shadow-[inset_6px_6px_12px_#bec3c9,inset_-6px_-6px_12px_#ffffff] border border-white/20">
+                                {/* Week Days Header */}
+                                <div className="grid grid-cols-7 mb-4">
+                                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                                        <div key={day} className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 py-2">
+                                            {day}
                                         </div>
                                     ))}
                                 </div>
-                            )}
+
+                                {/* Days */}
+                                <div className="grid grid-cols-7 gap-3">
+                                    {eachDayOfInterval({
+                                        start: startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }),
+                                        end: endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 })
+                                    }).map((day, dayIdx) => {
+                                        const dateKey = format(day, 'yyyy-MM-dd');
+                                        const daySubmissions = groupedHistory[dateKey] || [];
+                                        const isToday = isSameDay(day, new Date());
+                                        const isSelected = selectedDate && isSameDay(day, selectedDate);
+                                        const isCurrentMonth = isSameMonth(day, currentMonth);
+
+                                        return (
+                                            <motion.div
+                                                key={day.toString()}
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: dayIdx * 0.01 }}
+                                                onClick={() => setSelectedDate(day)}
+                                                className={`
+                                                    min-h-[100px] rounded-2xl p-3 flex flex-col gap-2 cursor-pointer transition-all border border-transparent
+                                                    ${!isCurrentMonth ? 'opacity-40 grayscale' : ''}
+                                                    ${isSelected
+                                                        ? 'bg-white shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] border-amber-400/50'
+                                                        : 'bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] hover:scale-105 hover:z-10'
+                                                    }
+                                                `}
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <span className={`text-xs font-bold ${isToday ? 'bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-sm' : 'text-gray-500'}`}>
+                                                        {format(day, 'd')}
+                                                    </span>
+                                                    {daySubmissions.length > 0 && (
+                                                        <span className="text-[9px] font-black text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                                                            {daySubmissions.length}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-1 content-start flex-1">
+                                                    {daySubmissions.slice(0, 4).map((sub: any, i: number) => (
+                                                        <div
+                                                            key={sub.id}
+                                                            title={`${sub.submitted_by_profile?.full_name} - ${sub.checklist_templates?.title}`}
+                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm border border-white/50
+                                                                ${sub.checklist_templates?.type === 'pre_exam' ? 'bg-blue-400' :
+                                                                    sub.checklist_templates?.type === 'post_exam' ? 'bg-purple-400' : 'bg-amber-400'}`}
+                                                        >
+                                                            {sub.submitted_by_profile?.full_name?.charAt(0) || '?'}
+                                                        </div>
+                                                    ))}
+                                                    {daySubmissions.length > 4 && (
+                                                        <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[8px] font-bold">
+                                                            +{daySubmissions.length - 4}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Selected Date Details */}
+                            <AnimatePresence mode="wait">
+                                {selectedDate && groupedHistory[format(selectedDate, 'yyyy-MM-dd')] && (
+                                    <motion.div
+                                        key={selectedDate.toString()}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 20 }}
+                                        className="mt-8"
+                                    >
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent flex-1" />
+                                            <h3 className="text-sm font-black text-gray-500 uppercase tracking-[0.2em] bg-[#e0e5ec] px-4">
+                                                {format(selectedDate, 'EEEE, MMMM do')}
+                                            </h3>
+                                            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent flex-1" />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {groupedHistory[format(selectedDate, 'yyyy-MM-dd')].map((submission: any, idx: number) => (
+                                                <HistoryItem
+                                                    key={submission.id}
+                                                    submission={submission}
+                                                    index={idx}
+                                                    onSelect={setSelectedSubmission}
+                                                    onDelete={deleteSubmission}
+                                                />
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     ) : null}
                 </div>
@@ -537,54 +682,86 @@ const TemplateCard = ({ template, index, onEdit, onDelete, onFill }: {
     onDelete: (id: string) => void;
     onFill: (t: ChecklistTemplate) => void;
 }) => {
-    const neumorphicCard = "bg-[#e0e5ec] shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)] rounded-2xl border border-white/20";
-    const typeLabel = template.type === 'pre_exam' ? 'Start Shift' : template.type === 'post_exam' ? 'End Shift' : 'Custom';
-    const typeColor = template.type === 'pre_exam' ? 'bg-blue-100/50 text-blue-700 border-blue-200' :
-        template.type === 'post_exam' ? 'bg-purple-100/50 text-purple-700 border-purple-200' :
-            'bg-amber-100/50 text-amber-700 border-amber-200';
+    // Determine color styles based on type
+    const isPre = template.type === 'pre_exam';
+    const isPost = template.type === 'post_exam';
+
+    // Updated cleaner styles
+    const accentColor = isPre ? 'text-blue-600' : isPost ? 'text-purple-600' : 'text-amber-600';
+    const accentBg = isPre ? 'bg-blue-500' : isPost ? 'bg-purple-500' : 'bg-amber-500';
+    const typeLabel = isPre ? 'Start Shift' : isPost ? 'End Shift' : 'Custom';
+
+    const neumorphicCard = "bg-[#e0e5ec] shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)] rounded-3xl border border-white/40";
+    const innerShadow = "shadow-[inset_4px_4px_8px_rgba(163,177,198,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.8)]";
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
-            className={`${neumorphicCard} p-6 relative flex flex-col h-full hover:shadow-[12px_12px_24px_#bec3c9,-12px_-12px_24px_#ffffff] transition-all duration-300 border-l-[6px] ${template.type === 'pre_exam' ? 'border-l-blue-500' : template.type === 'post_exam' ? 'border-l-purple-500' : 'border-l-amber-500'}`}
+            className={`${neumorphicCard} p-6 relative flex flex-col h-full group hover:scale-[1.02] transition-transform duration-300`}
         >
+            {/* Header: Type Badge & Admin Actions */}
             <div className="flex justify-between items-start mb-6">
-                <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${typeColor} flex items-center gap-1.5`}>
-                    <ClipboardList size={10} /> {typeLabel}
+                <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${innerShadow} ${accentColor} bg-[#e0e5ec]`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${accentBg} animate-pulse`} />
+                    {typeLabel}
                 </div>
+
                 <div className="flex gap-2">
-                    <button onClick={() => onEdit(template)} className="p-2.5 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-500 hover:text-blue-600 transition-colors">
-                        <Pencil size={13} />
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(template); }}
+                        className="p-2 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-white transition-all shadow-none hover:shadow-md"
+                        title="Edit Template"
+                    >
+                        <Pencil size={14} />
                     </button>
-                    <button onClick={() => onDelete(template.id)} className="p-2.5 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-red-400 hover:text-red-600 transition-colors">
-                        <Trash2 size={13} />
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(template.id); }}
+                        className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-none hover:shadow-md"
+                        title="Delete Template"
+                    >
+                        <Trash2 size={14} />
                     </button>
                 </div>
             </div>
 
-            <h3 className="text-xl font-black text-gray-800 mb-3 leading-tight uppercase tracking-tight">{template.title}</h3>
-            <p className="text-gray-500 text-xs mb-8 line-clamp-2 leading-relaxed h-[2.5rem]">{template.description || 'Verified operational procedure.'}</p>
+            {/* Content: Title & Description */}
+            <div className="flex-1 flex flex-col items-center text-center px-4 mb-8">
+                <div className={`mb-4 w-12 h-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent opacity-50`}></div>
+                <h3 className="text-xl font-black text-gray-700 mb-3 leading-tight uppercase tracking-tight group-hover:text-gray-900 transition-colors">
+                    {template.title}
+                </h3>
+                <p className="text-gray-500 text-xs font-medium leading-relaxed line-clamp-2 max-w-[90%]">
+                    {template.description || 'Verified operational procedure ready for execution.'}
+                </p>
+            </div>
 
-            <div className="mt-auto space-y-5">
-                <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">
-                    <div className="flex items-center gap-2">
-                        <List size={12} className="text-gray-300" /> {template.questions?.length || 0} Steps
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full shadow-sm ${template.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
-                        {template.is_active ? 'Online' : 'Offline'}
-                    </div>
+            {/* Footer: Stats & Action */}
+            <div className="space-y-4">
+                {/* Stats Row */}
+                <div className="flex items-center justify-center gap-4 text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                    <span className="flex items-center gap-1.5 bg-gray-100/50 px-2 py-1 rounded-lg">
+                        <List size={10} /> {template.questions?.length || 0} Steps
+                    </span>
+                    <span className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${template.is_active ? 'bg-green-100/50 text-green-600' : 'bg-gray-100/50 text-gray-400'}`}>
+                        <Activity size={10} /> {template.is_active ? 'Active' : 'Inactive'}
+                    </span>
                 </div>
 
+                {/* Big Action Button */}
                 <button
                     onClick={() => onFill(template)}
                     disabled={!template.is_active}
-                    className={`w-full py-3.5 rounded-2xl font-black uppercase tracking-[0.25em] text-[10px] transition-all flex items-center justify-center gap-3 shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] active:scale-95 ${template.is_active ? 'bg-gray-800 text-white hover:bg-black' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.25em] text-[10px] transition-all flex items-center justify-center gap-3 active:scale-95 group/btn
+                    ${template.is_active
+                            ? 'bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-700 hover:text-blue-600 hover:shadow-[inset_6px_6px_12px_#bec3c9,inset_-6px_-6px_12px_#ffffff]'
+                            : 'bg-[#e0e5ec] text-gray-300 shadow-none cursor-not-allowed opacity-60'}`}
                 >
-                    <Play size={14} className={template.is_active ? "text-amber-400" : ""} />
-                    Begin Operation
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center ${template.is_active ? 'bg-gray-200 group-hover/btn:bg-blue-100 group-hover/btn:text-blue-600' : 'bg-gray-100'}`}>
+                        <Play size={10} className="ml-0.5 fill-current" />
+                    </span>
+                    Execute Protocol
                 </button>
             </div>
         </motion.div>

@@ -223,9 +223,30 @@ export function FetsRosterPremium() {
   }
 
   const handleShiftCellSave = async (shiftData: { shift_code: string; overtime_hours: number }) => {
-    if (!selectedCellData || !user || !canEdit) {
+    if (!selectedCellData || !user || !canEdit || !profile) {
       showNotification('warning', 'Unable to save shift - permission or context issue')
       return
+    }
+
+    // RBAC: Restricted Roster Management Logic
+    // Only Super Admins can skip approval checks. 
+    // Roster Handlers (rotating) must have an approved request flag.
+    const isMithun = profile?.email === 'mithun@fets.in';
+    const isSuperAdminRole = profile?.role === 'super_admin';
+    const bypassApproval = isMithun || isSuperAdminRole;
+
+    if (!bypassApproval) {
+      // Check for approved leave/shift-change request for this specific user and date
+      const approvedRequest = requests.find(req =>
+        req.user_id === selectedCellData.profileId &&
+        req.requested_date === selectedCellData.date &&
+        req.status === 'approved'
+      );
+
+      if (!approvedRequest) {
+        showNotification('error', 'LOCK TRIGGERED: No approved Super Admin request found for this change.');
+        return;
+      }
     }
 
     const scheduleData = {

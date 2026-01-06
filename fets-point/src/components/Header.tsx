@@ -6,7 +6,7 @@ import {
   CalendarDays, UserSearch, UserCheck, Menu, LogOut,
   Server, Cpu, Shield, X
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useBranch } from '../hooks/useBranch';
 import { useUnreadCount } from '../hooks/useNotifications';
@@ -74,14 +74,25 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'candidate-tracker', label: 'FETS REGISTER', icon: UserSearch },
     { id: 'fets-calendar', label: 'FETS CALENDAR', icon: CalendarDays },
     { id: 'fets-roster', label: 'FETS ROSTER', icon: UserCheck },
-  ];
+  ].filter(item => {
+    // Roster is now visible to all staff
+    return true;
+  });
 
   const secondRowItems = [
     { id: 'checklist-management', label: 'CHECKLIST', icon: ClipboardList },
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
     { id: 'fets-intelligence', label: 'FETS INTELLIGENCE', icon: Brain },
-  ];
+    { id: 'user-management', label: 'USER MGMT', icon: Shield },
+  ].filter(item => {
+    if (item.id === 'user-management') {
+      const isMithun = profile?.email === 'mithun@fets.in';
+      const isSuperAdmin = profile?.role === 'super_admin';
+      return isMithun || isSuperAdmin;
+    }
+    return true;
+  });
 
   const handleSignOut = async () => {
     if (window.confirm('Are you sure you want to sign out?')) {
@@ -324,8 +335,8 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
         {/* --- ROW 2: UTILITY DECK (Recessed Utility Bar) --- (Hidden on Mobile, moved to Menu) */}
         {!isMobile && (
-          <div className="h-14 utility-deck flex items-center relative z-10 border-t border-black/5">
-            <div className="max-w-[1920px] mx-auto px-6 w-full flex items-center justify-center gap-6 overflow-x-auto no-scrollbar">
+          <div className="h-20 utility-deck flex items-center relative z-10 border-t border-black/5">
+            <div className="max-w-[1920px] mx-auto px-6 w-full flex items-center justify-center gap-6 overflow-x-auto no-scrollbar py-2">
               {secondRowItems.map((item) => {
                 const isActive = activeTab === item.id;
                 return (

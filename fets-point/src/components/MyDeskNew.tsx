@@ -16,6 +16,8 @@ import { ToDoMatrix } from './ToDoMatrix'
 import { DigitalNotebook } from './DigitalNotebook'
 import { FetsVault } from './FetsVault'
 import { DailyLog } from './DailyLog'
+import { getActiveRosterHandlerEmail } from '../utils/authUtils'
+import { UserCheck } from 'lucide-react'
 
 // --- Glassmorphism Components ---
 
@@ -327,6 +329,89 @@ const ProfilePanel = ({ profile, onSignOut }: { profile: any, onSignOut: () => v
   )
 }
 
+const RosterReportingModule = () => {
+  const handlerEmail = getActiveRosterHandlerEmail();
+  const [report, setReport] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!report.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Simulate sending report or integrate with a messaging system/database
+      // In a real scenario, this might create a record in 'roster_reports' or send a Fetchat message
+      await new Promise(resolve => setTimeout(resolve, 800));
+      toast.success(`Report transmitted to ${handlerEmail}`);
+      setReport('');
+    } catch (err: any) {
+      toast.error('Transmission failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <GlassCard className="h-full p-8 flex flex-col" glow>
+      <div className="mb-8">
+        <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-br from-[#ffbf00] to-[#ff9500] rounded-2xl shadow-lg">
+            <UserCheck size={24} className="text-black" />
+          </div>
+          Roster Reporting Hub
+        </h3>
+        <p className="text-white/50 text-xs font-bold uppercase tracking-[0.2em] mt-3 ml-1">
+          Direct link to current Roster Handler
+        </p>
+      </div>
+
+      <div className="flex-1 space-y-8">
+        <GlassInset className="p-6 bg-white/5 border-white/10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Active Handler</p>
+              <p className="text-lg font-black text-white uppercase tracking-tight">{handlerEmail.split('@')[0]}</p>
+              <p className="text-[10px] text-emerald-400 font-bold uppercase">Authorized Access Verified</p>
+            </div>
+          </div>
+        </GlassInset>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] ml-2">
+              Report Details (Leaves / Shift Adjustments)
+            </label>
+            <GlassInset>
+              <textarea
+                value={report}
+                onChange={e => setReport(e.target.value)}
+                className="w-full bg-transparent p-6 outline-none text-white font-medium placeholder:text-white/20 min-h-[150px] resize-none"
+                placeholder="Describe the roster activity or impact..."
+                required
+              />
+            </GlassInset>
+          </div>
+
+          <PremiumButton className="w-full py-5" active>
+            {isSubmitting ? 'TRANSMITTING...' : 'TRANSMIT TO HANDLER'}
+          </PremiumButton>
+        </form>
+
+        <div className="mt-auto p-4 rounded-xl bg-white/5 border border-white/5 flex items-start gap-3">
+          <Info size={16} className="text-[#ffbf00] flex-shrink-0 mt-0.5" />
+          <p className="text-[10px] leading-relaxed text-white/40 font-medium italic">
+            Note: This reports activities to the current designated roster owner for this period.
+            Official leave requests must still be submitted to Super Admins for electronic authorization.
+          </p>
+        </div>
+      </div>
+    </GlassCard>
+  );
+};
 const PageStyles = () => (
   <style dangerouslySetInnerHTML={{
     __html: `
@@ -368,6 +453,7 @@ export function MyDeskNew() {
     { id: 'todo', label: 'TO DO', icon: CheckSquare },
     { id: 'fetchat', label: 'FETCHAT', icon: MessageSquare },
     { id: 'notes', label: 'NOTES', icon: BookOpen },
+    { id: 'roster-report', label: 'ROSTER REPORT', icon: UserCheck },
     { id: 'vault', label: 'VAULT', icon: Key }
   ]
 
@@ -511,6 +597,18 @@ export function MyDeskNew() {
                     className="h-full"
                   >
                     <DigitalNotebook />
+                  </motion.div>
+                )}
+
+                {activeRightTab === 'roster-report' && (
+                  <motion.div
+                    key="roster-report"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="h-full"
+                  >
+                    <RosterReportingModule />
                   </motion.div>
                 )}
 

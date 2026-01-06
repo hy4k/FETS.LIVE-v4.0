@@ -11,7 +11,6 @@ import { askGemini } from '../lib/gemini'
 
 // Feature Components
 import { NewsManager } from './NewsManager'
-import { UserManagement } from './UserManagement'
 import IncidentManager from './IncidentManager'
 import { ClientControl } from './ClientControl'
 
@@ -156,7 +155,6 @@ export function FetsIntelligence() {
             {isSuperAdmin && (
               <div>
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 pl-2">Admin Tools</h3>
-                <SidebarItem icon={Users} label="Staff Manager" isActive={activeTab === 'users'} onClick={() => setActiveTab('users')} />
                 <SidebarItem icon={Settings} label="System Config" isActive={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
               </div>
             )}
@@ -249,15 +247,6 @@ export function FetsIntelligence() {
               <ContentCard title="Incident Logs" icon={AlertTriangle}>
                 <div className="p-8">
                   <IncidentManager />
-                </div>
-              </ContentCard>
-            )}
-
-            {/* STAFF MANAGER */}
-            {activeTab === 'users' && isSuperAdmin && (
-              <ContentCard title="Staff Directory" icon={Users}>
-                <div className="p-8">
-                  <UserManagement />
                 </div>
               </ContentCard>
             )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, User, Clock, AlertTriangle,
@@ -15,15 +15,16 @@ interface Incident {
   title: string
   description: string
   category: string
-  priority: 'critical' | 'major' | 'minor'
+  severity: 'critical' | 'major' | 'minor'
   status: 'open' | 'assigned' | 'in_progress' | 'escalated' | 'closed'
-  reporter_id: string
+  reporter?: string
   assigned_to?: string
+  user_id: string
+  system_id?: string
   event_date: string
   created_at: string
   updated_at: string
   closed_at?: string
-  closure_remarks?: string
   branch_location: string
 }
 
@@ -100,9 +101,9 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
     try {
       setLoading(true)
       let query = supabase
-        .from('events')
+        .from('incidents')
         .select('*')
-        .order('event_date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (activeBranch !== 'global') {
         query = query.eq('branch_location', activeBranch)
@@ -128,8 +129,8 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
   const loadStats = useCallback(async () => {
     try {
       let query = supabase
-        .from('events')
-        .select('status, priority, category, event_date, created_at, closed_at')
+        .from('incidents')
+        .select('status, severity, category, created_at, closed_at')
 
       if (activeBranch !== 'global') {
         query = query.eq('branch_location', activeBranch)
@@ -161,9 +162,9 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
       setStats({
         total_open: openIncidents.length,
         total_closed: closedIncidents.length,
-        critical_open: openIncidents.filter(e => e.priority === 'critical').length,
-        major_open: openIncidents.filter(e => e.priority === 'major').length,
-        minor_open: openIncidents.filter(e => e.priority === 'minor').length,
+        critical_open: openIncidents.filter(e => e.severity === 'critical').length,
+        major_open: openIncidents.filter(e => e.severity === 'major').length,
+        minor_open: openIncidents.filter(e => e.severity === 'minor').length,
         upcoming_this_week: upcomingThisWeek,
         by_category: categoryStats
       })
@@ -207,7 +208,7 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
       return false
     }
     if (categoryFilter !== 'all' && incident.category !== categoryFilter) return false
-    if (priorityFilter !== 'all' && incident.priority !== priorityFilter) return false
+    if (priorityFilter !== 'all' && incident.severity !== priorityFilter) return false
     if (statusFilter !== 'all' && incident.status !== statusFilter) return false
     return true
   })
@@ -442,7 +443,7 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
               {filteredIncidents.map((incident) => {
                 const categoryConfig = INCIDENT_CATEGORIES.find(cat => cat.id === incident.category) || INCIDENT_CATEGORIES[INCIDENT_CATEGORIES.length - 1]
                 const Icon = categoryConfig.icon
-                const priorityConfig = PRIORITY_CONFIG[incident.priority] || PRIORITY_CONFIG.minor
+                const priorityConfig = PRIORITY_CONFIG[incident.severity] || PRIORITY_CONFIG.minor
                 const statusConfig = STATUS_CONFIG[incident.status] || STATUS_CONFIG.open
                 const StatusIcon = statusConfig.icon
                 const hasNewComment = newCommentAlerts.includes(incident.id)
@@ -564,12 +565,12 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
     title: '',
     description: '',
     category: 'other',
-    priority: 'minor' as 'critical' | 'major' | 'minor',
+    severity: 'minor' as 'critical' | 'major' | 'minor',
     event_date: new Date().toISOString().split('T')[0]
   })
   const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!profile) {
       toast.error('You must be logged in to report an incident')
@@ -579,12 +580,12 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
     setSubmitting(true)
     try {
       const { error } = await supabase
-        .from('events')
+        .from('incidents')
         .insert({
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          priority: formData.priority,
+          severity: formData.severity,
           status: 'open',
           reporter_id: profile.user_id,
           event_date: new Date(formData.event_date).toISOString(),
@@ -674,8 +675,8 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
               <div className="relative">
                 <select
                   required
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'critical' | 'major' | 'minor' })}
+                  value={formData.severity}
+                  onChange={(e) => setFormData({ ...formData, severity: e.target.value as 'critical' | 'major' | 'minor' })}
                   className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                 >
                   <option value="minor">Minor</option>
@@ -760,7 +761,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
     title: incident.title,
     description: incident.description,
     category: incident.category,
-    priority: incident.priority,
+    severity: incident.severity,
     status: incident.status,
     event_date: new Date(incident.event_date).toISOString().split('T')[0]
   })
@@ -785,12 +786,12 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
     setUpdating(true)
     try {
       const { error } = await supabase
-        .from('events')
+        .from('incidents')
         .update({
           title: editForm.title,
           description: editForm.description,
           category: editForm.category,
-          priority: editForm.priority,
+          severity: editForm.severity,
           status: editForm.status,
           event_date: new Date(editForm.event_date).toISOString(),
           updated_at: new Date().toISOString()
@@ -818,7 +819,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
     }
 
     try {
-      const { error } = await supabase.from('events').delete().eq('id', incident.id)
+      const { error } = await supabase.from('incidents').delete().eq('id', incident.id)
       if (error) throw error
 
       toast.success('Incident deleted successfully')
@@ -841,8 +842,14 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
         updateData.closed_at = new Date().toISOString()
       }
 
-      const { error } = await supabase.from('events').update(updateData).eq('id', incident.id)
+      const { error } = await supabase.from('incidents').update(updateData).eq('id', incident.id)
       if (error) throw error
+
+      // Integration: If this was a system fault, clear it on resolution
+      if (newStatus === 'closed' && incident.system_id) {
+        await supabase.from('systems').update({ status: 'operational' }).eq('id', incident.system_id)
+        toast.success('System auto-restored to operational status')
+      }
 
       toast.success(`Incident ${newStatus === 'closed' ? 'closed' : 'updated'} successfully`)
       onIncidentUpdated()
@@ -904,7 +911,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
     return () => { supabase.removeChannel(channel) }
   }, [incident.id, profile])
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!newComment.trim() || !profile) return
 
@@ -1013,8 +1020,8 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Priority</label>
                     <select
-                      value={editForm.priority}
-                      onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as any })}
+                      value={editForm.severity}
+                      onChange={(e) => setEditForm({ ...editForm, severity: e.target.value as any })}
                       className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
                     >
                       <option value="minor">Minor</option>
@@ -1066,8 +1073,8 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                   <div className="neomorphic-card p-4">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Priority Level</h4>
                     <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${PRIORITY_CONFIG[incident.priority].dot} animate-pulse`}></span>
-                      <span className={`font-bold capitalize ${PRIORITY_CONFIG[incident.priority].color.split(' ')[1]}`}>{incident.priority}</span>
+                      <span className={`w-3 h-3 rounded-full ${PRIORITY_CONFIG[incident.severity].dot} animate-pulse`}></span>
+                      <span className={`font-bold capitalize ${PRIORITY_CONFIG[incident.severity].color.split(' ')[1]}`}>{incident.severity}</span>
                     </div>
                   </div>
                   <div className="neomorphic-card p-4">

@@ -270,6 +270,68 @@ END OF REPORT
                     ))}
                 </div>
 
+                {/* Career & Performance Insights (New Feature) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`${neumorphicCard} p-8 mb-8 relative overflow-hidden`}
+                >
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+                            <TrendingUp size={24} />
+                        </div>
+                        <h3 className="text-2xl font-black text-gray-700 uppercase tracking-tight">
+                            Career & Performance <span className="text-amber-600">Insights</span>
+                        </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* The Guardian Score */}
+                        <div className="bg-gray-50/50 p-6 rounded-2xl border border-white/50 relative overflow-hidden group hover:bg-white transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <AlertTriangle size={64} className="text-red-500" />
+                            </div>
+                            <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Guardian Score</h4>
+                            <p className="text-3xl font-black text-gray-700 mb-2">
+                                {analysisMetrics.issuesFound * 10} <span className="text-sm text-gray-400 font-bold">XP</span>
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                You earn 10 XP for every potential issue you identify. High scores demonstrate <strong className="text-red-500">vigilance</strong> and protect the company from risk.
+                            </p>
+                        </div>
+
+                        {/* Reliability Indicator */}
+                        <div className="bg-gray-50/50 p-6 rounded-2xl border border-white/50 relative overflow-hidden group hover:bg-white transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <CheckCircle2 size={64} className="text-green-500" />
+                            </div>
+                            <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Reliability Ratio</h4>
+                            <p className="text-3xl font-black text-gray-700 mb-2">
+                                {analysisMetrics.total > 0
+                                    ? Math.round((analysisMetrics.perfectSubmissions / analysisMetrics.total) * 100)
+                                    : 0}%
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                Percentage of "Perfect Checks". A balanced ratio shows you handle routine tasks efficiently while still catching necessary exceptions.
+                            </p>
+                        </div>
+
+                        {/* Detail Oriented */}
+                        <div className="bg-gray-50/50 p-6 rounded-2xl border border-white/50 relative overflow-hidden group hover:bg-white transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <FileText size={64} className="text-blue-500" />
+                            </div>
+                            <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Detail Level</h4>
+                            <p className="text-3xl font-black text-gray-700 mb-2">
+                                {analysisMetrics.textObservations.length} <span className="text-sm text-gray-400 font-bold">Notes</span>
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                Total written observations. Managers value staff who provide context. High numbers here indicate strong <strong className="text-blue-500">communication skills</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                     {/* Left Column: Breakdown & Report */}

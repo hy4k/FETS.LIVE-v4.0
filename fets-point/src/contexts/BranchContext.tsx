@@ -28,7 +28,11 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
   // Fixed: canAccessBranch initialization order
 
-  const [activeBranch, setActiveBranchState] = useState<BranchType>('calicut');
+  const [activeBranch, setActiveBranchState] = useState<BranchType>(() => {
+    // Try to get from local storage or default to calicut
+    const saved = localStorage.getItem('fets_active_branch');
+    return (saved as BranchType) || 'calicut';
+  });
 
   const [viewMode, setViewMode] = useState<ViewMode>('single');
 
@@ -162,27 +166,9 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
 
 
-      // Update the state immediately so components can react
-
+      // Update state and persistence
       setActiveBranchState(branch);
-
-
-
-      if (viewMode === 'dual' && branch !== 'global') {
-
-        setViewMode('single');
-
-      }
-
-
-
-      console.log(`🏢 Switched to ${branch} branch`);
-
-
-
-      // Force a small delay to ensure state updates propagate
-
-      await new Promise(resolve => setTimeout(resolve, 100));
+      localStorage.setItem('fets_active_branch', branch);
 
     } finally {
 
@@ -195,19 +181,19 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
 
   // Load initial branch from user's profile (set at login)
-
   useEffect(() => {
-
     if (profile) {
-
       const defaultBranch = profile.branch_assigned === 'both' ? 'calicut' : profile.branch_assigned;
 
-      setActiveBranchState(defaultBranch);
+      // If no manually saved branch, or current active branch is not in user's access list, set to default
+      const savedBranch = localStorage.getItem('fets_active_branch');
+      if (!savedBranch || (profile.branch_assigned !== 'both' && profile.branch_assigned !== 'global' && savedBranch !== profile.branch_assigned)) {
+        setActiveBranchState(defaultBranch as BranchType);
+        localStorage.setItem('fets_active_branch', defaultBranch);
+      }
 
-      console.log(`🏢 Loaded branch from profile: ${defaultBranch}`);
-
+      console.log(`🏢 Synchronized branch from profile: ${activeBranch}`);
     }
-
   }, [profile]);
 
 

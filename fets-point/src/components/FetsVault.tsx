@@ -4,7 +4,7 @@ import {
   Shield, Key, Lock, Unlock, Eye, EyeOff, Copy,
   ExternalLink, Search, Plus, Trash2, Edit3,
   Tag, Globe, User, Info, Check, ShieldCheck, AlertCircle,
-  Database, Server, Fingerprint, Zap, Phone, Mail, Link as LinkIcon, Briefcase
+  Database, Server, Fingerprint, Zap, Phone, Mail, Link as LinkIcon, Briefcase, Coins, Gem, Crown
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -36,6 +36,9 @@ export function FetsVault() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [revealMap, setRevealMap] = useState<Record<string, boolean>>({})
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
+
+  // Security State
+  const [isLocked, setIsLocked] = useState(false)
 
   // Form State
   const [newEntry, setNewEntry] = useState<Partial<VaultEntry>>({
@@ -83,8 +86,6 @@ export function FetsVault() {
     e.preventDefault()
     if (!newEntry.title) return
 
-    // Convert custom fields array to object/json if needed or store as array in jsonb
-    // For simplicity, storing as array of objects in jsonb
     const customData = customFieldsInput.filter(f => f.key && f.value)
 
     try {
@@ -109,9 +110,9 @@ export function FetsVault() {
 
       if (error) throw error
 
-      toast.success('Record Saved Successfully', {
-        style: { background: '#1a1c1e', color: '#4ade80', border: '1px solid #4ade80' },
-        icon: '✅'
+      toast.success('Treasure Secured!', {
+        icon: '💎',
+        style: { background: '#1a1c1e', color: '#fbbf24', border: '1px solid #fbbf24' },
       })
       setShowAddModal(false)
       setNewEntry({
@@ -157,8 +158,8 @@ export function FetsVault() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
     toast.success(`${label} Copied`, {
-      icon: '📋',
-      style: { background: '#1a1c1e', color: '#60a5fa', border: '1px solid #60a5fa' }
+      icon: '✨',
+      style: { background: '#1a1c1e', color: '#fbbf24', border: '1px solid #fbbf24' }
     })
   }
 
@@ -192,92 +193,135 @@ export function FetsVault() {
   )
 
   return (
-    <div className="flex flex-col h-full bg-[#050508] text-slate-300 rounded-3xl overflow-hidden border border-white/5 shadow-2xl relative font-sans">
+    <div className="flex flex-col h-full bg-[#0a0a09] text-amber-100/80 rounded-3xl overflow-hidden border border-amber-900/30 shadow-2xl relative font-sans">
 
-      {/* Background Visuals */}
-      <div className="absolute inset-0 bg-[url('/fets-vault-core.png')] bg-cover bg-center opacity-10 pointer-events-none mix-blend-screen" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050508]/90 via-[#050508]/95 to-[#050508] pointer-events-none" />
+      {/* Background Visuals (Dark Metal Texture) */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
+        backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`
+      }} />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-amber-900/20 pointer-events-none" />
 
       {/* Header Area */}
-      <div className="relative z-10 p-6 border-b border-white/5 flex flex-col gap-6 backdrop-blur-sm">
+      <div className="relative z-10 p-6 flex flex-col gap-6 ">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-2xl bg-black/50 border border-cyan-500/30 flex items-center justify-center overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.2)]">
-              <div className="absolute inset-0 bg-cyan-500/10 animate-pulse" />
-              <ShieldCheck size={32} className="text-cyan-400 relative z-10" />
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-[scan_3s_ease-in-out_infinite]" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-700 to-amber-900 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(245,158,11,0.3)] border border-amber-500/50">
+              <Crown size={32} className="text-amber-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white uppercase flex items-center gap-2">
-                FETS <span className="text-cyan-400">VAULT</span>
+              <h2 className="text-3xl font-black tracking-tight text-amber-500 uppercase flex items-center gap-2 drop-shadow-md">
+                Master Vault
               </h2>
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">
-                SECURE CREDENTIAL MANAGEMENT
+              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">
+                Classified Assets & Secrets
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="group relative px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition-all shadow-lg shadow-cyan-500/20"
-          >
-            <span className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
-              <Plus size={14} /> Add New Client
-            </span>
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Lock Button */}
+            <button
+              onClick={() => setIsLocked(!isLocked)}
+              className={`h-16 w-16 rounded-2xl border transition-all flex items-center justify-center ${isLocked ? 'bg-amber-600/20 text-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-[#1c1917] text-amber-800 border-amber-900/30 hover:border-amber-500/50 hover:text-amber-500'}`}
+            >
+              {isLocked ? <Lock size={24} /> : <Unlock size={24} />}
+            </button>
+
+            {/* Golden Add Button */}
+            <motion.button
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowAddModal(true)}
+              className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-[0_5px_15px_rgba(0,0,0,0.5)] border-4 border-amber-600 flex items-center justify-center group relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/20 group-hover:bg-white/40 transition-colors rounded-full" />
+              <Plus size={32} className="text-amber-950 font-black relative z-10 drop-shadow-sm" strokeWidth={4} />
+            </motion.button>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative group max-w-2xl">
-          <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+        {/* Search Bar (Gold Plated) */}
+        <div className={`relative group max-w-2xl mx-auto w-full transition-opacity duration-300 ${isLocked ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-700 group-focus-within:text-amber-400 transition-colors" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search clients..."
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium outline-none focus:border-cyan-500/50 transition-all placeholder:text-slate-600 text-white"
+            placeholder="Search your treasures..."
+            className="w-full bg-[#1c1917] border border-amber-900/30 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium outline-none focus:border-amber-500/50 focus:shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-all placeholder:text-amber-900/50 text-amber-200"
           />
         </div>
       </div>
+
+      {/* Locked State Overlay */}
+      {isLocked ? (
+        <div className="absolute inset-0 z-20 bg-[#0a0a09] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+          <div className="w-64 h-64 rounded-full border-4 border-amber-900/40 border-dashed animate-[spin_10s_linear_infinite] absolute" />
+          <div className="w-48 h-48 rounded-full border-2 border-amber-500/20 absolute" />
+          <ShieldCheck size={80} className="text-amber-600 mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-pulse" />
+          <h2 className="text-4xl font-black text-white uppercase tracking-widest mb-2">Vault Secured</h2>
+          <p className="text-amber-700 font-bold tracking-wider mb-8 uppercase text-xs">Biometric Lock Active</p>
+          <button
+            onClick={() => setIsLocked(false)}
+            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-black font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_0_20px_rgba(217,119,6,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)]"
+          >
+            Unlock Access
+          </button>
+        </div>
+      ) : null}
 
       {/* Vault Content Grid */}
       <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar p-6">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center opacity-50">
-            <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mb-4" />
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Loading Records...</p>
+            <div className="w-12 h-12 border-4 border-amber-900/40 border-t-amber-500 rounded-full animate-spin mb-4" />
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Unlocking Vault...</p>
           </div>
         ) : filteredEntries.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredEntries.map((entry) => (
               <motion.div
                 layoutId={entry.id}
                 key={entry.id}
                 onClick={() => setActiveEntryId(activeEntryId === entry.id ? null : entry.id)}
                 className={`
-                    group relative bg-[#0f1115] border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300
+                    group relative bg-gradient-to-br from-[#1c1917] to-[#0c0a09] border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300
                     ${activeEntryId === entry.id
-                    ? 'col-span-1 md:col-span-2 lg:col-span-2 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.1)] bg-[#13161a]'
-                    : 'border-white/5 hover:border-cyan-500/30 hover:shadow-lg hover:bg-[#13161a]'
+                    ? 'col-span-1 md:col-span-2 lg:col-span-2 border-amber-500/60 shadow-[0_0_40px_rgba(245,158,11,0.15)] z-20 scale-[1.01]'
+                    : 'border-amber-900/20 hover:border-amber-500/40 hover:shadow-xl hover:scale-[1.02]'
                   }
                 `}
               >
-                <div className="p-5">
+                {/* Decorative Rivets */}
+                <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
+                <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
+                <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
+                <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
+
+                <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${activeEntryId === entry.id ? 'bg-cyan-500 text-white' : 'bg-white/5 text-slate-500 group-hover:bg-cyan-500/10 group-hover:text-cyan-400'}`}>
-                        <Briefcase size={20} />
+                      {/* Icon Box */}
+                      <div className={`
+                         w-12 h-12 rounded-xl flex items-center justify-center shadow-inner
+                         ${activeEntryId === entry.id
+                          ? 'bg-amber-500 text-amber-950 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                          : 'bg-[#292524] text-amber-700 group-hover:text-amber-500 transition-colors'}
+                      `}>
+                        {activeEntryId === entry.id ? <Unlock size={24} /> : <Lock size={20} />}
                       </div>
+
                       <div>
-                        <h3 className={`text-base font-bold uppercase tracking-wide ${activeEntryId === entry.id ? 'text-white' : 'text-slate-300'}`}>{entry.title}</h3>
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">{entry.category}</p>
+                        <h3 className={`text-lg font-black uppercase tracking-wide ${activeEntryId === entry.id ? 'text-amber-100' : 'text-amber-700 group-hover:text-amber-200'}`}>{entry.title}</h3>
+                        <p className="text-[9px] uppercase tracking-widest text-amber-900/60 mt-1 font-bold">{entry.category}</p>
                       </div>
                     </div>
                     <button
                       onClick={(e) => deleteEntry(entry.id, e)}
-                      className="p-2 hover:bg-rose-500/10 text-slate-600 hover:text-rose-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 hover:bg-red-900/20 text-amber-900/40 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
 
@@ -290,111 +334,35 @@ export function FetsVault() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="pt-6 border-t border-white/5 grid gap-6 grid-cols-1 md:grid-cols-2">
+                        <div className="pt-6 border-t border-amber-900/20 grid gap-6 grid-cols-1 md:grid-cols-2">
 
-                          {/* Left Column: Primary Credentials */}
+                          {/* Left Column */}
                           <div className="space-y-4">
-
-                            {/* Primary Login */}
                             {(entry.username || entry.password) && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-cyan-500/70 mb-2">Primary Login</h4>
+                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Key size={10} /> Access Keys</h4>
 
                                 {entry.username && (
                                   <div className="flex justify-between items-center group/field">
                                     <div className="flex-1">
-                                      <label className="text-[9px] uppercase tracking-widest text-slate-500 block">User ID</label>
-                                      <div className="font-mono text-cyan-100 text-sm">{entry.username}</div>
+                                      <label className="text-[9px] uppercase tracking-widest text-amber-900 block">User Identity</label>
+                                      <div className="font-mono text-amber-100 text-sm">{entry.username}</div>
                                     </div>
-                                    <button onClick={() => copyToClipboard(entry.username!, 'User ID')} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
+                                    <button onClick={() => copyToClipboard(entry.username!, 'User ID')} className="text-amber-800 hover:text-amber-400"><Copy size={14} /></button>
                                   </div>
                                 )}
 
                                 {entry.password && (
                                   <div className="flex justify-between items-center group/field">
                                     <div className="flex-1">
-                                      <label className="text-[9px] uppercase tracking-widest text-slate-500 block">Password</label>
-                                      <div className="font-mono text-cyan-100 text-sm">
-                                        {revealMap[`${entry.id}-pass`] ? entry.password : '••••••••••••••••'}
+                                      <label className="text-[9px] uppercase tracking-widest text-amber-900 block">Secret Code</label>
+                                      <div className="font-mono text-amber-100 text-sm tracking-widest">
+                                        {revealMap[`${entry.id}-pass`] ? entry.password : '••••••••••••'}
                                       </div>
                                     </div>
                                     <div className="flex gap-2">
-                                      <button onClick={() => toggleReveal(entry.id, 'pass')} className="text-slate-600 hover:text-cyan-400"><Eye size={12} /></button>
-                                      <button onClick={() => copyToClipboard(entry.password!, 'Password')} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Site ID */}
-                            {entry.site_id && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5 flex justify-between items-center">
-                                <div>
-                                  <label className="text-[9px] uppercase tracking-widest text-slate-500 block">Site ID</label>
-                                  <div className="font-mono text-cyan-100 text-sm">{entry.site_id}</div>
-                                </div>
-                                <button onClick={() => copyToClipboard(entry.site_id!, 'Site ID')} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right Column: Professional & Other */}
-                          <div className="space-y-4">
-
-                            {/* Professional Email */}
-                            {(entry.prof_email || entry.prof_email_password) && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-cyan-500/70 mb-2">Professional Email</h4>
-
-                                {entry.prof_email && (
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex-1">
-                                      <label className="text-[9px] uppercase tracking-widest text-slate-500 block">Email ID</label>
-                                      <div className="text-white text-sm truncate">{entry.prof_email}</div>
-                                    </div>
-                                    <button onClick={() => copyToClipboard(entry.prof_email!, 'Email')} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
-                                  </div>
-                                )}
-
-                                {entry.prof_email_password && (
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex-1">
-                                      <label className="text-[9px] uppercase tracking-widest text-slate-500 block">Email Password</label>
-                                      <div className="font-mono text-cyan-100 text-sm">
-                                        {revealMap[`${entry.id}-emailpass`] ? entry.prof_email_password : '••••••••••••••••'}
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <button onClick={() => toggleReveal(entry.id, 'emailpass')} className="text-slate-600 hover:text-cyan-400"><Eye size={12} /></button>
-                                      <button onClick={() => copyToClipboard(entry.prof_email_password!, 'Email Password')} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Contact Numbers */}
-                            {entry.contact_numbers && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5">
-                                <label className="text-[9px] uppercase tracking-widest text-slate-500 block mb-1">Contact Numbers</label>
-                                <div className="text-sm text-slate-300 whitespace-pre-line">{entry.contact_numbers}</div>
-                              </div>
-                            )}
-
-                            {/* URLs */}
-                            {(entry.url || entry.other_urls) && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3">
-                                {entry.url && (
-                                  <a href={entry.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider">
-                                    <Globe size={14} /> Main Access URL <ExternalLink size={10} />
-                                  </a>
-                                )}
-                                {entry.other_urls && (
-                                  <div className="mt-2 pt-2 border-t border-white/5">
-                                    <label className="text-[9px] uppercase tracking-widest text-slate-500 block mb-1">Other Important URLs</label>
-                                    <div className="text-xs text-blue-400/80 hover:text-blue-400 whitespace-pre-line overflow-hidden break-all">
-                                      {entry.other_urls}
+                                      <button onClick={() => toggleReveal(entry.id, 'pass')} className="text-amber-800 hover:text-amber-400"><Eye size={14} /></button>
+                                      <button onClick={() => copyToClipboard(entry.password!, 'Password')} className="text-amber-800 hover:text-amber-400"><Copy size={14} /></button>
                                     </div>
                                   </div>
                                 )}
@@ -403,21 +371,65 @@ export function FetsVault() {
 
                             {/* Custom Fields */}
                             {entry.custom_fields && Array.isArray(entry.custom_fields) && entry.custom_fields.length > 0 && (
-                              <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-2">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-cyan-500/70 mb-2">Custom Data</h4>
+                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-2 shadow-inner">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Database size={10} /> Custom Attributes</h4>
                                 {entry.custom_fields.map((field: any, idx: number) => (
-                                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-white/5 last:border-0 last:pb-0">
+                                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-amber-900/20 last:border-0 last:pb-0">
                                     <div>
-                                      <label className="text-[9px] uppercase tracking-widest text-slate-500 block">{field.key}</label>
-                                      <div className="text-white text-sm">{field.value}</div>
+                                      <label className="text-[9px] uppercase tracking-widest text-amber-900 block">{field.key}</label>
+                                      <div className="text-amber-100 text-sm">{field.value}</div>
                                     </div>
-                                    <button onClick={() => copyToClipboard(field.value, field.key)} className="text-slate-600 hover:text-cyan-400"><Copy size={12} /></button>
+                                    <button onClick={() => copyToClipboard(field.value, field.key)} className="text-amber-800 hover:text-amber-400"><Copy size={14} /></button>
                                   </div>
                                 ))}
                               </div>
                             )}
+                          </div>
+
+                          {/* Right Column */}
+                          <div className="space-y-4">
+                            {/* Contact/Email */}
+                            {(entry.prof_email || entry.contact_numbers) && (
+                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Briefcase size={10} /> Contact Intel</h4>
+
+                                {entry.prof_email && (
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <label className="text-[9px] uppercase tracking-widest text-amber-900 block">Email</label>
+                                      <div className="text-amber-100 text-sm">{entry.prof_email}</div>
+                                    </div>
+                                    <button onClick={() => copyToClipboard(entry.prof_email!, 'Email')} className="text-amber-800 hover:text-amber-400"><Copy size={14} /></button>
+                                  </div>
+                                )}
+
+                                {entry.contact_numbers && (
+                                  <div className="pt-2 border-t border-amber-900/20">
+                                    <label className="text-[9px] uppercase tracking-widest text-amber-900 block">Comms</label>
+                                    <div className="text-amber-100 text-sm whitespace-pre-line">{entry.contact_numbers}</div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* URLs */}
+                            {(entry.url || entry.other_urls) && (
+                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                                {entry.url && (
+                                  <a href={entry.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-black text-amber-400 hover:text-amber-300 uppercase tracking-wider group/link">
+                                    <Globe size={14} /> Launch Portal <ExternalLink size={10} className="group-hover/link:translate-x-1 transition-transform" />
+                                  </a>
+                                )}
+                                {entry.other_urls && (
+                                  <div className="mt-2 text-[10px] text-amber-700/80 whitespace-pre-line overflow-hidden break-all font-mono">
+                                    {entry.other_urls}
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
                           </div>
+
                         </div>
                       </motion.div>
                     )}
@@ -428,118 +440,107 @@ export function FetsVault() {
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center opacity-30">
-            <Shield size={48} className="mb-4 text-slate-600" />
-            <p className="text-sm font-bold uppercase tracking-widest text-slate-500">Vault Empty</p>
+            <Coins size={64} className="mb-4 text-amber-800" />
+            <p className="text-sm font-bold uppercase tracking-widest text-amber-900">Vault Empty</p>
+            <p className="text-[10px] text-amber-900/60 mt-2">Start securing your fortune.</p>
           </div>
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add Entry Modal (Treasure Chest Style) */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-2xl bg-[#0f1115] rounded-3xl border border-white/10 shadow-2xl my-8 overflow-hidden"
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              className="w-full max-w-2xl bg-[#1c1917] rounded-3xl border-2 border-amber-600 shadow-[0_0_100px_rgba(251,191,36,0.2)] overflow-hidden relative"
             >
-              <div className="p-6 border-b border-white/5 bg-[#13161a] sticky top-0 z-20 flex justify-between items-center">
-                <h3 className="text-lg font-bold uppercase tracking-wide text-white">Add New Client Record</h3>
-                <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-white transition-colors"><Plus size={24} className="rotate-45" /></button>
+              {/* Modal Glow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_20px_#fbbf24]" />
+
+              <div className="p-8 border-b border-amber-900/40 bg-[#292524] flex justify-between items-center relative z-10">
+                <div className="flex items-center gap-3">
+                  <Gem className="text-amber-400" />
+                  <h3 className="text-xl font-black uppercase tracking-wide text-amber-100">Mint New Asset</h3>
+                </div>
+                <button onClick={() => setShowAddModal(false)} className="text-amber-900 hover:text-amber-500 transition-colors"><Plus size={24} className="rotate-45" /></button>
               </div>
 
-              <form onSubmit={handleAddEntry} className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+              <form onSubmit={handleAddEntry} className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar relative z-10">
 
-                {/* Basic Info */}
+                {/* Section: Basic Info */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-cyan-500 border-b border-cyan-900/30 pb-2">Client Information</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 border-b border-amber-900/30 pb-2">01. Asset Identification</h4>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Client Name</label>
-                      <input type="text" required value={newEntry.title} onChange={e => setNewEntry({ ...newEntry, title: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-cyan-500/50 outline-none" placeholder="e.g. Acme Corp" />
+                      <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Name / Title</label>
+                      <input autoFocus type="text" required value={newEntry.title} onChange={e => setNewEntry({ ...newEntry, title: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none transition-all focus:shadow-[0_0_10px_rgba(245,158,11,0.1)]" placeholder="E.g. Royal Bank" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Category</label>
-                      <select value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-cyan-500/50 outline-none appearance-none">
-                        <option>General</option>
-                        <option>Corporate</option>
-                        <option>Individual</option>
-                        <option>Government</option>
-                      </select>
+                      <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Classification</label>
+                      <input type="text" list="categories" value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none" placeholder="General" />
+                      <datalist id="categories">
+                        <option value="Financial" />
+                        <option value="Corporate" />
+                        <option value="Personal" />
+                        <option value="Emergency" />
+                      </datalist>
                     </div>
                   </div>
                 </div>
 
-                {/* Login Credentials */}
+                {/* Section: Credentials */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-cyan-500 border-b border-cyan-900/30 pb-2">Portal Access</h4>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login URL</label>
-                    <input type="url" value={newEntry.url} onChange={e => setNewEntry({ ...newEntry, url: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-cyan-500/50 outline-none" placeholder="https://" />
+                  <div className="flex justify-between items-center border-b border-amber-900/30 pb-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-amber-600">02. Secure Keys</h4>
+                    <Lock size={12} className="text-amber-800" />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Portal URL</label>
+                    <input type="url" value={newEntry.url} onChange={e => setNewEntry({ ...newEntry, url: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-blue-300 focus:border-amber-500/50 outline-none" placeholder="https://" />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">User ID</label>
-                      <input type="text" value={newEntry.username} onChange={e => setNewEntry({ ...newEntry, username: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm font-mono text-cyan-100 focus:border-cyan-500/50 outline-none" />
+                      <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Username / ID</label>
+                      <input type="text" value={newEntry.username} onChange={e => setNewEntry({ ...newEntry, username: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
-                      <input type="text" value={newEntry.password} onChange={e => setNewEntry({ ...newEntry, password: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm font-mono text-cyan-100 focus:border-cyan-500/50 outline-none" />
+                      <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Secret Phrase</label>
+                      <input type="text" value={newEntry.password} onChange={e => setNewEntry({ ...newEntry, password: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Site ID</label>
-                    <input type="text" value={newEntry.site_id} onChange={e => setNewEntry({ ...newEntry, site_id: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm font-mono text-cyan-100 focus:border-cyan-500/50 outline-none" />
                   </div>
                 </div>
 
-                {/* Professional Details */}
+                {/* Section: Custom Data (Free Form) */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-cyan-500 border-b border-cyan-900/30 pb-2">Professional Contact</h4>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Professional Email</label>
-                      <input type="email" value={newEntry.prof_email} onChange={e => setNewEntry({ ...newEntry, prof_email: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:border-cyan-500/50 outline-none" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Password</label>
-                      <input type="text" value={newEntry.prof_email_password} onChange={e => setNewEntry({ ...newEntry, prof_email_password: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm font-mono text-cyan-100 focus:border-cyan-500/50 outline-none" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contact Numbers (Line separated)</label>
-                    <textarea rows={2} value={newEntry.contact_numbers} onChange={e => setNewEntry({ ...newEntry, contact_numbers: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-xs text-slate-300 focus:border-cyan-500/50 outline-none resize-none" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Other Important URLs (Line separated)</label>
-                    <textarea rows={2} value={newEntry.other_urls} onChange={e => setNewEntry({ ...newEntry, other_urls: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-xs text-blue-300 focus:border-cyan-500/50 outline-none resize-none" />
-                  </div>
-                </div>
-
-                {/* Custom Fields */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-cyan-900/30 pb-2">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-cyan-500">Custom Data Points</h4>
-                    <button type="button" onClick={addCustomField} className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 flex items-center gap-1"><Plus size={12} /> Add Field</button>
+                  <div className="flex justify-between items-center border-b border-amber-900/30 pb-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-amber-600">03. Additional Intel</h4>
+                    <button type="button" onClick={addCustomField} className="px-3 py-1 rounded bg-amber-500/10 text-[10px] font-bold uppercase tracking-wider text-amber-500 hover:bg-amber-500 hover:text-black transition-colors flex items-center gap-2">
+                      <Plus size={10} /> Add Field
+                    </button>
                   </div>
 
                   {customFieldsInput.map((field, idx) => (
-                    <div key={idx} className="flex gap-2 items-start animate-fade-in">
-                      <input type="text" placeholder="Field Name" value={field.key} onChange={e => updateCustomField(idx, 'key', e.target.value)} className="w-1/3 bg-black/40 border border-white/10 rounded-xl py-2 px-3 text-xs text-slate-400 focus:border-cyan-500/50 outline-none" />
-                      <input type="text" placeholder="Value" value={field.value} onChange={e => updateCustomField(idx, 'value', e.target.value)} className="flex-1 bg-black/40 border border-white/10 rounded-xl py-2 px-3 text-xs text-white focus:border-cyan-500/50 outline-none" />
-                      <button type="button" onClick={() => removeCustomField(idx)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={14} /></button>
+                    <div key={idx} className="flex gap-2 items-start animate-in fade-in slide-in-from-left-4">
+                      <input type="text" placeholder="Label (e.g. PIN)" value={field.key} onChange={e => updateCustomField(idx, 'key', e.target.value)} className="w-1/3 bg-black/30 border border-amber-900/30 rounded-xl py-2 px-3 text-xs text-amber-700 focus:border-amber-500/50 outline-none" />
+                      <input type="text" placeholder="Data" value={field.value} onChange={e => updateCustomField(idx, 'value', e.target.value)} className="flex-1 bg-black/30 border border-amber-900/30 rounded-xl py-2 px-3 text-xs text-amber-100 focus:border-amber-500/50 outline-none" />
+                      <button type="button" onClick={() => removeCustomField(idx)} className="p-2 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     </div>
                   ))}
-                  {customFieldsInput.length === 0 && <p className="text-[10px] text-slate-600 italic pl-1">No custom fields added.</p>}
+                  {customFieldsInput.length === 0 && <p className="text-[10px] text-amber-900/50 italic py-2">No custom data points added.</p>}
                 </div>
 
-                <div className="pt-4 border-t border-white/10">
+                <div className="pt-6 border-t border-amber-900/30 flex gap-4">
+                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-amber-800 font-bold uppercase tracking-widest text-xs hover:bg-amber-900/10 rounded-xl transition-colors">Cancel</button>
                   <button
                     type="submit"
-                    className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-lg shadow-cyan-500/20"
+                    className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-black rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-[0_5px_20px_rgba(245,158,11,0.3)] transform hover:-translate-y-1"
                   >
-                    <Lock size={16} /> Save Record
+                    <ShieldCheck size={16} /> Secure in Vault
                   </button>
                 </div>
 

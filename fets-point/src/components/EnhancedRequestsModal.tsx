@@ -31,7 +31,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
   const [requests, setRequests] = useState<LeaveRequest[]>([])
 
   // Filter staff profiles (exclude super admins and current user)
-  const availableStaff = staffProfiles.filter(staff => 
+  const availableStaff = staffProfiles.filter(staff =>
     !['MITHUN', 'NIYAS', 'Mithun', 'Niyas'].includes(staff.full_name) &&
     staff.id !== profile?.id
   )
@@ -60,9 +60,9 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
           target:profiles!leave_requests_swap_with_user_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false })
-      
+
       if (error) throw error
-      
+
       const mappedRequests: LeaveRequest[] = (data || []).map(req => ({
         id: req.id,
         user_id: req.user_id,
@@ -79,7 +79,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         requestor_name: (req.requestor as any)?.full_name || 'Unknown',
         target_name: (req.target as any)?.full_name || 'Unknown'
       }))
-      
+
       setRequests(mappedRequests)
     } catch (error) {
       console.error('Error loading requests:', error)
@@ -92,14 +92,14 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
       toast.error('Please select a date')
       return
     }
-    
+
     if (requestType === 'shift_swap' && !selectedTargetStaff) {
       toast.error('Please select a staff member to swap with')
       return
     }
 
     setLoading(true)
-    
+
     try {
       const requestData = {
         user_id: profile?.id,
@@ -109,13 +109,13 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         status: 'pending',
         ...(requestType === 'shift_swap' && { swap_with_user_id: selectedTargetStaff })
       }
-      
+
       const { error } = await supabase
         .from('leave_requests')
         .insert(requestData)
-      
+
       if (error) throw error
-      
+
       toast.success(`${requestType === 'leave' ? 'Leave' : 'Shift swap'} request created successfully`)
       resetForm()
       loadRequests()
@@ -130,7 +130,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
 
   const updateRequestStatus = async (requestId: string, status: 'approved' | 'rejected') => {
     setLoading(true)
-    
+
     try {
       const request = requests.find(r => r.id === requestId)
       if (!request) return
@@ -138,19 +138,19 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
       // Update request status
       const { error: updateError } = await supabase
         .from('leave_requests')
-        .update({ 
+        .update({
           status,
           approved_by: profile?.id,
           approved_at: new Date().toISOString()
         })
         .eq('id', requestId)
-      
+
       if (updateError) throw updateError
 
       // If shift swap approved, perform the swap
       if (status === 'approved' && request.request_type === 'shift_swap' && request.swap_with_user_id) {
         await performShiftSwap(request.user_id, request.swap_with_user_id, request.requested_date)
-        
+
         // Log audit trail
         // await supabase
         //   .from('roster_audit_log')
@@ -161,7 +161,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         //     affected_date: request.requested_date
         //   })
       }
-      
+
       toast.success(`Request ${status} successfully`)
       loadRequests()
       onSuccess()
@@ -180,25 +180,25 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
       .select('*')
       .in('profile_id', [user1Id, user2Id])
       .eq('date', date)
-    
+
     if (fetchError) throw fetchError
-    
+
     const user1Shift = shifts?.find(s => s.profile_id === user1Id)
     const user2Shift = shifts?.find(s => s.profile_id === user2Id)
-    
+
     // Delete existing shifts
     if (shifts && shifts.length > 0) {
       const { error: deleteError } = await supabase
         .from('roster_schedules')
         .delete()
         .in('id', shifts.map(s => s.id))
-      
+
       if (deleteError) throw deleteError
     }
-    
+
     // Create swapped shifts
     const newShifts = []
-    
+
     if (user1Shift) {
       newShifts.push({
         profile_id: user2Id,
@@ -208,7 +208,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         status: 'confirmed'
       })
     }
-    
+
     if (user2Shift) {
       newShifts.push({
         profile_id: user1Id,
@@ -218,20 +218,20 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         status: 'confirmed'
       })
     }
-    
+
     if (newShifts.length > 0) {
       const { error: insertError } = await supabase
         .from('roster_schedules')
         .insert(newShifts)
-      
+
       if (insertError) throw insertError
     }
   }
 
   // Filter requests based on user role and tab
   const getFilteredRequests = () => {
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
-    
+    const isAdmin = profile?.role === 'super_admin' || profile?.email === 'mithun@fets.in';
+
     if (activeTab === 'my-requests') {
       return requests.filter(r => r.user_id === profile?.id)
     } else if (activeTab === 'manage' && isAdmin) {
@@ -247,11 +247,11 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 backdrop-blur-sm bg-black/20"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="relative w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -268,37 +268,34 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
               <X className="h-5 w-5 text-gray-400" />
             </button>
           </div>
-          
+
           {/* Tabs */}
           <div className="flex mt-4 space-x-1 bg-white/50 rounded-xl p-1">
             <button
               onClick={() => setActiveTab('create')}
-              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
-                activeTab === 'create'
+              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'create'
                   ? 'bg-white shadow-sm text-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               Create Request
             </button>
             <button
               onClick={() => setActiveTab('my-requests')}
-              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
-                activeTab === 'my-requests'
+              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'my-requests'
                   ? 'bg-white shadow-sm text-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               My Requests
             </button>
             {isAdmin && (
               <button
                 onClick={() => setActiveTab('manage')}
-                className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
-                  activeTab === 'manage'
+                className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'manage'
                     ? 'bg-white shadow-sm text-blue-600'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 Manage Requests
               </button>
@@ -316,24 +313,22 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setRequestType('leave')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                      requestType === 'leave'
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${requestType === 'leave'
                         ? 'border-blue-500 bg-blue-50 text-blue-900'
                         : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <Calendar className={`h-5 w-5 mb-2 ${requestType === 'leave' ? 'text-blue-600' : 'text-gray-500'}`} />
                     <div className="font-semibold">Leave Request</div>
                     <div className="text-sm opacity-75">Request time off</div>
                   </button>
-                  
+
                   <button
                     onClick={() => setRequestType('shift_swap')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                      requestType === 'shift_swap'
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${requestType === 'shift_swap'
                         ? 'border-blue-500 bg-blue-50 text-blue-900'
                         : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <Users className={`h-5 w-5 mb-2 ${requestType === 'shift_swap' ? 'text-blue-600' : 'text-gray-500'}`} />
                     <div className="font-semibold">Shift Swap</div>
@@ -422,11 +417,10 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                           <span className="font-medium text-gray-900">
                             {request.request_type === 'leave' ? 'Leave Request' : `Shift Swap with ${request.target_name}`}
                           </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                            }`}>
                             {request.status}
                           </span>
                         </div>
@@ -441,7 +435,7 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                           <p className="text-sm text-gray-600 mt-2 italic">{request.reason}</p>
                         )}
                       </div>
-                      
+
                       {activeTab === 'manage' && request.status === 'pending' && (
                         <div className="flex space-x-2 ml-4">
                           <button

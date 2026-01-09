@@ -102,13 +102,24 @@ export function useVideoCall() {
         };
 
         pc.ontrack = (event) => {
-            setCallState(prev => ({
-                ...prev,
-                remoteStreams: {
-                    ...prev.remoteStreams,
-                    [targetUserId]: event.streams[0]
+            console.log(`[useVideoCall] Track received from ${targetUserId}:`, event.track.kind);
+
+            setCallState(prev => {
+                const existingStream = prev.remoteStreams[targetUserId];
+                const stream = event.streams[0] || (existingStream ? existingStream : new MediaStream());
+
+                if (!stream.getTracks().find(t => t.id === event.track.id)) {
+                    stream.addTrack(event.track);
                 }
-            }));
+
+                return {
+                    ...prev,
+                    remoteStreams: {
+                        ...prev.remoteStreams,
+                        [targetUserId]: stream
+                    }
+                };
+            });
         };
 
         pc.onconnectionstatechange = () => {

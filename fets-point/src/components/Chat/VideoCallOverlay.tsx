@@ -133,19 +133,29 @@ export const VideoCallOverlay: React.FC<VideoCallOverlayProps> = ({
 
     return (
         <motion.div
+            drag
+            dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }} // Large bounds
+            dragMomentum={false}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className={`
-                fixed z-[1000] overflow-hidden bg-[#0f172a] rounded-[32px] border-2 ${callType === 'audio' ? 'border-emerald-500/30' : 'border-[#ffbf00]/30'} shadow-[0_40px_100px_rgba(0,0,0,0.8)]
+                fixed z-[1000] overflow-hidden bg-[#0f172a] rounded-[32px] border-2 shadow-[0_40px_100px_rgba(0,0,0,0.8)]
+                ${callType === 'audio' ? 'border-emerald-500/30' : 'border-[#ffbf00]/30'}
                 ${isMinimized
-                    ? 'w-64 h-40 bottom-8 right-8 cursor-pointer'
-                    : 'w-[95vw] sm:w-[85vw] max-w-[1200px] h-[80vh] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}
+                    ? 'w-64 h-40 bottom-8 right-8 cursor-move'
+                    : 'w-[90vw] sm:w-[80vw] max-w-[1000px] h-[75vh] top-[12.5vh] left-[5vw] sm:left-[10vw] cursor-move'}
             `}
+            style={{
+                boxShadow: callType === 'audio' ? '0 0 50px rgba(16,185,129,0.1)' : '0 0 50px rgba(255,191,0,0.1)'
+            }}
         >
+            {/* Drag Handle Overlay (invisible but indicates area) */}
+            <div className="absolute top-0 left-0 right-0 h-20 z-[100] cursor-move" />
+
             {/* Header / Info Bar */}
-            <div className="absolute top-0 left-0 right-0 p-6 z-50 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent">
-                <div className="flex items-center gap-4">
+            <div className="absolute top-0 left-0 right-0 p-6 z-50 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none">
+                <div className="flex items-center gap-4 pointer-events-auto">
                     <div className="relative">
                         <div className={`w-3 h-3 rounded-full ${callType === 'audio' ? 'bg-emerald-500' : 'bg-[#ffbf00]'} animate-pulse`} />
                         <div className={`absolute inset-0 w-3 h-3 rounded-full ${callType === 'audio' ? 'bg-emerald-500' : 'bg-[#ffbf00]'} animate-ping opacity-50`} />

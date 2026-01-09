@@ -5,7 +5,7 @@ import {
     ExternalLink, User, Search, MessageSquare,
     Clock, Check, CheckCheck, MoreVertical,
     Phone, Video, Smile, Info, Trash2, Zap, Image as ImageIcon, FileText, ChevronLeft,
-    Minus, ArrowUpRight
+    Minus, ArrowUpRight, Lock, Circle, CircleDashed, Slash
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -33,6 +33,7 @@ interface Message {
     file_path?: string
     created_at: string
     read_at?: string
+    status?: 'sent' | 'delivered' | 'seen' | 'deleted_for_me' | 'deleted_for_all'
 }
 
 interface FetchatProps {
@@ -57,6 +58,52 @@ const ComicInput = ({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) =
         className="w-full bg-white border-2 border-black rounded-xl px-4 py-3 text-sm font-bold text-gray-800 placeholder-gray-400 outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
     />
 )
+
+const MessageStatus = ({ status }: { status?: string }) => {
+    switch (status) {
+        case 'sent':
+            return (
+                <div className="flex items-center" title="Sent (Accepted by system)">
+                    <div className="w-2.5 h-2.5 rounded-full border border-black/40" />
+                </div>
+            );
+        case 'delivered':
+            return (
+                <div className="flex items-center" title="Delivered to device">
+                    <div className="w-2.5 h-2.5 rounded-full bg-black/40" />
+                </div>
+            );
+        case 'seen':
+            return (
+                <div className="flex items-center" title="Seen">
+                    <div className="w-2.5 h-2.5 rounded-full bg-black/80 flex items-center justify-center">
+                        <div className="w-1 h-1 bg-white rounded-full" />
+                    </div>
+                </div>
+            );
+        case 'deleted_for_me':
+            return (
+                <div className="flex items-center opacity-40" title="Deleted for you">
+                    <div className="w-3 h-3 rounded-full border border-black relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Slash size={10} className="text-black" />
+                        </div>
+                    </div>
+                </div>
+            );
+        case 'deleted_for_all':
+            return (
+                <div className="flex items-center opacity-30" title="Deleted for both">
+                    <div className="w-3.5 h-3.5 rounded-full bg-black/10 border border-black flex items-center justify-center relative">
+                        <Lock size={8} className="text-black" />
+                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                    </div>
+                </div>
+            );
+        default:
+            return <div className="w-2.5 h-2.5 rounded-full border border-black/20" />;
+    }
+};
 
 export const Fetchat: React.FC<FetchatProps> = ({
     isDetached = false,
@@ -139,9 +186,26 @@ export const Fetchat: React.FC<FetchatProps> = ({
 
                 if (messageSubscription.current) messageSubscription.current.unsubscribe()
                 messageSubscription.current = supabase.channel(`chat:${convId}`)
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` },
-                        payload => setMessages(prev => [...prev, payload.new as Message]))
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` },
+                        payload => {
+                            if (payload.eventType === 'INSERT') {
+                                setMessages(prev => [...prev, payload.new as Message]);
+                                // If I am the recipient and the chat is open, mark as seen
+                                if (payload.new.sender_id !== profile.id) {
+                                    supabase.from('messages').update({ status: 'seen' }).eq('id', payload.new.id).select().then();
+                                }
+                            } else if (payload.eventType === 'UPDATE') {
+                                setMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m));
+                            }
+                        })
                     .subscribe()
+
+                // Mark unread as seen
+                await supabase.from('messages')
+                    .update({ status: 'seen' })
+                    .eq('conversation_id', convId)
+                    .neq('sender_id', profile.id)
+                    .in('status', ['sent', 'delivered'])
             } catch (e) {
                 console.error(e)
             } finally { setIsLoading(false) }
@@ -219,7 +283,8 @@ export const Fetchat: React.FC<FetchatProps> = ({
                             sender_id: profile.id,
                             content: url,
                             type: type === 'audio' ? 'voice' : 'video',
-                            file_path: file.name
+                            file_path: file.name,
+                            status: (selectedUser?.user_id && presence[selectedUser.user_id]?.status === 'online') ? 'delivered' : 'sent'
                         })
                         toast.success('Sent')
                     } catch (err) {
@@ -292,18 +357,38 @@ export const Fetchat: React.FC<FetchatProps> = ({
 
             const { data: convId } = await supabase.rpc('get_or_create_conversation', { user_id_1: profile.id, user_id_2: selectedUser.id })
 
+            const isRecipientOnline = selectedUser?.user_id && presence[selectedUser.user_id]?.status === 'online';
+
             await supabase.from('messages').insert({
                 conversation_id: convId,
                 sender_id: profile.id,
                 content: url || newMessage.trim(),
                 type,
-                file_path: attachment?.name
+                file_path: attachment?.name,
+                status: isRecipientOnline ? 'delivered' : 'sent'
             })
 
             setNewMessage('')
             setAttachment(null)
-        } catch (err) { toast.error('Failed to send') }
-        finally { setIsUploading(false) }
+        } catch (err) {
+            toast.error('Failed to send')
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handleDeleteMessage = async (msgId: string, forAll: boolean = false) => {
+        try {
+            if (forAll) {
+                await supabase.from('messages').update({ status: 'deleted_for_all', content: 'Message deleted for everyone' }).eq('id', msgId)
+                toast.success('Deleted for both')
+            } else {
+                await supabase.from('messages').update({ status: 'deleted_for_me' }).eq('id', msgId)
+                toast.success('Deleted for you')
+            }
+        } catch (err) {
+            toast.error('Delete failed')
+        }
     }
 
     const filteredStaff = staff.filter(s => s.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -512,20 +597,38 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                                         : 'bg-white shadow-[3px_3px_0px_0px_#e5e7eb] rounded-bl-none'
                                                     }
                                                  `}>
-                                                    {msg.type === 'text' && <p className="text-sm font-bold text-gray-800 whitespace-pre-wrap">{msg.content}</p>}
-                                                    {msg.type === 'image' && <img src={msg.content} className="max-w-full rounded-lg border-2 border-black/10" />}
-                                                    {msg.type === 'voice' && (
-                                                        <div className="flex items-center gap-2 min-w-[200px]">
-                                                            <div className="p-2 bg-black rounded-full text-white"><Mic size={16} /></div>
-                                                            <audio src={msg.content} controls className="w-full h-8" />
+                                                    {msg.status !== 'deleted_for_all' && (
+                                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                                            <button onClick={() => handleDeleteMessage(msg.id, false)} title="Delete for me" className="p-1 hover:bg-black/5 rounded text-gray-400 hover:text-red-500"><Trash2 size={12} /></button>
+                                                            {isMe && <button onClick={() => handleDeleteMessage(msg.id, true)} title="Delete for both" className="p-1 hover:bg-black/5 rounded text-gray-400 hover:text-red-500"><Lock size={12} /></button>}
                                                         </div>
                                                     )}
-                                                    {msg.type === 'video' && (
-                                                        <div className="min-w-[200px]">
-                                                            <video src={msg.content} controls className="w-full h-auto rounded-lg" />
-                                                        </div>
+
+                                                    {msg.status === 'deleted_for_all' ? (
+                                                        <p className="text-xs italic opacity-50 flex items-center gap-2">
+                                                            <Lock size={10} /> Message deleted for both
+                                                        </p>
+                                                    ) : (
+                                                        <>
+                                                            {msg.type === 'text' && <p className="text-sm font-bold text-gray-800 whitespace-pre-wrap">{msg.content}</p>}
+                                                            {msg.type === 'image' && <img src={msg.content} className="max-w-full rounded-lg border-2 border-black/10" />}
+                                                            {msg.type === 'voice' && (
+                                                                <div className="flex items-center gap-2 min-w-[200px]">
+                                                                    <div className="p-2 bg-black rounded-full text-white"><Mic size={16} /></div>
+                                                                    <audio src={msg.content} controls className="w-full h-8" />
+                                                                </div>
+                                                            )}
+                                                            {msg.type === 'video' && (
+                                                                <div className="min-w-[200px]">
+                                                                    <video src={msg.content} controls className="w-full h-auto rounded-lg" />
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     )}
-                                                    <span className="text-[9px] font-bold opacity-40 block text-right mt-1">{format(new Date(msg.created_at), 'HH:mm')}</span>
+                                                    <div className="flex items-center justify-end gap-1.5 mt-1 border-t border-black/5 pt-1">
+                                                        <span className="text-[9px] font-bold opacity-40">{format(new Date(msg.created_at), 'HH:mm')}</span>
+                                                        {isMe && <MessageStatus status={msg.status} />}
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )

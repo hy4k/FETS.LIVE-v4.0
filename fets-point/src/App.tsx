@@ -9,6 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { BranchProvider } from './contexts/BranchContext';
 import { useBranch } from './hooks/useBranch';
 import { ChatProvider, useChat } from './contexts/ChatContext';
+import { CallProvider } from './contexts/CallContext';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LazyErrorBoundary } from './components/LazyErrorBoundary';
@@ -271,7 +272,9 @@ function App() {
           <BranchProvider>
             <ThemeProvider>
               <ChatProvider>
-                <AppContent />
+                <CallProvider>
+                  <AppContent />
+                </CallProvider>
               </ChatProvider>
               <Toaster position="top-right" toastOptions={{
                 duration: 4000,

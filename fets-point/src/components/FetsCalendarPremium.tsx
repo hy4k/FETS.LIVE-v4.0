@@ -26,46 +26,52 @@ interface Session {
 
 const CLIENT_COLORS = {
   'PEARSON': {
-    bg: '#EFF6FF',
-    text: '#1E40AF',
-    border: '#3B82F6',
-    accent: '#DBEAFE',
-    shadow: '0 4px 12px -2px rgba(59, 130, 246, 0.15)'
+    bg: '#f0f7ff',
+    text: '#1e40af',
+    border: '#3b82f6',
+    accent: '#dbeafe',
+    shadow: 'rgba(59, 130, 246, 0.12)',
+    ring: 'ring-blue-400/30'
   },
   'VUE': {
-    bg: '#ECFDF5',
-    text: '#047857',
-    border: '#10B981',
-    accent: '#D1FAE5',
-    shadow: '0 4px 12px -2px rgba(16, 185, 129, 0.15)'
+    bg: '#f0fdf4',
+    text: '#166534',
+    border: '#22c55e',
+    accent: '#dcfce7',
+    shadow: 'rgba(34, 197, 94, 0.12)',
+    ring: 'ring-green-400/30'
   },
   'ETS': {
-    bg: '#FFFBEB',
-    text: '#B45309',
-    border: '#F59E0B',
-    accent: '#FEF3C7',
-    shadow: '0 4px 12px -2px rgba(245, 158, 11, 0.15)'
+    bg: '#fffdf0',
+    text: '#92400e',
+    border: '#f59e0b',
+    accent: '#fef3c7',
+    shadow: 'rgba(245, 158, 11, 0.12)',
+    ring: 'ring-amber-400/30'
   },
   'PSI': {
-    bg: '#F5F3FF',
-    text: '#6D28D9',
-    border: '#8B5CF6',
-    accent: '#EDE9FE',
-    shadow: '0 4px 12px -2px rgba(139, 92, 246, 0.15)'
+    bg: '#f5f3ff',
+    text: '#5b21b6',
+    border: '#8b5cf6',
+    accent: '#ede9fe',
+    shadow: 'rgba(139, 92, 246, 0.12)',
+    ring: 'ring-purple-400/30'
   },
   'PROMETRIC': {
-    bg: '#FEF2F2',
-    text: '#B91C1C',
-    border: '#EF4444',
-    accent: '#FEE2E2',
-    shadow: '0 4px 12px -2px rgba(239, 68, 68, 0.15)'
+    bg: '#fff1f2',
+    text: '#9f1239',
+    border: '#f43f5e',
+    accent: '#ffe4e6',
+    shadow: 'rgba(244, 63, 94, 0.12)',
+    ring: 'ring-rose-400/30'
   },
   'OTHER': {
-    bg: '#F8FAFC',
-    text: '#475569',
-    border: '#94A3B8',
-    accent: '#F1F5F9',
-    shadow: '0 4px 12px -2px rgba(100, 116, 139, 0.15)'
+    bg: '#f8fafc',
+    text: '#334155',
+    border: '#64748b',
+    accent: '#f1f5f9',
+    shadow: 'rgba(100, 116, 139, 0.12)',
+    ring: 'ring-slate-400/30'
   }
 }
 
@@ -368,10 +374,10 @@ export function FetsCalendarPremium() {
   }
 
   return (
-    <div className="min-h-screen -mt-32 pt-48 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
 
-      {/* Functional Notification Banner */}
-      <div className="h-6 -mx-8 -mt-12 mb-8"></div>
+      {/* Functional Notification Banner Spacer */}
+      <div className="h-6 -mx-8 -mt-8 mb-8"></div>
 
       <div className="max-w-[1800px] mx-auto px-6">
         {/* Executive Header - Neumorphic */}
@@ -452,10 +458,13 @@ export function FetsCalendarPremium() {
         {/* Main Grid Conatiner - Clean & Premium */}
         <div className="bg-[#F0F4F8] rounded-3xl p-6 min-h-[600px]">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 mb-4">
+          <div className="grid grid-cols-7 mb-6">
             {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
-              <div key={day} className="text-center">
-                <div className="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">{day.substring(0, 3)}</div>
+              <div key={day} className="text-center group">
+                <div className="font-black text-slate-400 text-[10px] uppercase tracking-[0.3em] mb-1 group-hover:text-slate-600 transition-colors">
+                  {day.substring(0, 3)}
+                </div>
+                <div className="h-1 w-6 bg-slate-200 mx-auto rounded-full group-hover:w-10 group-hover:bg-amber-400 transition-all"></div>
               </div>
             ))}
           </div>
@@ -482,108 +491,119 @@ export function FetsCalendarPremium() {
               return (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ y: -8, scale: 1.03 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ y: -8, scale: 1.03, zIndex: 30 }}
                   onClick={() => openDetailsModal(date)}
                   className={`
-                    h-56 p-4 cursor-pointer transition-all duration-400 rounded-[2rem] group flex flex-col relative overflow-hidden backdrop-blur-sm
+                    min-h-[260px] p-6 cursor-pointer transition-all duration-300 rounded-[2.5rem] group flex flex-col relative
                     ${opacityClass}
                     ${isCurrentDay
-                      ? 'bg-white shadow-[0_20px_50px_rgba(245,158,11,0.15)] ring-2 ring-amber-400 ring-offset-2'
-                      : 'bg-white/80 border border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.12)]'
+                      ? 'bg-[#f6ba41] border-4 border-white shadow-[0_30px_60px_-15px_rgba(246,186,65,0.4)]'
+                      : 'bg-[#185a86] border border-white/10 hover:bg-[#398bb1] shadow-xl'
                     }
                   `}
                 >
-                  {/* Weekend Subtle Pattern */}
-                  {(date.getDay() === 0 || date.getDay() === 6) && (
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:10px_10px]" />
-                  )}
-
-                  <div className="h-full flex flex-col relative z-10">
-                    {/* Date Header - PREMIUM INSTRUMENT PANEL */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-4xl font-black leading-none tracking-tighter ${isCurrentDay ? 'text-amber-500' : 'text-slate-400/80 group-hover:text-slate-600 transition-colors'}`}>
+                  <div className="h-full flex flex-col relative z-20">
+                    {/* 1. TOP BAR: DATE & STATUS */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex flex-col">
+                        <span className={`text-4xl font-black tracking-tighter leading-none ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
                           {date.getDate()}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-slate-400">
+                        <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${isCurrentDay ? 'text-[#185a86]/60' : 'text-[#80b8d6]'}`}>
                           {date.toLocaleDateString('en-US', { weekday: 'short' })}
                         </span>
                       </div>
 
-                      {daySessions.length > 0 && (
-                        <div className="flex flex-col items-end">
-                          <div className={`px-3 py-1 rounded-full text-sm font-black tracking-tight shadow-sm ${totalCandidates >= 70 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                            {totalCandidates} <span className="text-[10px] font-bold opacity-80">CAND</span>
+                      {isCurrentDay && (
+                        <div className="px-3 py-1 bg-[#185a86] rounded-full text-[8px] font-black text-white uppercase tracking-[0.2em] shadow-lg flex items-center gap-1.5 ring-2 ring-white/20">
+                          <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                          <span>Today</span>
+                        </div>
+                      )}
+
+                      {!isCurrentDay && (date.getDay() === 0 || date.getDay() === 6) && (
+                        <div className="text-[10px] font-black text-[#80b8d6]/50 uppercase tracking-[0.3em]">Off</div>
+                      )}
+                    </div>
+
+                    {/* 2. HERO: CANDIDATE VOLUME BADGE */}
+                    <div className="flex-1 flex flex-col items-center justify-center py-2">
+                      {totalCandidates > 0 ? (
+                        <div className={`
+                           w-full py-4 rounded-2xl flex flex-col items-center justify-center border transition-all duration-300
+                           ${isCurrentDay
+                            ? 'bg-white/40 border-[#185a86]/10 shadow-sm'
+                            : 'bg-black/20 border-white/5 shadow-inner'
+                          }
+                         `}>
+                          <div className="flex items-baseline gap-1">
+                            <span className={`text-5xl font-black tracking-tighter leading-none ${isCurrentDay ? 'text-[#185a86]' : 'text-[#f6ba41]'}`}>
+                              {totalCandidates}
+                            </span>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${isCurrentDay ? 'text-[#185a86]/40' : 'text-white/40'}`}>
+                              Pax
+                            </span>
                           </div>
+                          <p className={`text-[8px] font-black uppercase tracking-[0.4em] mt-2 ${isCurrentDay ? 'text-[#185a86]/50' : 'text-[#80b8d6]'}`}>
+                            Unit Volume
+                          </p>
+                        </div>
+                      ) : (
+                        <div className={`opacity-10 py-8 ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
+                          <Calendar size={48} />
                         </div>
                       )}
                     </div>
 
-                    {/* Sessions List - VIBRANT BENTO CARDS */}
-                    <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto no-scrollbar pb-2">
-                      {daySessions.slice(0, 3).map((session, sIdx) => {
-                        const clientColor = CLIENT_COLORS[getClientType(session.client_name)] || CLIENT_COLORS['OTHER']
-                        return (
-                          <motion.div
-                            key={session.id || sIdx}
-                            className="flex-shrink-0 relative overflow-hidden rounded-lg transition-all py-2 px-2.5 border-l-3 group/session hover:translate-x-0.5"
-                            style={{
-                              background: clientColor.bg,
-                              borderLeftWidth: '3px',
-                              borderLeftColor: clientColor.border,
-                              boxShadow: clientColor.shadow
-                            }}
-                          >
-                            <div className="flex justify-between items-center mb-0.5 pointer-events-none">
-                              <span className="text-[10px] font-black uppercase tracking-tight" style={{ color: clientColor.text }}>
-                                {getShortClient(session.client_name)}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <Clock size={8} style={{ color: clientColor.border }} />
-                                <span className="text-[9px] font-bold text-slate-600">{getShortTime(session.start_time)}</span>
-                              </div>
-                            </div>
-                            <p className="text-[11px] font-bold text-slate-800 leading-tight truncate">{getShortExam(session.exam_name)}</p>
-                          </motion.div>
-                        )
-                      })}
-                      {daySessions.length > 3 && (
-                        <div className="text-[10px] font-black text-slate-500 py-1 text-center bg-slate-100/50 rounded-lg border border-dashed border-slate-300 group-hover:bg-slate-100 transition-colors">
-                          + {daySessions.length - 3} MORE
+                    {/* 3. SESSIONS: COMPACT LIST */}
+                    <div className="mt-4 space-y-1.5">
+                      {daySessions.slice(0, 2).map((session, sIdx) => (
+                        <div
+                          key={session.id || sIdx}
+                          className={`
+                            px-3 py-2.5 rounded-xl border transition-all duration-300
+                            ${isCurrentDay
+                              ? 'bg-white/50 text-[#185a86] border-[#185a86]/10'
+                              : 'bg-white/10 text-white border-white/5'
+                            }
+                          `}
+                        >
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-tighter truncate w-24 opacity-80">{getShortClient(session.client_name)}</span>
+                            <span className="text-[8px] font-bold opacity-60">{getShortTime(session.start_time)}</span>
+                          </div>
+                          <p className={`text-[10px] font-black leading-tight truncate ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
+                            {getShortExam(session.exam_name)}
+                          </p>
+                        </div>
+                      ))}
+
+                      {daySessions.length > 2 && (
+                        <div className={`
+                          text-[9px] font-black text-center py-2 rounded-xl border border-dashed uppercase tracking-widest
+                          ${isCurrentDay ? 'bg-[#185a86]/5 text-[#185a86]/50 border-[#185a86]/20' : 'bg-white/5 text-white/30 border-white/10'}
+                        `}>
+                          + {daySessions.length - 2} Active Units
                         </div>
                       )}
                     </div>
 
-                    {/* CAPACITY HEALTH BAR */}
+                    {/* 4. FOOTER: CAPACITY HEALTH */}
                     {totalCandidates > 0 && (
-                      <div className="mt-auto pt-2">
-                        <div className="flex justify-between items-center text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-widest">
-                          <span>Capacity</span>
-                          <span>{Math.round((totalCandidates / 80) * 100)}%</span>
-                        </div>
-                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="mt-5 pt-3 border-t border-white/5">
+                        <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden shadow-inner">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(totalCandidates / 80) * 100}%` }}
-                            className={`h-full rounded-full ${totalCandidates >= 70 ? 'bg-rose-500' : totalCandidates >= 40 ? 'bg-amber-500' : 'bg-emerald-500'
+                            className={`h-full rounded-full ${totalCandidates >= 70 ? 'bg-[#d64d2e]' : 'bg-[#80b8d6]'
                               }`}
                           />
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Tactile Highlight for Today */}
-                  {isCurrentDay && (
-                    <div className="absolute top-0 right-0 p-3">
-                      <div className="flex items-center gap-1.5 bg-amber-500 px-2 py-0.5 rounded-full shadow-lg shadow-amber-500/30">
-                        <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
-                        <span className="text-[8px] font-black text-white uppercase tracking-widest">Active</span>
-                      </div>
-                    </div>
-                  )}
                 </motion.div>
               )
             })}

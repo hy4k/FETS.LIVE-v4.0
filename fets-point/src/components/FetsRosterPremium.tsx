@@ -352,9 +352,9 @@ export function FetsRosterPremium() {
   }
 
   return (
-    <div className="min-h-screen -mt-32 pt-48 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-      {/* Functional Notification Banner */}
-      <div className="h-6 -mx-8 -mt-12 mb-8"></div>
+    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+      {/* Functional Notification Banner Spacer */}
+      <div className="h-6 -mx-8 -mt-8 mb-8"></div>
 
       <div className="max-w-[1800px] mx-auto px-6">
         {/* Executive Header - Neumorphic */}
@@ -416,7 +416,7 @@ export function FetsRosterPremium() {
             </div>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="neomorphic-btn px-4 py-2 text-sm font-semibold text-gray-600"
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm"
             >
               Today
             </button>

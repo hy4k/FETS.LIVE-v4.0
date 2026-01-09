@@ -66,8 +66,8 @@ const CandidateCard = memo(({ candidate, onEdit, onDelete, onToggleNoShow }: any
         <button
           onClick={() => onToggleNoShow(candidate.id, isNoShow)}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isNoShow
-              ? 'bg-red-50 text-red-600 border border-red-200'
-              : 'bg-gray-50 text-gray-400 border border-gray-200 hover:border-red-200'
+            ? 'bg-red-50 text-red-600 border border-red-200'
+            : 'bg-gray-50 text-gray-400 border border-gray-200 hover:border-red-200'
             }`}
         >
           {isNoShow ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 rounded border-2 border-current" />}
@@ -306,230 +306,243 @@ export function CandidateTrackerPremium() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+      {/* Functional Notification Banner Spacer */}
+      <div className="h-6 -mx-8 -mt-8 mb-8"></div>
 
-      {/* FETS Roster Style Header - Yellow Gradient */}
-      <div className="sticky top-0 z-30 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-lg">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                FETS Register
-              </h1>
-            </div>
+      <div className="max-w-[1800px] mx-auto px-6">
+        {/* Executive Header - Neumorphic */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
+        >
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gold-gradient mb-2 uppercase">
+              FETS Register
+            </h1>
+            <p className="text-lg text-gray-600 font-medium">
+              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Candidate Tracking & Management
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+        </motion.div>
 
-            <div className="flex items-center space-x-6">
-              {/* Date Navigator */}
-              <div className="flex items-center space-x-2 bg-white/20 p-1 rounded-lg">
-                <button
-                  onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <h2 className="text-lg font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  {format(currentDate, 'MMMM yyyy')}
-                </h2>
-                <button
-                  onClick={() => setCurrentDate(subMonths(currentDate, -1))}
-                  className="p-2 rounded-lg hover:bg-white/20 text-white"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-2 bg-white/20 p-1 rounded-lg">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium ${viewMode === 'grid' ? 'bg-white text-yellow-800 shadow' : 'text-white'
-                    }`}
-                >
-                  Cards
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium ${viewMode === 'list' ? 'bg-white text-yellow-800 shadow' : 'text-white'
-                    }`}
-                >
-                  List
-                </button>
-              </div>
-
-              {/* Add Button */}
+        {/* Control Toolbar - Neumorphic */}
+        <div className="neomorphic-card p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            {/* Month Navigation */}
+            <div className="flex items-center space-x-3">
               <button
-                onClick={handleOpenAdd}
-                className="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 flex items-center space-x-2 font-semibold"
+                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                className="neomorphic-btn-icon"
+                title="Previous month"
               >
-                <Plus className="h-4 w-4" />
-                <span>New Entry</span>
+                <ChevronLeft className="h-5 w-5 text-gray-600" />
+              </button>
+              <div className="text-xl font-bold text-gray-700 min-w-[200px] text-center">
+                {format(currentDate, 'MMMM yyyy')}
+              </div>
+              <button
+                onClick={() => setCurrentDate(subMonths(currentDate, -1))}
+                className="neomorphic-btn-icon"
+                title="Next month"
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600" />
               </button>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="p-6 space-y-6">
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-500 uppercase tracking-wide">Net Registered</div>
-              <Users className="h-5 w-5 text-blue-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900">{netCount}</div>
-            <div className="text-xs text-gray-400 mt-1">Total minus absentees</div>
+            <button
+              onClick={() => setCurrentDate(new Date())}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm"
+            >
+              Today
+            </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-500 uppercase tracking-wide">Total Registered</div>
-              <FileText className="h-5 w-5 text-green-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900">{totalRegistered}</div>
-            <div className="text-xs text-gray-400 mt-1">All registrations</div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-500 uppercase tracking-wide">No Shows</div>
-              <UserX className="h-5 w-5 text-red-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900">{noShows}</div>
-            <div className="text-xs text-gray-400 mt-1">Marked as absent</div>
-          </div>
-        </div>
-
-        {/* Search and Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="flex items-center space-x-4 flex-wrap gap-2">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by name or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="Search candidates..."
+                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none w-64 shadow-sm"
               />
             </div>
 
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <Grid size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <List size={18} />
+              </button>
+            </div>
+
+            {/* Export Actions */}
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => setFilterClient('all')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filterClient === 'all'
-                    ? 'bg-yellow-400 text-black'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                onClick={exportToExcel}
+                className="p-2.5 bg-white border border-slate-200 text-green-600 rounded-xl shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
+                title="Export to Excel"
               >
-                All
+                <FileSpreadsheet size={18} />
               </button>
-              {['PROMETRIC', 'ETS', 'PEARSON VUE', 'PSI'].map(client => (
-                <button
-                  key={client}
-                  onClick={() => setFilterClient(client)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filterClient === client
-                      ? 'bg-yellow-400 text-black'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                >
-                  {client.split(' ')[0]}
-                </button>
-              ))}
+              <button
+                onClick={exportToPDF}
+                className="p-2.5 bg-white border border-slate-200 text-red-600 rounded-xl shadow-sm hover:shadow-md hover:bg-red-50 transition-all"
+                title="Export to PDF"
+              >
+                <FileText size={18} />
+              </button>
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
+            {/* Add Candidate Button */}
             <button
-              onClick={exportToExcel}
-              className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
-              title="Export to Excel"
+              onClick={handleOpenAdd}
+              className="px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center space-x-2 font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
             >
-              <FileSpreadsheet className="h-5 w-5" />
-            </button>
-            <button
-              onClick={exportToPDF}
-              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-              title="Export to PDF"
-            >
-              <Download className="h-5 w-5" />
+              <Plus size={18} />
+              <span>Add Candidate</span>
             </button>
           </div>
         </div>
 
-        {/* Candidates Grid/List */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCandidates.map(candidate => (
-              <CandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                onEdit={handleOpenEdit}
-                onDelete={handleDelete}
-                onToggleNoShow={handleToggleNoShow}
-              />
+        {/* Stats Section - Premium Chips */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registered</span>
+            <span className="text-2xl font-black text-slate-800">{totalRegistered}</span>
+          </div>
+          <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+            <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Absent</span>
+            <span className="text-2xl font-black text-rose-600">{noShows}</span>
+          </div>
+          <div className="px-6 py-4 bg-amber-50 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
+            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Net Candidates</span>
+            <span className="text-2xl font-black text-amber-700">{netCount}</span>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center space-x-4 mb-6">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Show Client:</span>
+          <div className="flex flex-wrap gap-2">
+            {['all', 'PROMETRIC', 'ETS', 'PEARSON VUE', 'PSI'].map((client) => (
+              <button
+                key={client}
+                onClick={() => setFilterClient(client)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterClient === client
+                  ? 'bg-amber-500 text-white shadow-md'
+                  : 'bg-white text-slate-500 border border-slate-200 hover:border-amber-300'
+                  }`}
+              >
+                {client.split(' ')[0]}
+              </button>
             ))}
           </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exam</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredCandidates.map(candidate => (
-                  <tr key={candidate.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600">
-                      {candidate.confirmationNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {candidate.fullName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {candidate.clientName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {candidate.examName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${candidate.status === 'no_show'
-                          ? 'bg-red-100 text-red-800'
-                          : candidate.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {candidate.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleOpenEdit(candidate)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(candidate.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
+        </div>
+
+        {/* Candidates Grid/List Content */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.8),9px_9px_16px_#bec3c9] min-h-[600px] border border-white/60">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCandidates.map(candidate => (
+                <CandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleDelete}
+                  onToggleNoShow={handleToggleNoShow}
+                />
+              ))}
+              {filteredCandidates.length === 0 && (
+                <div className="col-span-full py-20 text-center opacity-60">
+                  <Search size={48} className="mx-auto mb-4 text-slate-300" />
+                  <p className="text-xl font-bold text-slate-400">No candidates found matching your criteria</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredCandidates.map(candidate => (
+                    <tr key={candidate.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600 font-bold">
+                        {candidate.confirmationNumber}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
+                        {candidate.fullName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
+                        {candidate.clientName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
+                        {candidate.examName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-[10px] leading-5 font-black uppercase tracking-tight rounded-full ${candidate.status === 'no_show'
+                          ? 'bg-red-100 text-red-600'
+                          : candidate.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : 'bg-blue-100 text-blue-600'
+                          }`}>
+                          {candidate.status?.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                        <button
+                          onClick={() => handleOpenEdit(candidate)}
+                          className="text-amber-600 hover:text-amber-700 font-bold"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(candidate.id)}
+                          className="text-rose-600 hover:text-rose-700 font-bold"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredCandidates.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-20 text-center opacity-60">
+                        <p className="text-sm font-bold text-slate-400">No candidates found matching your criteria</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal - Clean and Simple like the image */}
@@ -677,7 +690,7 @@ export function CandidateTrackerPremium() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   )
 }
 

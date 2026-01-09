@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule } from '../hooks/useCommandCentre'
 import { useNews } from '../hooks/useNewsManager'
 import { ExamScheduleWidget } from './ExamScheduleWidget'
+import { CommandCentreGraphs } from './CommandCentreGraphs'
 import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
 import { NotificationBanner } from './NotificationBanner'
@@ -311,56 +312,30 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                             </h3>
 
                             {/* Horizontal Layout for Actions */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                            <div className="grid grid-cols-2 lg:grid-cols-2 gap-8 relative z-10">
                                 <button
                                     onClick={() => handleOpenChecklist('pre_exam')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-40 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
+                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
                                 >
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center font-bold shadow-inner group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors duration-300">
-                                        <Play size={24} className="fill-current" />
+                                    <div className="w-16 h-16 rounded-2xl bg-white shadow-md text-amber-500 flex items-center justify-center font-bold group-hover:bg-amber-100 transition-colors duration-300">
+                                        <ClipboardCheck size={32} />
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Morning</div>
-                                        <div className="text-lg font-black text-slate-700 group-hover:text-amber-600 transition-colors">Start Shift</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pre-deployment</div>
+                                        <div className="text-xl font-black text-slate-700 group-hover:text-amber-600 transition-colors uppercase tracking-tighter">Pre-exam Checklist</div>
                                     </div>
                                 </button>
 
                                 <button
                                     onClick={() => handleOpenChecklist('post_exam')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-40 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
+                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
                                 >
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center font-bold shadow-inner group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors duration-300">
-                                        <CheckCircle2 size={24} />
+                                    <div className="w-16 h-16 rounded-2xl bg-white shadow-md text-emerald-500 flex items-center justify-center font-bold group-hover:bg-emerald-100 transition-colors duration-300">
+                                        <CheckCircle size={32} />
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Evening</div>
-                                        <div className="text-lg font-black text-slate-700 group-hover:text-amber-600 transition-colors">End Shift</div>
-                                    </div>
-                                </button>
-
-                                <button
-                                    onClick={() => handleOpenChecklist('custom')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-40 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
-                                >
-                                    <div className={`${neuInset} p-4 text-amber-500 rounded-2xl group-hover:bg-amber-50 transition-colors`}>
-                                        <Sparkles size={24} />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ad-Hoc</div>
-                                        <div className="text-lg font-black text-slate-700">Custom</div>
-                                    </div>
-                                </button>
-
-                                <button
-                                    onClick={() => onNavigate && onNavigate('system-manager')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-40 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
-                                >
-                                    <div className={`${neuInset} p-4 text-slate-400 group-hover:text-blue-500 transition-colors`}>
-                                        <Settings size={24} />
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">System</div>
-                                        <div className="text-lg font-black text-slate-700 group-hover:text-blue-600 transition-colors">Manage</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Post-deployment</div>
+                                        <div className="text-xl font-black text-slate-700 group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">Post-exam Checklist</div>
                                     </div>
                                 </button>
                             </div>
@@ -393,47 +368,45 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                                 </div>
                             </motion.div>
 
-                            {/* Checklist Metrics - SLATE/SILVER BLUEPRINT */}
+                            {/* Daily Operations Metrics - MERGED */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                                className={`${neuCard} p-6 relative group overflow-hidden border-t-4 border-t-slate-500`}
+                                className={`${neuCard} p-6 col-span-2 relative group overflow-hidden border-t-4 border-t-slate-800`}
                             >
-                                <div className="absolute -right-6 -bottom-6 text-slate-400/10 rotate-[-15deg]">
-                                    <ClipboardCheck size={120} />
+                                <div className="absolute -right-6 -bottom-6 text-slate-800/5 rotate-[-15deg]">
+                                    <Users size={160} />
                                 </div>
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className={`${neuInset} p-3 text-slate-600 rounded-xl bg-slate-50/50`}>
-                                        <ListChecks size={20} />
+                                <div className="flex justify-between items-center mb-6 relative z-10">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Day Report</span>
+                                        <h4 className="text-xl font-black text-slate-700 uppercase tracking-tighter">Operational Volume</h4>
+                                    </div>
+                                    <div className={`${neuInset} p-3 text-slate-600 rounded-xl`}>
+                                        <ClipboardCheck size={24} />
                                     </div>
                                 </div>
-                                <div className="flex items-baseline gap-2 mb-1 relative z-10">
-                                    <span className="text-4xl font-black text-slate-800 tracking-tight">{checklistMetrics.total}</span>
-                                    <span className="text-xs font-bold text-slate-400 uppercase">Entries</span>
-                                </div>
-                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex gap-2 relative z-10">
-                                    Daily Logs
-                                    {checklistMetrics.issues > 0 && <span className="text-red-500 font-bold ml-auto">{checklistMetrics.issues} Flags</span>}
-                                </div>
-                            </motion.div>
 
-                            {/* Candidates - TEAL/CYAN LIVE TRACKER */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                                className={`${neuCard} p-6 relative group overflow-hidden border-t-4 border-t-teal-500`}
-                            >
-                                <div className="absolute -right-6 -bottom-6 text-teal-500/5 rotate-[-15deg]">
-                                    <Users size={120} />
-                                </div>
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className={`${neuInset} p-3 text-teal-600 rounded-xl bg-teal-50/50`}>
-                                        <Users size={20} />
+                                <div className="grid grid-cols-2 gap-8 relative z-10">
+                                    <div className="flex flex-col">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-5xl font-black text-slate-800 tracking-tighter">{dashboardData?.todayCandidates || 0}</span>
+                                            <span className="text-xs font-bold text-slate-400 uppercase">Pax</span>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Attendees Verified Today</p>
                                     </div>
-                                    <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
+                                    <div className="flex flex-col border-l border-slate-200 pl-8">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-5xl font-black text-slate-800 tracking-tighter">{checklistMetrics.total}</span>
+                                            <span className="text-xs font-bold text-slate-400 uppercase">Logs</span>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Deployment Logs Filed</p>
+                                    </div>
                                 </div>
-                                <div className="text-4xl font-black text-slate-800 mb-1 tracking-tight relative z-10">{dashboardData?.todayCandidates || 0}</div>
-                                <div className="text-[10px] font-bold text-teal-600 uppercase tracking-widest relative z-10">Active Candidates</div>
                             </motion.div>
                         </div>
+
+                        {/* 2.5 ANALYTICS GRID */}
+                        <CommandCentreGraphs />
 
                         {/* 3. CALENDAR WIDGET - EXECUTIVE PLANNER */}
                         <motion.div
@@ -559,7 +532,45 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                             <div className="absolute -bottom-2 right-12 w-6 h-10 bg-white/10 rotate-15 backdrop-blur-sm border border-white/20 hidden xl:block" />
                         </motion.div>
 
-                        {/* Space filler / extra widget could go here if needed in future */}
+                        {/* --- CLIENT ACCESS HUB --- */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.7 }}
+                            className={`${neuCard} p-8 flex flex-col gap-6`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-white shadow-lg">
+                                    <Sparkles size={18} />
+                                </div>
+                                <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] font-['Rajdhani']">Scheduler Interface Hub</h4>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-4">
+                                {[
+                                    { name: 'ACCA', logo: 'uploaded_image_0_1767992440020.png', url: 'https://www.accaglobal.com' },
+                                    { name: 'AWS', logo: 'uploaded_image_1_1767992440020.png', url: 'https://aws.amazon.com/certification' },
+                                    { name: 'CELPIP', logo: 'uploaded_image_2_1767992440020.jpg', url: 'https://www.celpip.ca' },
+                                    { name: 'CMA USA', logo: 'uploaded_image_3_1767992440020.png', url: 'https://www.imanet.org/cma-certification' },
+                                    { name: 'Microsoft', logo: 'uploaded_image_4_1767992440020.png', url: 'https://learn.microsoft.com/credentials' }
+                                ].map((client) => (
+                                    <a
+                                        key={client.name}
+                                        href={client.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`${neuBtn} p-4 flex items-center justify-center h-24 hover:scale-105 transition-all group`}
+                                        title={`Access ${client.name} Scheduler`}
+                                    >
+                                        <img
+                                            src={client.logo}
+                                            alt={client.name}
+                                            className="max-w-full max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-500"
+                                        />
+                                    </a>
+                                ))}
+                            </div>
+                        </motion.div>
                     </div>
 
                 </div>

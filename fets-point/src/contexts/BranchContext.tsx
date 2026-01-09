@@ -131,6 +131,8 @@ export function BranchProvider({ children }: BranchProviderProps) {
     if (!canAccessBranch(branch) || branch === activeBranch) return;
 
 
+    // Add switching animation class
+    document.body.classList.add('branch-switching');
 
     setIsSwitching(true);
 
@@ -157,6 +159,7 @@ export function BranchProvider({ children }: BranchProviderProps) {
           console.error('❌ Error updating branch:', error.message);
 
           setIsSwitching(false);
+          document.body.classList.remove('branch-switching');
 
           return;
 
@@ -172,7 +175,10 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
     } finally {
 
-      setTimeout(() => setIsSwitching(false), 300);
+      setTimeout(() => {
+        setIsSwitching(false);
+        document.body.classList.remove('branch-switching');
+      }, 600);
 
     }
 

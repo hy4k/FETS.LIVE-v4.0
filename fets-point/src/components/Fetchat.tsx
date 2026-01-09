@@ -29,7 +29,7 @@ interface Message {
     conversation_id: string
     sender_id: string
     content: string
-    type: 'text' | 'voice' | 'file' | 'image'
+    type: 'text' | 'voice' | 'file' | 'image' | 'video'
     file_path?: string
     created_at: string
     read_at?: string
@@ -41,6 +41,8 @@ interface FetchatProps {
     onClose?: () => void
     activeUser?: StaffProfile | null
     onSelectUser?: (user: StaffProfile | null) => void
+
+    onStartVideoCall?: (targetUserIds: string | string[], type?: 'video' | 'audio') => void
 }
 
 const COMMON_EMOJIS = [
@@ -61,7 +63,8 @@ export const Fetchat: React.FC<FetchatProps> = ({
     onToggleDetach,
     onClose,
     activeUser,
-    onSelectUser
+    onSelectUser,
+    onStartVideoCall
 }) => {
     const { profile, user } = useAuth()
     const [staff, setStaff] = useState<StaffProfile[]>([])
@@ -80,6 +83,7 @@ export const Fetchat: React.FC<FetchatProps> = ({
     const [searchQuery, setSearchQuery] = useState('')
     const [attachment, setAttachment] = useState<File | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    const [activeConversation, setActiveConversation] = useState<any>(null)
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const messageSubscription = useRef<any>(null)
@@ -118,15 +122,17 @@ export const Fetchat: React.FC<FetchatProps> = ({
 
     // Load Chat (only if selectedUser AND viewMode is chat)
     useEffect(() => {
-        // We load chat data even if in dossier mode, so switching is instant, but only if selectedUser exists.
         if (!selectedUser || !user?.id) return
 
         const loadChat = async () => {
-            if (viewMode !== 'chat') return; // Optional: pause chat loading if in dossier? No, keep it fresh.
             setIsLoading(true)
             try {
                 const { data: convId, error } = await supabase.rpc('get_or_create_conversation', { user_id_1: profile.id, user_id_2: selectedUser.id })
                 if (error) throw error
+
+                // Fetch conversation details to check if group
+                const { data: conv } = await supabase.from('conversations').select('*, members:conversation_members(user_id)').eq('id', convId).single()
+                setActiveConversation(conv)
 
                 const { data: msgs } = await supabase.from('messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true })
                 setMessages(msgs || [])
@@ -142,13 +148,93 @@ export const Fetchat: React.FC<FetchatProps> = ({
         }
         loadChat()
         return () => { if (messageSubscription.current) messageSubscription.current.unsubscribe() }
-    }, [selectedUser, user?.id, viewMode])
+    }, [selectedUser, user?.id, profile.id])
 
-    useEffect(() => {
-        if (scrollRef.current && viewMode === 'chat') scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }, [messages, attachment, viewMode])
+    const handleStartCall = (type: 'video' | 'audio' = 'video') => {
+        if (!onStartVideoCall || !selectedUser) return
 
-    // --- Handlers ---
+        if (activeConversation?.is_group) {
+            // Member IDs excluding current user
+            const members = activeConversation.members
+                .map((m: any) => m.user_id)
+                .filter((id: string) => id !== user?.id)
+            onStartVideoCall(members, type)
+        } else {
+            onStartVideoCall(selectedUser.user_id, type)
+        }
+    }
+
+    const [isRecording, setIsRecording] = useState<'audio' | 'video' | null>(null)
+    const [recordingTime, setRecordingTime] = useState(0)
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+    const chunksRef = useRef<Blob[]>([])
+    const timerRef = useRef<any>(null)
+
+    // --- Recording Logic ---
+    const startRecording = async (type: 'audio' | 'video') => {
+        try {
+            const constraints = type === 'audio' ? { audio: true } : { video: true, audio: true }
+            const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+            const recorder = new MediaRecorder(stream)
+            mediaRecorderRef.current = recorder
+            chunksRef.current = []
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunksRef.current.push(e.data)
+            }
+
+            recorder.onstop = async () => {
+                const blob = new Blob(chunksRef.current, { type: type === 'audio' ? 'audio/webm' : 'video/webm' })
+                const file = new File([blob], `recording.${type === 'audio' ? 'webm' : 'webm'}`, { type: blob.type })
+                setAttachment(file)
+
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop())
+                setIsRecording(null)
+                setRecordingTime(0)
+                clearInterval(timerRef.current)
+            }
+
+            recorder.start()
+            setIsRecording(type)
+
+            // Timer
+            setRecordingTime(0)
+            timerRef.current = setInterval(() => {
+                setRecordingTime(prev => {
+                    const next = prev + 1
+                    // Limits: Audio 120s (2m), Video 60s (1m)
+                    if ((type === 'audio' && next >= 120) || (type === 'video' && next >= 60)) {
+                        stopRecording()
+                        return next
+                    }
+                    return next
+                })
+            }, 1000)
+
+        } catch (err) {
+            console.error('Recording failed:', err)
+            toast.error('Could not access media device')
+        }
+    }
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop()
+        }
+    }
+
+    const cancelRecording = () => {
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop()
+            // Clear data logic handled in onstop, but we overwrite attachment here? 
+            // Actually better to just stop checks and clear attachment specifically if needed.
+            // For simplicity, we just stop. To truly cancel without saving, we'd need a flag.
+            // But user can just X the attachment.
+        }
+    }
+
     const handleSendMessage = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
         if ((!newMessage.trim() && !attachment) || !selectedUser) return
@@ -162,7 +248,11 @@ export const Fetchat: React.FC<FetchatProps> = ({
                 await supabase.storage.from('chat-uploads').upload(path, attachment)
                 const { data } = supabase.storage.from('chat-uploads').getPublicUrl(path)
                 url = data.publicUrl
-                type = attachment.type.startsWith('image/') ? 'image' : 'file'
+
+                if (attachment.type.startsWith('image/')) type = 'image'
+                else if (attachment.type.startsWith('audio/')) type = 'voice'
+                else if (attachment.type.startsWith('video/')) type = 'video'
+                else type = 'file'
             }
 
             const { data: convId } = await supabase.rpc('get_or_create_conversation', { user_id_1: profile.id, user_id_2: selectedUser.id })
@@ -182,8 +272,6 @@ export const Fetchat: React.FC<FetchatProps> = ({
     }
 
     const filteredStaff = staff.filter(s => s.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
-
-    // --- Render ---
 
     const containerStyle = isDetached
         ? "fixed bottom-8 right-8 w-[400px] h-[600px] z-[9999]"
@@ -224,20 +312,6 @@ export const Fetchat: React.FC<FetchatProps> = ({
             {/* Main Content Area */}
             <div className={`flex-1 flex bg-[#fdfbf7] border-2 border-t-0 border-black rounded-b-xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]`}>
 
-                {/* SIDEBAR (Users List) */}
-                {/* 
-                   Logic: 
-                   1. Not detached/mobile: always show sidebar unless on mobile and user selected?
-                   2. Detached: If user selected, hide sidebar (show chat). If no user, show sidebar.
-                   
-                   Actually, user request implies seeing the list regularly. 
-                   Let's stick to:
-                   If detached:
-                     No user selected -> Show List
-                     User selected -> Show Chat/Dossier (with back button)
-                   If embedded (MyDesk):
-                     Show Sidebar AND Main Pane side-by-side (responsive).
-                */}
                 <div className={`
                     ${isDetached && selectedUser ? 'hidden' : 'flex'} 
                     ${!isDetached ? 'w-full md:w-[340px] border-r-2 border-black' : 'w-full'}
@@ -272,7 +346,6 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                     `}
                                 >
                                     <div className="flex items-center gap-4">
-                                        {/* Avatar Column */}
                                         <div className="relative">
                                             <div className="w-14 h-14 rounded-full border-2 border-black bg-gray-200 overflow-hidden">
                                                 {s.avatar_url ? <img src={s.avatar_url} className="w-full h-full object-cover" /> : <User className="p-3 w-full h-full text-gray-400" />}
@@ -280,12 +353,10 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                             {isOnline && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />}
                                         </div>
 
-                                        {/* Info Column */}
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-black text-sm text-gray-900 truncate">{s.full_name}</h4>
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">{s.branch_assigned || 'Active Agent'}</p>
 
-                                            {/* Action Buttons Row */}
                                             <div className="flex gap-2 mt-2">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleSelectUser(s, 'chat'); }}
@@ -308,16 +379,13 @@ export const Fetchat: React.FC<FetchatProps> = ({
                     </div>
                 </div>
 
-                {/* RIGHT PANE: Chat or Dossier */}
                 {selectedUser ? (
                     <div className={`
                         flex-1 flex flex-col relative bg-[#fff]
                         ${isDetached ? 'w-full' : 'hidden md:flex'}
                     `}>
-                        {/* If Dossier Mode */}
                         {viewMode === 'dossier' ? (
                             <div className="flex-1 flex flex-col bg-slate-900 relative overflow-hidden">
-                                {/* Back Button for Detached/Mobile */}
                                 <div className="absolute top-4 left-4 z-20">
                                     <button
                                         onClick={() => handleSelectUser(null)}
@@ -331,7 +399,7 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                         <AgentDossier
                                             agent={{ ...selectedUser, is_online: presence[selectedUser.user_id]?.status === 'online' }}
                                             currentUserId={user?.id}
-                                            onClose={() => setViewMode('chat')} // Switch to chat if closed? Or Deselect? Let's just switch to chat for flow.
+                                            onClose={() => setViewMode('chat')}
                                             onStartChat={() => setViewMode('chat')}
                                             embedded={true}
                                         />
@@ -339,14 +407,12 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            /* If Chat Mode */
                             <>
-                                {/* Chat Header */}
                                 <div className="p-3 border-b-2 border-black flex items-center justify-between bg-[#fdfbf7]">
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => handleSelectUser(null)} className="md:hidden p-2 rounded-lg hover:bg-black/5"><ChevronLeft size={20} /></button>
                                         <div
-                                            onClick={() => setViewMode('dossier')} // View profile from header too
+                                            onClick={() => setViewMode('dossier')}
                                             className="w-8 h-8 rounded-full border-2 border-black overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                                         >
                                             {selectedUser.avatar_url ? <img src={selectedUser.avatar_url} className="w-full h-full object-cover" /> : <User className="p-1" />}
@@ -362,17 +428,38 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Quick Toggle to Dossier */}
-                                    <button
-                                        onClick={() => setViewMode('dossier')}
-                                        className="p-2 hover:bg-black/5 rounded-lg text-gray-500 hover:text-black transition-colors"
-                                        title="View Agent Dossier"
-                                    >
-                                        <Info size={18} />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        {onStartVideoCall && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleStartCall('audio')}
+                                                    disabled={presence[selectedUser.user_id]?.status !== 'online' && !activeConversation?.is_group}
+                                                    className={`p-2 rounded-lg transition-colors ${(presence[selectedUser.user_id]?.status === 'online' || activeConversation?.is_group) ? 'bg-white border-2 border-black hover:bg-gray-50' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                                    title={(presence[selectedUser.user_id]?.status === 'online' || activeConversation?.is_group) ? "Start Audio Call" : "Agent Offline"}
+                                                >
+                                                    <Phone size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleStartCall('video')}
+                                                    disabled={presence[selectedUser.user_id]?.status !== 'online' && !activeConversation?.is_group}
+                                                    className={`p-2 rounded-lg transition-colors ${(presence[selectedUser.user_id]?.status === 'online' || activeConversation?.is_group) ? 'bg-[#f4d03f] hover:bg-[#ffe16b] text-black border-2 border-black shadow-[2px_2px_0px_0px_black]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                                    title={(presence[selectedUser.user_id]?.status === 'online' || activeConversation?.is_group) ? "Start Video Call" : "Agent Offline"}
+                                                >
+                                                    <Video size={18} />
+                                                </button>
+                                            </>
+                                        )}
+
+                                        <button
+                                            onClick={() => setViewMode('dossier')}
+                                            className="p-2 hover:bg-black/5 rounded-lg text-gray-500 hover:text-black transition-colors"
+                                            title="View Agent Dossier"
+                                        >
+                                            <Info size={18} />
+                                        </button>
+                                    </div>
                                 </div>
 
-                                {/* Messages */}
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fdfbf7]" ref={scrollRef}>
                                     {messages.map(msg => {
                                         const isMe = msg.sender_id === user?.id
@@ -392,6 +479,17 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                                  `}>
                                                     {msg.type === 'text' && <p className="text-sm font-bold text-gray-800 whitespace-pre-wrap">{msg.content}</p>}
                                                     {msg.type === 'image' && <img src={msg.content} className="max-w-full rounded-lg border-2 border-black/10" />}
+                                                    {msg.type === 'voice' && (
+                                                        <div className="flex items-center gap-2 min-w-[200px]">
+                                                            <div className="p-2 bg-black rounded-full text-white"><Mic size={16} /></div>
+                                                            <audio src={msg.content} controls className="w-full h-8" />
+                                                        </div>
+                                                    )}
+                                                    {msg.type === 'video' && (
+                                                        <div className="min-w-[200px]">
+                                                            <video src={msg.content} controls className="w-full h-auto rounded-lg" />
+                                                        </div>
+                                                    )}
                                                     <span className="text-[9px] font-bold opacity-40 block text-right mt-1">{format(new Date(msg.created_at), 'HH:mm')}</span>
                                                 </div>
                                             </motion.div>
@@ -399,39 +497,59 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                     })}
                                 </div>
 
-                                {/* Input */}
                                 <div className="p-3 bg-white border-t-2 border-black">
-                                    <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                                        <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 rounded-xl border-2 border-black hover:bg-gray-100 transition-colors">
-                                            <Paperclip size={18} />
-                                        </button>
-                                        <input type="file" ref={fileInputRef} className="hidden" onChange={e => { if (e.target.files?.[0]) setAttachment(e.target.files[0]) }} />
-
-                                        <div className="flex-1 relative">
-                                            {attachment && (
-                                                <div className="absolute bottom-full mb-2 left-0 right-0 bg-[#f4d03f] p-2 rounded-lg border-2 border-black flex justify-between items-center">
-                                                    <span className="text-xs font-bold truncate">{attachment.name}</span>
-                                                    <button onClick={() => setAttachment(null)}><X size={14} /></button>
-                                                </div>
-                                            )}
-                                            <ComicInput
-                                                placeholder="Type a message..."
-                                                value={newMessage}
-                                                onChange={e => setNewMessage(e.target.value)}
-                                            />
+                                    {isRecording ? (
+                                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border-2 border-red-200 animate-pulse">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                                                <span className="font-bold text-red-500 text-sm uppercase">
+                                                    Recording {isRecording} ({recordingTime}s / {isRecording === 'audio' ? '120s' : '60s'})
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={stopRecording} className="p-2 bg-red-500 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-600 transition-colors">Stop & Send</button>
+                                            </div>
                                         </div>
+                                    ) : (
+                                        <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                                            <div className="flex gap-1">
+                                                <button type="button" onClick={() => startRecording('audio')} className="p-3 rounded-xl border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all text-gray-500 hover:text-black" title="Record Voice (Max 2m)">
+                                                    <Mic size={18} />
+                                                </button>
+                                                <button type="button" onClick={() => startRecording('video')} className="p-3 rounded-xl border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all text-gray-500 hover:text-black" title="Record Video Message (Max 1m)">
+                                                    <Video size={18} />
+                                                </button>
+                                                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 rounded-xl border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all text-gray-500 hover:text-black">
+                                                    <Paperclip size={18} />
+                                                </button>
+                                            </div>
 
-                                        <button type="submit" disabled={isUploading} className="p-3 bg-black text-[#f4d03f] rounded-xl border-2 border-black hover:bg-gray-800 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-                                            <Send size={18} fill="currentColor" />
-                                        </button>
-                                    </form>
+                                            <input type="file" ref={fileInputRef} className="hidden" onChange={e => { if (e.target.files?.[0]) setAttachment(e.target.files[0]) }} />
+
+                                            <div className="flex-1 relative">
+                                                {attachment && (
+                                                    <div className="absolute bottom-full mb-2 left-0 right-0 bg-[#f4d03f] p-2 rounded-lg border-2 border-black flex justify-between items-center z-10">
+                                                        <span className="text-xs font-bold truncate max-w-[80%]">{attachment.name}</span>
+                                                        <button onClick={() => setAttachment(null)}><X size={14} /></button>
+                                                    </div>
+                                                )}
+                                                <ComicInput
+                                                    placeholder="Type a message..."
+                                                    value={newMessage}
+                                                    onChange={e => setNewMessage(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <button type="submit" disabled={isUploading} className="p-3 bg-black text-[#f4d03f] rounded-xl border-2 border-black hover:bg-gray-800 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+                                                <Send size={18} fill="currentColor" />
+                                            </button>
+                                        </form>
+                                    )}
                                 </div>
                             </>
                         )}
-
                     </div>
                 ) : (
-                    /* Default Placeholder */
                     <div className="hidden md:flex flex-1 flex-col items-center justify-center p-8 text-center bg-[#fdfbf7]">
                         <div className="relative mb-8">
                             <div className="w-40 h-40 bg-[#fff] rounded-full border-4 border-black flex items-center justify-center shadow-[12px_12px_0px_0px_#f4d03f] relative z-10">

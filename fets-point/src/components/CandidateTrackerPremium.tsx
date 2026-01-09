@@ -1,11 +1,26 @@
-import { useState } from 'react'
-import { Users, Plus, Search, Filter, Eye, Edit, UserCheck, UserX, Clock, Phone, Mail, X, Calendar, Upload, Trash2, MoreVertical } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import {
+  Users, Plus, Search, Filter, Eye, Edit, UserCheck, UserX, Clock, Phone, Mail, X, Calendar,
+  Upload, Trash2, MoreVertical, FileText, Download, PieChart, BarChart2, TrendingUp, Layers
+} from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
 import { useBranchFilter } from '../hooks/useBranchFilter'
 import { useCandidates, useCreateCandidate, useUpdateCandidateStatus, useClients } from '../hooks/useQueries'
 import { toast } from 'react-hot-toast'
+import * as XLSX from 'xlsx'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  PieChart as RePieChart, Pie, Cell, AreaChart, Area
+} from 'recharts'
+import { format, isSameDay } from 'date-fns'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
+/* --------------------------------------------------------------------------------
+ * Types & Interfaces
+ * -------------------------------------------------------------------------------- */
 
 interface Candidate {
   id: string
@@ -28,7 +43,8 @@ interface ModernStatsCardProps {
   value: string | number
   subtitle: string
   icon: React.ElementType
-  status?: 'positive' | 'warning' | 'neutral' | 'primary'
+  colorEncoded?: string // hex color
+  trend?: string
   onClick?: () => void
   clickable?: boolean
 }
@@ -43,57 +59,225 @@ interface EditCandidateData {
   clientName: string
 }
 
+/* --------------------------------------------------------------------------------
+ * Helper Functions & Constants
+ * -------------------------------------------------------------------------------- */
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+const STATUS_COLORS: Record<string, string> = {
+  registered: '#3B82F6', // blue
+  checked_in: '#F59E0B', // amber
+  in_progress: '#8B5CF6', // purple
+  completed: '#10B981', // green
+  no_show: '#EF4444', // red
+  cancelled: '#6B7280' // gray
+};
+
+const deriveClientFromExamName = (name?: string): string => {
+  const n = (name || '').toUpperCase()
+  if (n.includes('CMA US')) return 'PROMETRIC'
+  if (n.includes('GRE') || n.includes('TOEFL')) return 'ETS'
+  if (n.includes('VUE') || n.includes('PEARSON')) return 'PEARSON VUE'
+  return 'PEARSON VUE'
+}
+
+const CLIENT_STYLE: Record<string, { border: string; tint: string; text: string; badge: string }> = {
+  'PROMETRIC': { border: '#EF4444', tint: 'bg-red-50', text: 'text-red-700', badge: 'bg-red-100 text-red-800' },
+  'ETS': { border: '#F97316', tint: 'bg-orange-50', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-800' },
+  'PEARSON VUE': { border: '#3B82F6', tint: 'bg-blue-50', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-800' },
+  'PSI': { border: '#8B5CF6', tint: 'bg-purple-50', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-800' },
+  'OTHERS': { border: '#6B7280', tint: 'bg-gray-50', text: 'text-gray-700', badge: 'bg-gray-100 text-gray-800' }
+}
+
+/* --------------------------------------------------------------------------------
+ * Components
+ * -------------------------------------------------------------------------------- */
+
 function ModernStatsCard({
   title,
   value,
   subtitle,
   icon: Icon,
-  status = 'primary',
+  colorEncoded = '#06b6d4', // cyan-500 default
+  trend,
   onClick,
   clickable = false
 }: ModernStatsCardProps) {
-  const statusClass = {
-    positive: 'status-positive',
-    warning: 'status-warning',
-    neutral: 'status-neutral',
-    primary: 'status-warning'
-  }[status]
-
   return (
     <div
-      className={`stat-block stat-block--candidate-tracker ${clickable ? 'cursor-pointer' : ''}`}
       onClick={clickable ? onClick : undefined}
+      className={`
+        relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all duration-300
+        hover:shadow-md hover:-translate-y-1
+        ${clickable ? 'cursor-pointer' : ''}
+      `}
     >
-      <div className="stat-block__icon">
-        <Icon size={28} />
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+          style={{ backgroundColor: `${colorEncoded}20`, color: colorEncoded }} // 20 hex = ~12% opacity
+        >
+          <Icon size={24} />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+            {trend && <span className="text-xs font-medium text-green-600">{trend}</span>}
+          </div>
+        </div>
       </div>
-      <div className="stat-block__value">{value}</div>
-      <div className="stat-block__label">{title}</div>
-      <div className="stat-block__subtitle">{subtitle}</div>
+      <div className="mt-4 flex items-center gap-2">
+        <div className="h-1.5 w-full flex-1 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full rounded-full" style={{ width: '70%', backgroundColor: colorEncoded }}></div>
+        </div>
+        <p className="text-xs text-gray-400">{subtitle}</p>
+      </div>
+    </div>
+  )
+}
+
+function AnalysisView({ candidates }: { candidates: Candidate[] }) {
+  // Aggregate data for charts
+  const statusData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    candidates.forEach(c => {
+      counts[c.status] = (counts[c.status] || 0) + 1
+    })
+    return Object.keys(counts).map(key => ({
+      name: key.replace('_', ' ').toUpperCase(),
+      value: counts[key],
+      color: STATUS_COLORS[key] || '#999'
+    }))
+  }, [candidates])
+
+  const clientData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    candidates.forEach(c => {
+      const client = (c.clientName || deriveClientFromExamName(c.examName)).toUpperCase()
+      counts[client] = (counts[client] || 0) + 1
+    })
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5) // Top 5
+  }, [candidates])
+
+  const activityData = useMemo(() => {
+    // Last 7 days or current month view could be complex, simple aggregation by date
+    const counts: Record<string, number> = {}
+    candidates.forEach(c => {
+      if (c.examDate) {
+        const dateStr = format(c.examDate, 'MMM dd')
+        counts[dateStr] = (counts[dateStr] || 0) + 1
+      }
+    })
+    // Sort by date would need real date objects, simplified here for demo
+    return Object.entries(counts).map(([date, count]) => ({ date, count })).slice(-10)
+  }, [candidates])
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status Distribution */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-cyan-500" />
+            Candidate Status Distribution
+          </h3>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RePieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip />
+                <Legend />
+              </RePieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Client Distribution */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+            <BarChart2 className="h-5 w-5 text-purple-500" />
+            Top Clients
+          </h3>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={clientData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                <RechartsTooltip cursor={{ fill: 'transparent' }} />
+                <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
+                  {clientData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Activity Trend */}
+        <div className="lg:col-span-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-500" />
+            Exam Activity (Recent)
+          </h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={activityData}>
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <RechartsTooltip />
+                <Area type="monotone" dataKey="count" stroke="#06b6d4" fillOpacity={1} fill="url(#colorCount)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
 export function CandidateTrackerPremium() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { activeBranch } = useBranch()
   const { applyFilter, isGlobalView } = useBranchFilter()
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [showNewCandidateModal, setShowNewCandidateModal] = useState(false)
   const [showEditCandidateModal, setShowEditCandidateModal] = useState(false)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterClient, setFilterClient] = useState('all')
   const [filterDate, setFilterDate] = useState('')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'grid' | 'export'>('grid')
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
-  const [uploadResults, setUploadResults] = useState<{ success: number; errors: string[] }>({ success: 0, errors: [] })
+  const [activeTab, setActiveTab] = useState<'tracker' | 'analysis'>('tracker')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+
   const { data: clients } = useClients()
+
+  // Form State
   const [newCandidate, setNewCandidate] = useState({
     fullName: '',
     address: '',
@@ -103,6 +287,7 @@ export function CandidateTrackerPremium() {
     notes: '',
     clientName: ''
   })
+
   const [editCandidate, setEditCandidate] = useState<EditCandidateData>({
     fullName: '',
     address: '',
@@ -113,35 +298,19 @@ export function CandidateTrackerPremium() {
     clientName: ''
   })
 
-  // React Query hooks - add branch filter
+  // Queries
   const filters = {
     date: filterDate || undefined,
     status: filterStatus !== 'all' ? filterStatus : undefined,
     branch_location: !isGlobalView ? activeBranch : undefined
   }
+
   const { data: candidatesData, isLoading: loading, refetch } = useCandidates(filters)
   const createCandidateMutation = useCreateCandidate()
   const updateStatusMutation = useUpdateCandidateStatus()
 
-  // Transform the data for component use
-  const deriveClientFromExamName = (name?: string): string => {
-    const n = (name || '').toUpperCase()
-    if (n.includes('CMA US')) return 'PROMETRIC'
-    if (n.includes('GRE') || n.includes('TOEFL')) return 'ETS'
-    if (n.includes('VUE') || n.includes('PEARSON')) return 'PEARSON VUE'
-    return 'PEARSON VUE'
-  }
-
-  const CLIENT_STYLE: Record<string, { border: string; tint: string; text: string }> = {
-    'PROMETRIC': { border: '#FF3B30', tint: '#FEF2F2', text: '#7F1D1D' },
-    'ETS': { border: '#FF9500', tint: '#FFF7ED', text: '#7C2D12' },
-    'PEARSON VUE': { border: '#007AFF', tint: '#EFF6FF', text: '#1E3A8A' },
-    'PSI': { border: '#AF52DE', tint: '#F5F3FF', text: '#5B21B6' },
-    'OTHERS': { border: '#9CA3AF', tint: '#F3F4F6', text: '#374151' }
-  }
-  const getClientStyle = (client: string) => CLIENT_STYLE[client] || CLIENT_STYLE['OTHERS']
-
-  const candidates: Candidate[] = candidatesData?.map(candidate => ({
+  // Derived Data
+  const candidates: Candidate[] = useMemo(() => candidatesData?.map(candidate => ({
     id: candidate.id,
     fullName: candidate.full_name,
     address: candidate.address,
@@ -149,17 +318,30 @@ export function CandidateTrackerPremium() {
     examDate: candidate.exam_date ? new Date(candidate.exam_date) : undefined,
     examName: candidate.exam_name || 'Exam Session',
     status: candidate.status as Candidate['status'],
-    confirmationNumber: candidate.confirmation_number || generateConfirmationNumber(),
+    confirmationNumber: candidate.confirmation_number || 'N/A',
     checkInTime: candidate.check_in_time ? new Date(candidate.check_in_time) : undefined,
     notes: candidate.notes,
     createdAt: new Date(candidate.created_at),
     clientName: candidate.client_name || deriveClientFromExamName(candidate.exam_name),
     branchLocation: candidate.branch_location
-  })) || []
+  })) || [], [candidatesData])
 
+  const filteredCandidates = useMemo(() => candidates.filter(candidate => {
+    const matchesSearch =
+      candidate.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      candidate.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      candidate.confirmationNumber.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const clientComputed = (candidate.clientName || deriveClientFromExamName(candidate.examName)).toUpperCase()
+    const matchesClient = filterClient === 'all' || clientComputed === filterClient.toUpperCase()
+
+    return matchesSearch && matchesClient
+  }), [candidates, searchQuery, filterClient])
+
+  // Handlers
   const generateConfirmationNumber = () => {
     const prefix = 'EXAM'
-    const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
+    const timestamp = Date.now().toString().slice(-6)
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
     return `${prefix}-${timestamp}-${random}`
   }
@@ -186,15 +368,14 @@ export function CandidateTrackerPremium() {
       onSuccess: () => {
         setNewCandidate({ fullName: '', address: '', phone: '', examDate: new Date().toISOString().slice(0, 10), examName: '', notes: '', clientName: '' })
         setShowNewCandidateModal(false)
+        toast.success("Candidate registered successfully")
       }
     })
   }
 
   const handleEditCandidate = async () => {
     if (!selectedCandidate) return
-
     try {
-      console.log('Updating candidate...')
       const { error } = await supabase
         .from('candidates')
         .update({
@@ -208,47 +389,28 @@ export function CandidateTrackerPremium() {
         })
         .eq('id', selectedCandidate.id)
 
-      if (error) {
-        console.error('Error updating candidate:', error)
-        toast.error('Failed to update candidate: ' + error.message)
-        return
-      }
+      if (error) throw error
 
-      console.log('Candidate updated successfully!')
       refetch()
       setShowEditCandidateModal(false)
       setSelectedCandidate(null)
       toast.success('Candidate updated successfully!')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating candidate:', error)
-      alert('Failed to update candidate. Please try again.')
+      toast.error('Failed to update: ' + error.message)
     }
   }
 
   const handleDeleteCandidate = async (candidateId: string, candidateName: string) => {
-    if (!window.confirm(`Are you sure you want to delete candidate "${candidateName}"? This action cannot be undone.`)) {
-      return
-    }
+    if (!window.confirm(`Delete candidate "${candidateName}"?`)) return
 
     try {
-      console.log('Deleting candidate...')
-      const { error } = await supabase
-        .from('candidates')
-        .delete()
-        .eq('id', candidateId)
-
-      if (error) {
-        console.error('Error deleting candidate:', error)
-        toast.error('Failed to delete candidate: ' + error.message)
-        return
-      }
-
-      console.log('Candidate deleted successfully!')
+      const { error } = await supabase.from('candidates').delete().eq('id', candidateId)
+      if (error) throw error
       refetch()
-      toast.success('Candidate deleted successfully!')
-    } catch (error) {
-      console.error('Error deleting candidate:', error)
-      alert('Failed to delete candidate. Please try again.')
+      toast.success('Candidate deleted')
+    } catch (error: any) {
+      toast.error('Deletion failed: ' + error.message)
     }
   }
 
@@ -266,466 +428,289 @@ export function CandidateTrackerPremium() {
     setShowEditCandidateModal(true)
   }
 
-  const handleUpdateStatus = async (candidateId: string, newStatus: Candidate['status']) => {
-    const updates: any = { status: newStatus }
-    if (newStatus === 'checked_in') {
-      updates.check_in_time = new Date().toISOString()
-    }
-
-    updateStatusMutation.mutate({ id: candidateId, status: newStatus })
+  // Export Functions
+  const exportToExcel = () => {
+    const data = filteredCandidates.map(c => ({
+      Name: c.fullName,
+      Phone: c.phone || 'N/A',
+      Client: (c.clientName || deriveClientFromExamName(c.examName)),
+      Exam: c.examName,
+      Date: c.examDate ? format(c.examDate, 'yyyy-MM-dd') : 'N/A',
+      Status: c.status
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Candidates")
+    XLSX.writeFile(wb, `Candidates_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+    toast.success("Excel exported successfully")
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
-      if (validTypes.includes(file.type) || file.name.endsWith('.csv')) {
-        setUploadFile(file)
-        setUploadStatus('idle')
-        setUploadResults({ success: 0, errors: [] })
-      } else {
-        alert('Please select a valid CSV or Excel file')
-      }
-    }
-  }
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    const tableData = filteredCandidates.map(c => [
+      c.fullName,
+      c.phone || 'N/A',
+      (c.clientName || deriveClientFromExamName(c.examName)),
+      c.examName || 'N/A',
+      c.examDate ? format(c.examDate, 'yyyy-MM-dd') : 'N/A',
+      c.status.replace('_', ' ').toUpperCase()
+    ])
 
-  const processBulkUpload = async () => {
-    if (!uploadFile || !user) return
+    doc.setFontSize(20)
+    doc.setTextColor(40)
+    doc.text('FETS Register - Candidate Report', 14, 22)
+    doc.setFontSize(11)
+    doc.setTextColor(100)
+    doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, 30)
 
-    setUploadStatus('uploading')
-    setUploadProgress(0)
-    const errors: string[] = []
-    let successCount = 0
-
-    try {
-      const { data: uploadRecord, error: uploadError } = await supabase
-        .from('candidate_roster_uploads')
-        .insert({
-          filename: uploadFile.name,
-          total_candidates: 0,
-          uploaded_by_user_id: user.id,
-          status: 'processing',
-          exam_provider: 'Bulk Upload',
-          file_type: uploadFile.type || 'text/csv'
-        })
-        .select()
-        .single()
-
-      if (uploadError) {
-        console.error('Error creating upload record:', uploadError)
-      }
-
-      const text = await uploadFile.text()
-      const lines = text.split('\n').filter(line => line.trim())
-
-      if (lines.length < 2) {
-        throw new Error('File must contain at least a header row and one data row')
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-      const dataLines = lines.slice(1)
-
-      const requiredHeaders = ['full_name']
-      const missingHeaders = requiredHeaders.filter(h => !headers.some(header => header.includes(h.replace('_', ''))))
-      if (missingHeaders.length > 0) {
-        throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`)
-      }
-
-      for (let i = 0; i < dataLines.length; i++) {
-        try {
-          const values = dataLines[i].split(',').map(v => v.trim())
-          const candidateData: any = {}
-
-          headers.forEach((header, index) => {
-            const value = values[index] || ''
-            if (header.includes('name') || header.includes('full')) candidateData.full_name = value
-            if (header.includes('address')) candidateData.address = value
-            if (header.includes('phone')) candidateData.phone = value || null
-            if (header.includes('exam') && header.includes('name')) candidateData.exam_name = value || null
-            if (header.includes('exam') && header.includes('date')) {
-              candidateData.exam_date = value ? new Date(value).toISOString() : null
-            }
-            if (header.includes('note')) candidateData.notes = value || null
-          })
-
-          if (!candidateData.full_name) {
-            errors.push(`Row ${i + 2}: Missing name`)
-            continue
-          }
-
-          candidateData.status = 'registered'
-          candidateData.confirmation_number = generateConfirmationNumber()
-          candidateData.user_id = user.id
-
-          const { error } = await supabase
-            .from('candidates')
-            .insert(candidateData)
-
-          if (error) {
-            errors.push(`Row ${i + 2}: Database error - ${error.message}`)
-          } else {
-            successCount++
-          }
-        } catch (rowError: any) {
-          errors.push(`Row ${i + 2}: ${rowError.message}`)
-        }
-
-        setUploadProgress(Math.round(((i + 1) / dataLines.length) * 100))
-      }
-
-      if (uploadRecord) {
-        await supabase
-          .from('candidate_roster_uploads')
-          .update({
-            total_candidates: dataLines.length,
-            processed_candidates: successCount,
-            failed_candidates: errors.length,
-            status: errors.length === dataLines.length ? 'failed' : 'completed',
-            error_log: errors.length > 0 ? errors.join('\n') : null,
-            processed_date: new Date().toISOString()
-          })
-          .eq('id', uploadRecord.id)
-      }
-
-      setUploadResults({ success: successCount, errors })
-      setUploadStatus(errors.length === dataLines.length ? 'error' : 'success')
-
-      if (successCount > 0) {
-        refetch()
-      }
-    } catch (error: any) {
-      setUploadStatus('error')
-      setUploadResults({ success: 0, errors: [error.message] })
-    }
-  }
-
-  const exportToCsv = () => {
-    const headers = ['#', 'Name', 'Phone', 'Client', 'Exam', 'Date']
-    const rows = filteredCandidates.map((candidate, index) => {
-      const client = (candidate.clientName || deriveClientFromExamName(candidate.examName)).toUpperCase()
-      return [
-        index + 1,
-        candidate.fullName,
-        candidate.phone || '-',
-        client,
-        candidate.examName || '-',
-        candidate.examDate ? new Date(candidate.examDate).toLocaleDateString() : '-'
-      ].join(',')
+    autoTable(doc, {
+      startY: 40,
+      head: [['Full Name', 'Phone', 'Client', 'Exam', 'Date', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [6, 182, 212], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
     })
 
-    const csvContent = [headers.join(','), ...rows].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    if (link.href) {
-      URL.revokeObjectURL(link.href)
-    }
-    link.href = URL.createObjectURL(blob)
-    link.download = 'candidates.csv'
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    doc.save(`Candidates_${format(new Date(), 'yyyyMMdd')}.pdf`)
+    toast.success("PDF exported successfully")
   }
 
-  const resetBulkUpload = () => {
-    setUploadFile(null)
-    setUploadStatus('idle')
-    setUploadProgress(0)
-    setUploadResults({ success: 0, errors: [] })
-    setShowBulkUploadModal(false)
-  }
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'registered': return 'status-badge--info'
-      case 'checked_in': return 'status-badge--warning'
-      case 'in_progress': return 'status-badge--warning'
-      case 'completed': return 'status-badge--active'
-      case 'no_show': return 'status-badge--alert'
-      case 'cancelled': return 'status-badge--info'
-      default: return 'status-badge--info'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'checked_in': return <UserCheck className="h-4 w-4" />
-      case 'completed': return <UserCheck className="h-4 w-4" />
-      case 'no_show': return <UserX className="h-4 w-4" />
-      case 'in_progress': return <Clock className="h-4 w-4" />
-      default: return <Users className="h-4 w-4" />
-    }
-  }
-
-  const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch =
-      candidate.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      candidate.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      candidate.confirmationNumber.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const clientComputed = (candidate.clientName || deriveClientFromExamName(candidate.examName)).toUpperCase()
-    const matchesClient = filterClient === 'all' || clientComputed === filterClient.toUpperCase()
-
-    return matchesSearch && matchesClient
-  })
+  const isSuperAdmin = profile?.role === 'super_admin'
 
   if (loading) {
     return (
-      <div className="page-wrapper--candidate-tracker flex-1 p-4 sm:p-6 overflow-auto min-h-screen">
-        <div className="flex items-center justify-center min-h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading candidates...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50/50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent"></div>
+          <p className="font-medium text-gray-500 font-outfit">Loading candidates...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="page-wrapper--candidate-tracker flex-1 p-4 sm:p-6 overflow-auto min-h-screen">
-      {/* Premium Header Section */}
-      <div className="unified-card mb-8 border-l-4 border-l-cyan-500">
-        <div className="p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-h2 text-gray-900 mb-2">Candidate Tracker</h1>
-              <p className="text-body text-gray-600">Track and manage candidate registrations</p>
-            </div>
-            <div className="flex items-center space-x-8">
-              <div className="text-center">
-                <div className="stat-block__value text-cyan-600">{candidates.length}</div>
-                <p className="text-sm text-gray-600 mt-1">Total Candidates</p>
-              </div>
-              <div className="text-center">
-                <div className="stat-block__value text-cyan-600">{filteredCandidates.length}</div>
-                <p className="text-sm text-gray-600 mt-1">Filtered View</p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50/80 p-6 font-outfit">
+      {/* Header */}
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">FETS Register</h1>
+          <p className="text-gray-500 mt-1">Manage and track candidate examinations efficiently</p>
+        </div>
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setActiveTab('tracker')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'tracker' ? 'bg-cyan-50 text-cyan-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            Tracker
+          </button>
+          <button
+            onClick={() => setActiveTab('analysis')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'analysis' ? 'bg-cyan-50 text-cyan-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            <PieChart size={16} />
+            Analysis
+          </button>
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="unified-card mb-8">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      {activeTab === 'tracker' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <ModernStatsCard
+              title="Total Registered"
+              value={candidates.filter(c => c.status === 'registered').length}
+              subtitle="Pending check-in"
+              icon={Users}
+              colorEncoded="#3B82F6"
+            />
+            <ModernStatsCard
+              title="In Progress"
+              value={candidates.filter(c => c.status === 'in_progress').length}
+              subtitle="Currently testing"
+              icon={Clock}
+              colorEncoded="#8B5CF6"
+            />
+            <ModernStatsCard
+              title="Completed Today"
+              value={candidates.filter(c => c.status === 'completed' && isSameDay(c.createdAt, new Date())).length}
+              subtitle="Finished successfully"
+              icon={UserCheck}
+              colorEncoded="#10B981"
+            />
+            <ModernStatsCard
+              title="Issues / No Shows"
+              value={candidates.filter(c => ['no_show', 'cancelled'].includes(c.status)).length}
+              subtitle="Requires attention"
+              icon={UserX}
+              colorEncoded="#EF4444"
+            />
+          </div>
+
+          {/* Action & Filter Bar */}
+          <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
+            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+              <div className="relative group min-w-[300px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cyan-500 transition-colors" size={18} />
                 <input
                   type="text"
-                  placeholder="Search candidates by name, address, or confirmation number..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
+                  placeholder="Search name, confirmation, or address..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all placeholder:text-gray-400"
                 />
               </div>
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                {['ALL', 'PROMETRIC', 'PEARSON VUE', 'ETS'].map(client => (
+                  <button
+                    key={client}
+                    onClick={() => setFilterClient(client === 'ALL' ? 'all' : client)}
+                    className={`
+                          whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all border
+                          ${(filterClient === 'all' && client === 'ALL') || filterClient === client
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+                        `}
+                  >
+                    {client}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <input
-                type="date"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                placeholder="Filter by exam date"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Clients:</span>
-            {['all','PROMETRIC','ETS','PEARSON VUE','PSI','OTHERS'].map(c => {
-              const label = c.toUpperCase()
-              const active = filterClient.toUpperCase() === label
-              return (
-                <button
-                  key={c}
-                  onClick={() => setFilterClient(c)}
-                  className={`px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-all ${active ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-white text-gray-700 border-gray-200 hover:border-cyan-300'}`}
-                >
-                  {label === 'ALL' ? 'ALL CLIENTS' : label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <ModernStatsCard
-          title="Total Registered"
-          value={candidates.filter(c => c.status === 'registered').length}
-          subtitle="Awaiting check-in"
-          icon={Users}
-          status="primary"
-        />
-        <ModernStatsCard
-          title="Checked In"
-          value={candidates.filter(c => c.status === 'checked_in').length}
-          subtitle="Ready to proceed"
-          icon={UserCheck}
-          status="positive"
-        />
-        <ModernStatsCard
-          title="In Progress"
-          value={candidates.filter(c => c.status === 'in_progress').length}
-          subtitle="Currently testing"
-          icon={Clock}
-          status="warning"
-        />
-        <ModernStatsCard
-          title="Completed"
-          value={candidates.filter(c => c.status === 'completed').length}
-          subtitle="Exams finished"
-          icon={UserCheck}
-          status="positive"
-        />
-      </div>
-
-      {/* Content Area */}
-      <div className="unified-card">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end xl:self-auto">
               <button
                 onClick={() => setShowNewCandidateModal(true)}
-                className="unified-btn--candidate-tracker flex items-center gap-2"
+                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95 font-medium"
               >
-                <Plus className="h-4 w-4" />
-                Add Candidate
+                <Plus size={18} />
+                <span className="hidden sm:inline">Add Candidate</span>
+                <span className="sm:hidden">Add</span>
               </button>
-              <button
-                onClick={() => setShowBulkUploadModal(true)}
-                className="unified-btn--candidate-tracker flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Bulk Add
-              </button>
-            </div>
-            <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden bg-white">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 text-sm font-medium transition-all ${viewMode==='grid'?'bg-cyan-100 text-cyan-700':'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Grid
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${viewMode==='list'?'bg-cyan-100 text-cyan-700':'text-gray-600 hover:bg-gray-50'}`}
-              >
-                List
-              </button>
-              <button
-                onClick={() => setViewMode('export')}
-                className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${viewMode==='export'?'bg-cyan-100 text-cyan-700':'text-gray-600 hover:bg-gray-50'}`}
-              >
-                Export
-              </button>
-            </div>
-          </div>
-        </div>
 
-        <div className="p-6">
-          {viewMode === 'list' && (
-            <div className="space-y-4">
-              {filteredCandidates.map((candidate) => (
-                <div key={candidate.id} className="unified-card p-6 border-l-4 border-l-cyan-300">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{candidate.fullName}</h3>
-                          <span className={`status-badge ${getStatusBadgeClass(candidate.status)}`}>
-                            {candidate.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600">{candidate.confirmationNumber}</p>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <button onClick={() => setOpenMenu(openMenu === candidate.id ? null : candidate.id)} className="p-2 rounded-full hover:bg-gray-100">
-                        <MoreVertical className="h-5 w-5 text-gray-600" />
-                      </button>
-                      {openMenu === candidate.id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-100">
-                          <div className="py-1">
-                            <button onClick={() => openEditModal(candidate)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                              <Edit className="h-4 w-4 inline mr-2" />
-                              Edit
-                            </button>
-                            <button onClick={() => handleDeleteCandidate(candidate.id, candidate.fullName)} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                              <Trash2 className="h-4 w-4 inline mr-2" />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">Address</p>
-                      <p className="text-gray-900 flex items-center gap-2"><Mail className="h-4 w-4 text-cyan-500" />{candidate.address}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">Phone</p>
-                      <p className="text-gray-900 flex items-center gap-2"><Phone className="h-4 w-4 text-cyan-500" />{candidate.phone || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-xs font-medium uppercase tracking-wide mb-1">Exam</p>
-                      <p className="text-gray-900 flex items-center gap-2"><Calendar className="h-4 w-4 text-cyan-500" />{candidate.examName || 'Not specified'}</p>
-                    </div>
+              <div className="h-8 w-[1px] bg-gray-200 mx-2"></div>
+
+              <div className="flex rounded-lg bg-gray-100 p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Layers size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <FileText size={18} />
+                </button>
+              </div>
+
+              {isSuperAdmin && (
+                <div className="relative group">
+                  <button className="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:border-gray-300 transition-all">
+                    <Download size={18} />
+                  </button>
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-1 hidden group-hover:block z-20">
+                    <button onClick={exportToExcel} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+                      <span className="text-green-600 text-xs font-bold w-6">XLS</span> Export Excel
+                    </button>
+                    <button onClick={exportToPDF} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+                      <span className="text-red-600 text-xs font-bold w-6">PDF</span> Export PDF
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
 
-          {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCandidates.map((candidate) => {
+          {/* Candidates Grid/List */}
+          {filteredCandidates.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+              <Search className="h-12 w-12 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">No candidates found</h3>
+              <p className="text-gray-500">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' : 'flex flex-col gap-3'}>
+              {filteredCandidates.map(candidate => {
                 const client = (candidate.clientName || deriveClientFromExamName(candidate.examName)).toUpperCase()
                 const style = CLIENT_STYLE[client] || CLIENT_STYLE['OTHERS']
+
+                if (viewMode === 'list') {
+                  return (
+                    <div key={candidate.id} className="group flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:border-cyan-200 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-6">
+                        <div className={`w-1 h-12 rounded-full ${style.tint.replace('bg-', 'bg-').replace('50', '500')}`}></div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{candidate.fullName}</h4>
+                          <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                            <span>{candidate.confirmationNumber}</span>
+                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                            <span>{candidate.examName}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${style.badge}`}>
+                          {client}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${style.tint} ${style.border.replace('border-', 'text-')}`}>
+                          {candidate.status.replace('_', ' ')}
+                        </span>
+                        <button onClick={() => openEditModal(candidate)} className="p-2 text-gray-400 hover:text-cyan-600 transition-colors">
+                          <Edit size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
-                  <div key={candidate.id} className="unified-card p-6 border-t-4 border-t-cyan-500 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{candidate.fullName}</h3>
-                        <p className="text-sm text-gray-600">{candidate.confirmationNumber}</p>
+                  <div key={candidate.id} className="group relative bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-cyan-500/5 hover:border-cyan-200 transition-all duration-300">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className={`px-3 py-1 rounded-lg text-xs font-bold tracking-wider ${style.badge}`}>
+                        {client}
                       </div>
                       <div className="relative">
-                        <button onClick={() => setOpenMenu(openMenu === candidate.id ? null : candidate.id)} className="p-1 rounded-full hover:bg-gray-100">
-                          <MoreVertical className="h-4 w-4 text-gray-600" />
+                        <button onClick={() => setOpenMenu(openMenu === candidate.id ? null : candidate.id)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600">
+                          <MoreVertical size={16} />
                         </button>
                         {openMenu === candidate.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-100">
-                            <div className="py-1">
-                              <button onClick={() => openEditModal(candidate)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Edit</button>
-                              <button onClick={() => handleDeleteCandidate(candidate.id, candidate.fullName)} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Delete</button>
-                            </div>
+                          <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-10 animate-in fade-in zoom-in-95">
+                            <button onClick={() => openEditModal(candidate)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                              <Edit size={14} /> Edit
+                            </button>
+                            <button onClick={() => handleDeleteCandidate(candidate.id, candidate.fullName)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                              <Trash2 size={14} /> Delete
+                            </button>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="mb-4">
-                      <span className={`status-badge ${getStatusBadgeClass(candidate.status)}`}>
-                        {candidate.status.replace('_', ' ').toUpperCase()}
-                      </span>
+
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-cyan-600 transition-colors">{candidate.fullName}</h3>
+                      <p className="text-sm text-gray-500 font-mono">{candidate.confirmationNumber}</p>
                     </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold" style={{ background: style.tint, color: style.text, borderLeft: `3px solid ${style.border}` }}>
-                          {client}
+
+                    <div className="space-y-3 pt-4 border-t border-gray-50">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Exam</span>
+                        <span className="font-medium text-gray-900 max-w-[60%] truncate" title={candidate.examName}>{candidate.examName || '-'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Date</span>
+                        <span className="font-medium text-gray-900">
+                          {candidate.examDate ? format(candidate.examDate, 'MMM dd, yyyy') : '-'}
                         </span>
                       </div>
-                      <div>
-                        <p className="text-gray-600 text-xs uppercase font-medium mb-1">Exam</p>
-                        <p className="text-gray-900 font-medium">{candidate.examName || 'Not specified'}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-xs uppercase font-medium mb-1">Scheduled Date</p>
-                        <p className="text-gray-900 font-medium">{candidate.examDate ? new Date(candidate.examDate).toLocaleDateString() : 'Not scheduled'}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Status</span>
+                        <span className="font-medium capitalize" style={{ color: STATUS_COLORS[candidate.status] }}>
+                          {candidate.status.replace('_', ' ')}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -733,154 +718,113 @@ export function CandidateTrackerPremium() {
               })}
             </div>
           )}
-
-          {viewMode === 'export' && (
-            <div>
-              <div className="flex justify-end mb-4">
-                <button onClick={exportToCsv} className="unified-btn--candidate-tracker">Export CSV</button>
-              </div>
-              <div className="unified-card p-0 overflow-x-auto border-0">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">#</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Name</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Phone</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Client</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Exam</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Date</th>
-                      <th className="text-left px-6 py-3 font-semibold text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCandidates.map((candidate, index) => {
-                      const client = (candidate.clientName || deriveClientFromExamName(candidate.examName)).toUpperCase()
-                      return (
-                        <tr key={candidate.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="px-6 py-3 text-gray-900">{index + 1}</td>
-                          <td className="px-6 py-3 text-gray-900 font-medium">{candidate.fullName}</td>
-                          <td className="px-6 py-3 text-gray-700">{candidate.phone || '-'}</td>
-                          <td className="px-6 py-3 text-gray-700">{client}</td>
-                          <td className="px-6 py-3 text-gray-700">{candidate.examName || '-'}</td>
-                          <td className="px-6 py-3 text-gray-700">{candidate.examDate ? new Date(candidate.examDate).toLocaleDateString() : '-'}</td>
-                          <td className="px-6 py-3">
-                            <span className={`status-badge ${getStatusBadgeClass(candidate.status)} text-xs`}>
-                              {candidate.status.replace('_', ' ')}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
-      {/* Modals - preserved from original */}
+      {activeTab === 'analysis' && <AnalysisView candidates={candidates} />}
+
+      {/* New Candidate Modal */}
       {showNewCandidateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="unified-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-h3 text-gray-900">Register New Candidate</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">New Registration</h2>
+                <p className="text-sm text-gray-500 mt-1">Enter candidate details below</p>
+              </div>
+              <button onClick={() => setShowNewCandidateModal(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="Enter candidate's full name"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="e.g. John Doe"
                     value={newCandidate.fullName}
-                    onChange={(e) => setNewCandidate({ ...newCandidate, fullName: e.target.value })}
+                    onChange={e => setNewCandidate({ ...newCandidate, fullName: e.target.value })}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    value={newCandidate.address}
-                    onChange={(e) => setNewCandidate({ ...newCandidate, address: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="+1-555-0123"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="+91..."
                     value={newCandidate.phone}
-                    onChange={(e) => setNewCandidate({ ...newCandidate, phone: e.target.value })}
+                    onChange={e => setNewCandidate({ ...newCandidate, phone: e.target.value })}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Exam Name</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="AWS Solutions Architect, TOEFL, etc."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="e.g. TOEFL iBT"
                     value={newCandidate.examName}
-                    onChange={(e) => setNewCandidate({ ...newCandidate, examName: e.target.value })}
+                    onChange={e => setNewCandidate({ ...newCandidate, examName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Client Name</label>
+                  <div className="relative">
+                    <input
+                      list="clients-list"
+                      type="text"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                      placeholder="Type or select client..."
+                      value={newCandidate.clientName}
+                      onChange={e => setNewCandidate({ ...newCandidate, clientName: e.target.value })}
+                    />
+                    <datalist id="clients-list">
+                      {clients?.map(c => <option key={c.id} value={c.name} />)}
+                    </datalist>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-gray-600"
+                    value={newCandidate.examDate}
+                    onChange={e => setNewCandidate({ ...newCandidate, examDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="City, State"
+                    value={newCandidate.address}
+                    onChange={e => setNewCandidate({ ...newCandidate, address: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Client</label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900"
-                  value={newCandidate.clientName}
-                  onChange={(e) => setNewCandidate({ ...newCandidate, clientName: e.target.value })}
-                >
-                  <option value="">Select a client</option>
-                  {clients?.map(client => (
-                    <option key={client.id} value={client.name}>{client.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Exam Date & Time</label>
-                <input
-                  type="date"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900"
-                  value={newCandidate.examDate}
-                  onChange={(e) => setNewCandidate({ ...newCandidate, examDate: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Notes</label>
                 <textarea
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 h-24 resize-none"
-                  placeholder="Special accommodations, dietary requirements, etc."
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300 min-h-[100px] resize-none"
+                  placeholder="Additional requirements..."
                   value={newCandidate.notes}
-                  onChange={(e) => setNewCandidate({ ...newCandidate, notes: e.target.value })}
+                  onChange={e => setNewCandidate({ ...newCandidate, notes: e.target.value })}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-100">
-              <button
-                onClick={() => setShowNewCandidateModal(false)}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-              >
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+              <button onClick={() => setShowNewCandidateModal(false)} className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
                 Cancel
               </button>
               <button
                 onClick={handleCreateCandidate}
-                className="unified-btn--candidate-tracker"
-                disabled={!newCandidate.fullName.trim()}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-cyan-500 hover:bg-cyan-600 shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!newCandidate.fullName}
               >
                 Register Candidate
               </button>
@@ -889,240 +833,86 @@ export function CandidateTrackerPremium() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Edit Candidate Modal (Mirrors structure of New Modal but logic for Edit) */}
       {showEditCandidateModal && selectedCandidate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="unified-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-h3 text-gray-900">Edit Candidate: {selectedCandidate.fullName}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Candidate</h2>
+              <button onClick={() => setShowEditCandidateModal(false)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="Enter candidate's full name"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
                     value={editCandidate.fullName}
-                    onChange={(e) => setEditCandidate({ ...editCandidate, fullName: e.target.value })}
+                    onChange={e => setEditCandidate({ ...editCandidate, fullName: e.target.value })}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    value={editCandidate.address}
-                    onChange={(e) => setEditCandidate({ ...editCandidate, address: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
                   <input
                     type="tel"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="+1-555-0123"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
                     value={editCandidate.phone}
-                    onChange={(e) => setEditCandidate({ ...editCandidate, phone: e.target.value })}
+                    onChange={e => setEditCandidate({ ...editCandidate, phone: e.target.value })}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Exam Name</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
-                    placeholder="AWS Solutions Architect, TOEFL, etc."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
                     value={editCandidate.examName}
-                    onChange={(e) => setEditCandidate({ ...editCandidate, examName: e.target.value })}
+                    onChange={e => setEditCandidate({ ...editCandidate, examName: e.target.value })}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Client</label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900"
-                  value={editCandidate.clientName}
-                  onChange={(e) => setEditCandidate({ ...editCandidate, clientName: e.target.value })}
-                >
-                  <option value="">Select a client</option>
-                  {clients?.map(client => (
-                    <option key={client.id} value={client.name}>{client.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Exam Date & Time</label>
-                <input
-                  type="datetime-local"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900"
-                  value={editCandidate.examDate}
-                  onChange={(e) => setEditCandidate({ ...editCandidate, examDate: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                <textarea
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 h-24 resize-none"
-                  placeholder="Special accommodations, dietary requirements, etc."
-                  value={editCandidate.notes}
-                  onChange={(e) => setEditCandidate({ ...editCandidate, notes: e.target.value })}
-                />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Client Name</label>
+                  <input
+                    list="clients-list-edit"
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-gray-300"
+                    value={editCandidate.clientName}
+                    onChange={e => setEditCandidate({ ...editCandidate, clientName: e.target.value })}
+                  />
+                  <datalist id="clients-list-edit">
+                    {clients?.map(c => <option key={c.id} value={c.name} />)}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Exam Date</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-gray-600"
+                    value={editCandidate.examDate}
+                    onChange={e => setEditCandidate({ ...editCandidate, examDate: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-100">
-              <button
-                onClick={() => setShowEditCandidateModal(false)}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-              >
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+              <button onClick={() => setShowEditCandidateModal(false)} className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
                 Cancel
               </button>
               <button
                 onClick={handleEditCandidate}
-                className="unified-btn--candidate-tracker"
-                disabled={!editCandidate.fullName.trim()}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-cyan-500 hover:bg-cyan-600 shadow-lg shadow-cyan-500/30 transition-all hover:scale-[1.02] active:scale-95"
               >
-                Update Candidate
+                Save Changes
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Bulk Upload Modal */}
-      {showBulkUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="unified-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-h3 text-gray-900">Bulk Upload Candidates</h2>
-              <button
-                onClick={() => resetBulkUpload()}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-cyan-900 mb-2">Upload Instructions</h3>
-                <ul className="text-sm text-cyan-800 space-y-1">
-                  <li>• Upload a CSV file with candidate information</li>
-                  <li>• Required columns: <strong>full_name</strong></li>
-                  <li>• Optional columns: address, phone, exam_name, exam_date, notes</li>
-                  <li>• First row should contain column headers</li>
-                  <li>• Date format: YYYY-MM-DD or MM/DD/YYYY</li>
-                </ul>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select CSV File</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-cyan-400 transition-colors">
-                  <div className="text-center">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="bulk-upload-input"
-                    />
-                    <label
-                      htmlFor="bulk-upload-input"
-                      className="cursor-pointer text-cyan-600 hover:text-cyan-700 font-medium"
-                    >
-                      Click to select file
-                    </label>
-                    <p className="text-gray-500 text-sm mt-1">CSV, XLS, or XLSX files only</p>
-                  </div>
-
-                  {uploadFile && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <strong>Selected:</strong> {uploadFile.name} ({Math.round(uploadFile.size / 1024)}KB)
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {uploadStatus === 'uploading' && (
-                <div>
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Processing candidates...</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="h-3 rounded-full transition-all duration-300 bg-gradient-to-r from-cyan-500 to-cyan-600"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-
-              {uploadStatus === 'success' && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-green-900 mb-2">Upload Completed!</h3>
-                  <p className="text-green-800">
-                    Successfully imported {uploadResults.success} candidates.
-                  </p>
-                  {uploadResults.errors.length > 0 && (
-                    <details className="mt-3">
-                      <summary className="cursor-pointer text-yellow-700 font-medium">View {uploadResults.errors.length} errors</summary>
-                      <ul className="mt-2 text-sm text-yellow-800 space-y-1 pl-4">
-                        {uploadResults.errors.map((error, index) => (
-                          <li key={index}>• {error}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </div>
-              )}
-
-              {uploadStatus === 'error' && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-red-900 mb-2">Upload Failed</h3>
-                  <ul className="text-red-800 space-y-1">
-                    {uploadResults.errors.map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-100">
-              <button
-                onClick={() => resetBulkUpload()}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-              >
-                {uploadStatus === 'success' ? 'Done' : 'Cancel'}
-              </button>
-              {uploadFile && uploadStatus !== 'uploading' && uploadStatus !== 'success' && (
-                <button
-                  onClick={processBulkUpload}
-                  className="unified-btn--candidate-tracker"
-                  disabled={!uploadFile}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Candidates
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

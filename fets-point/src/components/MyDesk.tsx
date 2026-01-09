@@ -4,7 +4,7 @@ import {
   ShieldCheck, MapPin, Briefcase, GraduationCap, Sparkles,
   MessageSquare, LayoutGrid, BookOpen, UserCheck, Key, LogOut,
   Mail, History, Info, ExternalLink, Brain, ChevronDown, ChevronRight, Phone,
-  CheckSquare, Flower2, Calendar, FileText, User
+  CheckSquare, Flower2, Calendar, FileText, User, Users
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
@@ -21,6 +21,10 @@ import { FetsProfile } from './FetsProfile'
 import { getActiveRosterHandlerEmail } from '../utils/authUtils'
 import { useChat } from '../contexts/ChatContext'
 import { Minimize2 } from 'lucide-react'
+import { useVideoCall } from '../hooks/useVideoCall'
+import { IncomingCallModal } from './Chat/IncomingCallModal'
+import { VideoCallOverlay } from './Chat/VideoCallOverlay'
+import { Frame } from './Frame'
 
 // --- VISUAL COMPONENT PRIMITIVES (Glass & Midnight Theme for Main UI) ---
 
@@ -517,8 +521,25 @@ export function MyDesk() {
   const { isDetached, toggleDetach, activeUser, setActiveUser } = useChat()
   const [activeTab, setActiveTab] = useState('fetchat')
 
+  // Video Call Hook
+  const {
+    callState,
+    startCall,
+    endCall,
+    answerCall,
+    rejectCall
+  } = useVideoCall()
+
+  const [isCallMinimized, setIsCallMinimized] = useState(false)
+
+  // Explicit handlers for Fetchat
+  const handleStartVideoCall = (targetUserIds: string | string[], type: 'video' | 'audio' = 'video') => {
+    startCall(targetUserIds, type)
+  }
+
   const mainTabs = [
     { id: 'fetchat', label: 'Chat', icon: MessageSquare },
+    { id: 'frame', label: 'Frame', icon: Users }, // New Frame Tab
     { id: 'todo', label: 'To Do', icon: CheckSquare },
     { id: 'notes', label: 'Notes', icon: BookOpen },
     { id: 'vault', label: 'Vault', icon: Key },
@@ -693,9 +714,19 @@ export function MyDesk() {
                         onSelectUser={setActiveUser}
                         isDetached={false}
                         onToggleDetach={toggleDetach}
+                        onStartVideoCall={handleStartVideoCall}
                       />
                     </div>
                   )}
+                </motion.div>
+              )}
+
+              {/* 1.5 FRAME (New Group Hub) */}
+              {activeTab === 'frame' && (
+                <motion.div key="frame" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
+                  <div className="h-full rounded-2xl overflow-hidden shadow-2xl relative p-1 bg-white/5 backdrop-blur-sm border border-white/10">
+                    <Frame />
+                  </div>
                 </motion.div>
               )}
 
@@ -745,6 +776,31 @@ export function MyDesk() {
         </div>
 
       </div>
+
+      {/* --- VIDEO CHAT OVERLAYS --- */}
+      <AnimatePresence>
+        {callState.isReceivingCall && (
+          <IncomingCallModal
+            callerName={callState.callerId!}
+            callType={callState.callType}
+            onAccept={answerCall}
+            onDecline={rejectCall}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {(callState.isInCall || callState.isCalling) && (
+          <VideoCallOverlay
+            localStream={callState.localStream}
+            remoteStreams={callState.remoteStreams}
+            onEndCall={endCall}
+            isMinimized={isCallMinimized}
+            onToggleMinimize={() => setIsCallMinimized(!isCallMinimized)}
+            callType={callState.callType}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

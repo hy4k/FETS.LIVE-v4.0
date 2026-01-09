@@ -10,6 +10,11 @@
   --calicut-light: #fff8dc;
   --calicut-glow: rgba(231, 187, 90, 0.2);
   --calicut-border: rgba(231, 187, 90, 0.3);
+  --calicut-bg-tint: rgba(231, 187, 90, 0.02);
+  --calicut-bg-hover: rgba(231, 187, 90, 0.05);
+  --calicut-card-border: rgba(231, 187, 90, 0.12);
+  --calicut-card-hover: rgba(231, 187, 90, 0.08);
+  --calicut-focus-ring: rgba(231, 187, 90, 0.3);
 
   /* Cochin Branch - Fresh Mint Green Accents */
   --cochin-primary: #4ade80;
@@ -17,6 +22,11 @@
   --cochin-light: #ecfdf5;
   --cochin-glow: rgba(74, 222, 128, 0.2);
   --cochin-border: rgba(74, 222, 128, 0.3);
+  --cochin-bg-tint: rgba(74, 222, 128, 0.02);
+  --cochin-bg-hover: rgba(74, 222, 128, 0.05);
+  --cochin-card-border: rgba(74, 222, 128, 0.12);
+  --cochin-card-hover: rgba(74, 222, 128, 0.08);
+  --cochin-focus-ring: rgba(74, 222, 128, 0.3);
 
   /* Kannur Branch - Energetic Rose Accents */
   --kannur-primary: #f43f5e;
@@ -24,6 +34,11 @@
   --kannur-light: #fff1f2;
   --kannur-glow: rgba(244, 63, 94, 0.2);
   --kannur-border: rgba(244, 63, 94, 0.3);
+  --kannur-bg-tint: rgba(244, 63, 94, 0.02);
+  --kannur-bg-hover: rgba(244, 63, 94, 0.05);
+  --kannur-card-border: rgba(244, 63, 94, 0.12);
+  --kannur-card-hover: rgba(244, 63, 94, 0.08);
+  --kannur-focus-ring: rgba(244, 63, 94, 0.3);
 
   /* Global Mode - Blue-Purple Gradient */
   --global-primary: #3b82f6;
@@ -31,6 +46,11 @@
   --global-light: #f0f9ff;
   --global-glow: rgba(59, 130, 246, 0.2);
   --global-border: rgba(59, 130, 246, 0.3);
+  --global-bg-tint: rgba(59, 130, 246, 0.02);
+  --global-bg-hover: rgba(59, 130, 246, 0.05);
+  --global-card-border: rgba(59, 130, 246, 0.12);
+  --global-card-hover: rgba(59, 130, 246, 0.08);
+  --global-focus-ring: rgba(59, 130, 246, 0.3);
 }
 
 /* ==========================================================================
@@ -90,6 +110,63 @@
   background: var(--calicut-primary);
 }
 
+/* Page-Level Background Theming */
+.branch-calicut::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right,
+      var(--calicut-bg-tint) 0%,
+      transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card and Container Theming */
+.branch-calicut .glass-card,
+.branch-calicut .modern-card,
+.branch-calicut [class*="card"]:not(.candidate-card):not(.activity-card) {
+  border-color: var(--calicut-card-border) !important;
+}
+
+.branch-calicut .glass-card:hover,
+.branch-calicut .modern-card:hover {
+  background: var(--calicut-card-hover) !important;
+  box-shadow: 0 8px 30px var(--calicut-glow) !important;
+}
+
+/* Button Theming */
+.branch-calicut button:not(.btn-danger):not([class*="bg-"]):hover {
+  background: var(--calicut-bg-hover) !important;
+  border-color: var(--calicut-border) !important;
+}
+
+/* Input Focus States */
+.branch-calicut input:focus,
+.branch-calicut textarea:focus,
+.branch-calicut select:focus {
+  outline: 2px solid var(--calicut-focus-ring) !important;
+  outline-offset: 2px;
+  border-color: var(--calicut-primary) !important;
+}
+
+/* Tab Active States */
+.branch-calicut [class*="tab"][class*="active"],
+.branch-calicut .active-tab {
+  box-shadow: 0 0 20px var(--calicut-glow) !important;
+}
+
+/* Smooth Transitions */
+.branch-calicut {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 /* ==========================================================================
    COCHIN BRANCH THEME - SUBTLE ACCENT STYLING
    ========================================================================== */
@@ -146,6 +223,63 @@
 .branch-cochin .status-indicator.positive {
   background: var(--cochin-primary);
 }
+
+/* Page-Level Background Theming */
+.branch-cochin::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right,
+      var(--cochin-bg-tint) 0%,
+      transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card and Container Theming */
+.branch-cochin .glass-card,
+.branch-cochin .modern-card,
+.branch-cochin [class*="card"]:not(.candidate-card):not(.activity-card) {
+  border-color: var(--cochin-card-border) !important;
+}
+
+.branch-cochin .glass-card:hover,
+.branch-cochin .modern-card:hover {
+  background: var(--cochin-card-hover) !important;
+  box-shadow: 0 8px 30px var(--cochin-glow) !important;
+}
+
+/* Button Theming */
+.branch-cochin button:not(.btn-danger):not([class*="bg-"]):hover {
+  background: var(--cochin-bg-hover) !important;
+  border-color: var(--cochin-border) !important;
+}
+
+/* Input Focus States */
+.branch-cochin input:focus,
+.branch-cochin textarea:focus,
+.branch-cochin select:focus {
+  outline: 2px solid var(--cochin-focus-ring) !important;
+  outline-offset: 2px;
+  border-color: var(--cochin-primary) !important;
+}
+
+/* Tab Active States */
+.branch-cochin [class*="tab"][class*="active"],
+.branch-cochin .active-tab {
+  box-shadow: 0 0 20px var(--cochin-glow) !important;
+}
+
+/* Smooth Transitions */
+.branch-cochin {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 
 /* ==========================================================================
    KANNUR BRANCH THEME - SUBTLE ACCENT STYLING
@@ -204,6 +338,63 @@
   background: var(--kannur-primary);
 }
 
+/* Page-Level Background Theming */
+.branch-kannur::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right,
+      var(--kannur-bg-tint) 0%,
+      transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card and Container Theming */
+.branch-kannur .glass-card,
+.branch-kannur .modern-card,
+.branch-kannur [class*="card"]:not(.candidate-card):not(.activity-card) {
+  border-color: var(--kannur-card-border) !important;
+}
+
+.branch-kannur .glass-card:hover,
+.branch-kannur .modern-card:hover {
+  background: var(--kannur-card-hover) !important;
+  box-shadow: 0 8px 30px var(--kannur-glow) !important;
+}
+
+/* Button Theming */
+.branch-kannur button:not(.btn-danger):not([class*="bg-"]):hover {
+  background: var(--kannur-bg-hover) !important;
+  border-color: var(--kannur-border) !important;
+}
+
+/* Input Focus States */
+.branch-kannur input:focus,
+.branch-kannur textarea:focus,
+.branch-kannur select:focus {
+  outline: 2px solid var(--kannur-focus-ring) !important;
+  outline-offset: 2px;
+  border-color: var(--kannur-primary) !important;
+}
+
+/* Tab Active States */
+.branch-kannur [class*="tab"][class*="active"],
+.branch-kannur .active-tab {
+  box-shadow: 0 0 20px var(--kannur-glow) !important;
+}
+
+/* Smooth Transitions */
+.branch-kannur {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 /* ==========================================================================
    GLOBAL MODE THEME
    ========================================================================== */
@@ -255,6 +446,63 @@
 .branch-global .status-indicator.positive {
   background: var(--global-primary);
 }
+
+/* Page-Level Background Theming */
+.branch-global::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right,
+      var(--global-bg-tint) 0%,
+      transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card and Container Theming */
+.branch-global .glass-card,
+.branch-global .modern-card,
+.branch-global [class*="card"]:not(.candidate-card):not(.activity-card) {
+  border-color: var(--global-card-border) !important;
+}
+
+.branch-global .glass-card:hover,
+.branch-global .modern-card:hover {
+  background: var(--global-card-hover) !important;
+  box-shadow: 0 8px 30px var(--global-glow) !important;
+}
+
+/* Button Theming */
+.branch-global button:not(.btn-danger):not([class*="bg-"]):hover {
+  background: var(--global-bg-hover) !important;
+  border-color: var(--global-border) !important;
+}
+
+/* Input Focus States */
+.branch-global input:focus,
+.branch-global textarea:focus,
+.branch-global select:focus {
+  outline: 2px solid var(--global-focus-ring) !important;
+  outline-offset: 2px;
+  border-color: var(--global-primary) !important;
+}
+
+/* Tab Active States */
+.branch-global [class*="tab"][class*="active"],
+.branch-global .active-tab {
+  box-shadow: 0 0 20px var(--global-glow) !important;
+}
+
+/* Smooth Transitions */
+.branch-global {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 
 /* ==========================================================================
    BRANCH TOGGLE COMPONENT STYLES
@@ -603,4 +851,13 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* ==========================================================================
+   BRANCH SWITCHING ANIMATION
+   ========================================================================== */
+.branch-switching {
+  opacity: 0.95;
+  filter: blur(1px);
+  transition: all 0.3s ease;
 }

@@ -19,6 +19,7 @@ import { Header } from './components/Header';
 import { UpdatePassword } from './components/UpdatePassword';
 import { AiAssistant } from './components/AiAssistant';
 import { Fetchat } from './components/Fetchat';
+import { BranchIndicator } from './components/BranchIndicator';
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
@@ -27,7 +28,7 @@ import { useIsMobile, useScreenSize } from './hooks/use-mobile';
 // Lazy load all page components for better performance
 const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard').then(module => ({ default: module.ICloudDashboard })))
 const CommandCentre = lazy(() => import('./components/CommandCentreFinal'))
-const CandidateTracker = lazy(() => import('./components/CandidateTracker').then(module => ({ default: module.CandidateTracker })))
+const CandidateTracker = lazy(() => import('./components/CandidateTrackerPremium').then(module => ({ default: module.CandidateTrackerPremium })))
 const MyDesk = lazy(() => import('./components/MyDesk').then(module => ({ default: module.MyDesk })))
 const StaffManagement = lazy(() => import('./components/StaffManagement').then(module => ({ default: module.StaffManagement })))
 const FetsVault = lazy(() => import('./components/FetsVault').then(module => ({ default: module.FetsVault })))
@@ -229,7 +230,7 @@ function AppContent() {
   }
 
   return (
-    <div className={`golden-theme min-h-screen relative branch-global`}>
+    <div className={`golden-theme min-h-screen relative ${getBranchTheme(activeBranch)}`}>
       <Header
         isMobile={isMobile}
         sidebarOpen={sidebarOpen}
@@ -247,6 +248,7 @@ function AppContent() {
       {/* Floating AI Assistant - ALWAYS VISIBLE */}
       <AiAssistant />
       <GlobalChatLayer />
+      <BranchIndicator />
 
       <ConnectionStatus />
       {process.env.NODE_ENV === 'development' && <DatabaseSetup />}

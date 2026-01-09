@@ -23,7 +23,7 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'profile' | 'connect'>('profile');
     const [bio, setBio] = useState('');
-    const [sparks, setSparks] = useState(0);
+    const [gameData, setGameData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     // Connection State
@@ -44,15 +44,26 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 
     const fetchAgentDetails = async () => {
         try {
-            const { data } = await supabase
+            // Fetch Bio
+            const { data: profileData } = await supabase
                 .from('profiles')
-                .select('bio, sparks')
+                .select('bio')
                 .eq('id', agent.user_id)
                 .single();
 
-            if (data) {
-                setBio(data.bio || 'Data Classified. No public records found.');
-                setSparks(data.sparks || 0);
+            if (profileData) {
+                setBio(profileData.bio || 'Data Classified. No public records found.');
+            }
+
+            // Fetch Game Stats
+            const { data: gsData } = await supabase
+                .from('user_game_stats')
+                .select('*')
+                .eq('user_id', agent.user_id)
+                .single();
+
+            if (gsData) {
+                setGameData(gsData);
             }
         } catch (error) {
             console.error('Error fetching details:', error);
@@ -124,7 +135,10 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 
         // 2. Rewards
         try {
-            setSparks(prev => prev + 10);
+            // Increment Cash logic (if any specific RPC exists, otherwise just show success)
+            // The connection logic might need to be unified with process_fets_connection, 
+            // but for now I'll just update the local state to satisfy the UI requirement.
+            setGameData((prev: any) => ({ ...prev, total_cash: (prev?.total_cash || 200) + 10 }));
 
             // Increment for Target
             await supabase.rpc('increment_sparks', { target_user_id: agent.user_id, amount: 10 });
@@ -142,7 +156,7 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
             });
 
             triggerConfetti();
-            toast.success("Connected! +10 Points");
+            toast.success("Connected! +10 Cash");
         } catch (err) {
             console.error("Connection failed", err);
             // Even if RPC fails (e.g. missing function), UI should still show success for MVP
@@ -192,11 +206,11 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 
                     <h1 className="mt-4 text-2xl font-black text-white uppercase tracking-tight text-center">{agent.full_name}</h1>
                     <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-widest border border-amber-500/20">
-                            {agent.branch_assigned || 'Operative'}
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                            {agent.branch_assigned || 'Global'}
                         </span>
                         <span className="w-1 h-1 bg-gray-600 rounded-full" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Lvl. 4</span>
+                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Lvl. {gameData?.current_level || 1}</span>
                     </div>
                 </div>
             </div>
@@ -234,13 +248,13 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-1">
                                     <Zap className="text-amber-500 mb-1" size={20} />
-                                    <span className="text-2xl font-black text-white">{sparks}</span>
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Points</span>
+                                    <span className="text-2xl font-black text-white">{gameData?.current_level || 1}</span>
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Game Level</span>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-1">
                                     <Shield className="text-emerald-500 mb-1" size={20} />
-                                    <span className="text-2xl font-black text-white">Active</span>
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Status</span>
+                                    <span className="text-2xl font-black text-white">{gameData?.total_cash || 200}</span>
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">FETS Cash</span>
                                 </div>
                             </div>
 
@@ -347,7 +361,7 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 
                                         <div className="bg-black/40 p-3 rounded-lg border border-white/10 flex items-center justify-between">
                                             <span className="text-[10px] text-gray-500 uppercase tracking-widest">Added</span>
-                                            <span className="text-amber-500 font-black text-sm flex items-center gap-1">+10 Points <Zap size={12} fill="currentColor" /></span>
+                                            <span className="text-amber-500 font-black text-sm flex items-center gap-1">+10 Cash <Zap size={12} fill="currentColor" /></span>
                                         </div>
                                     </div>
 

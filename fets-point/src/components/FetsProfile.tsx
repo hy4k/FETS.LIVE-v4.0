@@ -20,7 +20,7 @@ export const FetsProfile = () => {
     const [bio, setBio] = useState('');
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [loadingBio, setLoadingBio] = useState(true);
-    const [sparks, setSparks] = useState(0);
+    const [gameData, setGameData] = useState<any>(null);
 
     useEffect(() => {
         if (profile?.created_at) {
@@ -35,17 +35,15 @@ export const FetsProfile = () => {
         // Mock stats for visual richness (in real app, fetch from DB)
         setStats(prev => ({ ...prev, loginCount: 42, tasksCompleted: 128 }));
 
-        // Fetch Bio & Sparks
+        // Fetch Game Stats (Level & Cash)
         if (profile?.id) {
-            const fetchProfileData = async () => {
-                const { data } = await supabase.from('profiles').select('bio, sparks').eq('id', profile.id).single();
+            const fetchGameData = async () => {
+                const { data } = await supabase.from('user_game_stats').select('*').eq('user_id', profile.id).single();
                 if (data) {
-                    setBio(data.bio || '');
-                    setSparks(data.sparks || 0);
+                    setGameData(data);
                 }
-                setLoadingBio(false);
             };
-            fetchProfileData();
+            fetchGameData();
         }
     }, [profile]);
 
@@ -107,13 +105,16 @@ export const FetsProfile = () => {
                         <div className="bg-black/20 rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center">
                             <div className="flex items-center gap-1 text-amber-400 mb-1">
                                 <Zap size={14} fill="currentColor" />
-                                <p className="text-xl font-black">{sparks}</p>
+                                <p className="text-xl font-black">{gameData?.current_level || 1}</p>
                             </div>
-                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Points</p>
+                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Game Level</p>
                         </div>
-                        <div className="bg-black/20 rounded-xl p-3 border border-white/5">
-                            <p className="text-xl font-black text-white mb-1">{stats.daysActive}</p>
-                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Days Active</p>
+                        <div className="bg-black/20 rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center">
+                            <div className="flex items-center gap-1 text-emerald-400 mb-1">
+                                <Star size={14} fill="currentColor" />
+                                <p className="text-xl font-black">{gameData?.total_cash || 200}</p>
+                            </div>
+                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">FETS Cash</p>
                         </div>
                     </div>
                 </div>
@@ -171,9 +172,7 @@ export const FetsProfile = () => {
                         <InfoRow icon={Hash} label="Staff ID" value={profile?.id?.substring(0, 8).toUpperCase()} />
                         <InfoRow icon={Mail} label="Contact Email" value={user?.email} isLink />
                         <InfoRow icon={Phone} label="Secure Line" value={profile?.phone || 'Not Registered'} />
-                        <InfoRow icon={Briefcase} label="Designation" value={profile?.role?.replace('_', ' ')} />
                         <InfoRow icon={MapPin} label="Base of Operations" value={profile?.branch_assigned || 'Global HQ'} />
-                        <InfoRow icon={Globe} label="Access Level" value="Level 4 (Administrator)" />
                         <InfoRow icon={Calendar} label="Induction Date" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'} />
                     </div>
 

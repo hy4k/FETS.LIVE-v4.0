@@ -187,13 +187,50 @@ export const Fetchat: React.FC<FetchatProps> = ({
             recorder.onstop = async () => {
                 const blob = new Blob(chunksRef.current, { type: type === 'audio' ? 'audio/webm' : 'video/webm' })
                 const file = new File([blob], `recording.${type === 'audio' ? 'webm' : 'webm'}`, { type: blob.type })
-                setAttachment(file)
+
+                const shouldAutoSend = (recorder as any)._autoSend !== false;
 
                 // Stop all tracks
-                stream.getTracks().forEach(track => track.stop())
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    track.enabled = false;
+                })
+
                 setIsRecording(null)
                 setRecordingTime(0)
                 clearInterval(timerRef.current)
+
+                if (shouldAutoSend) {
+                    setIsUploading(true);
+                    try {
+                        const ext = file.name.split('.').pop()
+                        const path = `${profile.id}/${Date.now()}.${ext}`
+                        await supabase.storage.from('chat-uploads').upload(path, file)
+                        const { data } = supabase.storage.from('chat-uploads').getPublicUrl(path)
+                        const url = data.publicUrl
+
+                        const { data: convId } = await supabase.rpc('get_or_create_conversation', {
+                            user_id_1: profile.id,
+                            user_id_2: selectedUser?.id
+                        })
+
+                        await supabase.from('messages').insert({
+                            conversation_id: convId,
+                            sender_id: profile.id,
+                            content: url,
+                            type: type === 'audio' ? 'voice' : 'video',
+                            file_path: file.name
+                        })
+                        toast.success('Sent')
+                    } catch (err) {
+                        toast.error('Failed to send recording')
+                        setAttachment(file) // Fallback to manual send
+                    } finally {
+                        setIsUploading(false)
+                    }
+                } else {
+                    setAttachment(file)
+                }
             }
 
             recorder.start()
@@ -219,21 +256,19 @@ export const Fetchat: React.FC<FetchatProps> = ({
         }
     }
 
-    const stopRecording = () => {
+    const stopRecording = (autoSend = true) => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            (mediaRecorderRef.current as any)._autoSend = autoSend;
             mediaRecorderRef.current.stop()
         }
     }
 
     const cancelRecording = () => {
-        if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop()
-            // Clear data logic handled in onstop, but we overwrite attachment here? 
-            // Actually better to just stop checks and clear attachment specifically if needed.
-            // For simplicity, we just stop. To truly cancel without saving, we'd need a flag.
-            // But user can just X the attachment.
-        }
+        stopRecording(false)
     }
+
+    // Effect to handle auto-sending after state updates if needed, 
+    // but better to do it in onstop itself since we have the blob.
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
@@ -507,7 +542,7 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                                 </span>
                                             </div>
                                             <div className="flex gap-2">
-                                                <button onClick={stopRecording} className="p-2 bg-red-500 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-600 transition-colors">Stop & Send</button>
+                                                <button type="button" onClick={() => stopRecording()} className="p-2 bg-red-500 text-white rounded-lg font-bold text-xs uppercase hover:bg-red-600 transition-colors">Stop & Send</button>
                                             </div>
                                         </div>
                                     ) : (

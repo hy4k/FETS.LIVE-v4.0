@@ -12,6 +12,7 @@ interface CallState {
     localStream: MediaStream | null;
     remoteStreams: Record<string, MediaStream>; // Keyed by User ID
     callType: 'video' | 'audio';
+    startTime: number | null;
 }
 
 const ICE_SERVERS = {
@@ -32,7 +33,13 @@ export function useVideoCall() {
         localStream: null,
         remoteStreams: {},
         callType: 'video',
+        startTime: null,
     });
+
+    const stateRef = useRef(callState);
+    useEffect(() => {
+        stateRef.current = callState;
+    }, [callState]);
 
     const pcs = useRef<Record<string, RTCPeerConnection>>({});
     const localStreamRef = useRef<MediaStream | null>(null);
@@ -43,12 +50,16 @@ export function useVideoCall() {
         Object.values(pcs.current).forEach(pc => {
             pc.onicecandidate = null;
             pc.ontrack = null;
+            pc.onconnectionstatechange = null;
             pc.close();
         });
         pcs.current = {};
 
         if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
+            localStreamRef.current.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
             localStreamRef.current = null;
         }
         setCallState({
@@ -60,6 +71,7 @@ export function useVideoCall() {
             localStream: null,
             remoteStreams: {},
             callType: 'video',
+            startTime: null,
         });
     }, []);
 
@@ -157,7 +169,7 @@ export function useVideoCall() {
     const answerCall = async () => {
         const offer = (window as any)._pendingOffer;
         const callType = (window as any)._pendingCallType || 'video';
-        const from = callState.callerId;
+        const from = stateRef.current.callerId;
         if (!offer || !from) return;
 
         try {
@@ -178,7 +190,8 @@ export function useVideoCall() {
                 ...prev,
                 isReceivingCall: false,
                 isInCall: true,
-                localStream: stream
+                localStream: stream,
+                startTime: Date.now()
             }));
             delete (window as any)._pendingOffer;
             delete (window as any)._pendingCallType;
@@ -216,11 +229,11 @@ export function useVideoCall() {
 
             switch (type) {
                 case 'offer':
-                    if (callState.isInCall || callState.isCalling || callState.isReceivingCall) {
+                    if (stateRef.current.isInCall || stateRef.current.isCalling || stateRef.current.isReceivingCall) {
                         sendSignal(from, { type: 'reject-call', reason: 'busy' });
                         return;
                     }
-                    setCallState(prev => ({ ...prev, isReceivingCall: true, callerId: from }));
+                    setCallState(prev => ({ ...prev, isReceivingCall: true, callerId: from, callType: (payload as any).callType || 'video' }));
                     (window as any)._pendingOffer = offer;
                     (window as any)._pendingCallType = (payload as any).callType || 'video';
                     break;
@@ -228,7 +241,7 @@ export function useVideoCall() {
                 case 'answer':
                     if (pcs.current[from]) {
                         await pcs.current[from].setRemoteDescription(new RTCSessionDescription(answer));
-                        setCallState(prev => ({ ...prev, isCalling: false, isInCall: true }));
+                        setCallState(prev => ({ ...prev, isCalling: false, isInCall: true, startTime: prev.startTime || Date.now() }));
                     }
                     break;
 
@@ -237,7 +250,7 @@ export function useVideoCall() {
                         try {
                             await pcs.current[from].addIceCandidate(new RTCIceCandidate(candidate));
                         } catch (e) {
-                            console.error('Error adding ice candidate:', e);
+                            // Suppress candidate error logged during cleanup/disconnect
                         }
                     }
                     break;
@@ -248,14 +261,12 @@ export function useVideoCall() {
                     break;
 
                 case 'end-call':
-                    // If this was the only other person, end my call too.
-                    // Or in mesh, just remove their stream.
                     setCallState(prev => {
                         const newStreams = { ...prev.remoteStreams };
                         delete newStreams[from];
                         const stillInCall = Object.keys(newStreams).length > 0 || prev.isCalling;
                         if (!stillInCall) {
-                            setTimeout(cleanup, 0); // Cleanup after render
+                            setTimeout(cleanup, 0);
                             return prev;
                         }
                         return { ...prev, remoteStreams: newStreams };

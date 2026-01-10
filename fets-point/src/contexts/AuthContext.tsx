@@ -151,7 +151,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const restrictedPermissions = ['user_management_edit'];
 
     if (permission === 'can_edit_roster') {
-      return checkRosterEditPermission(profile.email, profile.role);
+      if (checkRosterEditPermission(profile.email, profile.role)) return true;
+      const permissions = typeof profile.permissions === 'object' && profile.permissions !== null
+        ? (profile.permissions as Record<string, boolean>)
+        : {};
+      return !!(permissions['can_edit_roster'] || permissions['roster_edit']);
     }
 
     if (restrictedPermissions.includes(permission)) {

@@ -518,7 +518,8 @@ export const Fetchat: React.FC<FetchatProps> = ({
                                     <div className="w-full h-full max-w-md mx-auto relative">
                                         <AgentDossier
                                             agent={{ ...selectedUser, is_online: presence[selectedUser.user_id]?.status === 'online' }}
-                                            currentUserId={user?.id}
+                                            currentUserId={profile?.id}
+                                            userBranch={profile?.branch_assigned}
                                             onClose={() => setViewMode('chat')}
                                             onStartChat={() => setViewMode('chat')}
                                             embedded={true}

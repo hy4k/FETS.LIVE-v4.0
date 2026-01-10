@@ -98,7 +98,7 @@ export const EnhancedQuickAddModal: React.FC<QuickAddModalProps> = ({
 
       // Batch upsert functionality
       const { error } = await supabase
-        .from('schedules' as any)
+        .from('roster_schedules')
         .upsert(newSchedules, { onConflict: 'profile_id,date' })
 
       if (error) throw error

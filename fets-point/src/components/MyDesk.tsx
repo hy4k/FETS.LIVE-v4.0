@@ -597,6 +597,24 @@ export function MyDesk() {
     }
 
     fetchGameStats()
+
+    // Real-time subscription for status updates
+    if (profile?.id) {
+      const channel = supabase.channel(`game_stats_${profile.id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'user_game_stats',
+          filter: `user_id=eq.${profile.id}`
+        }, payload => {
+          if (payload.new) setGameStats(payload.new)
+        })
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
   }, [profile?.id])
 
   // Global Call Support

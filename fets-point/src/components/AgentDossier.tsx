@@ -16,10 +16,11 @@ interface AgentDossierProps {
     onStartChat: () => void;
     currentUserId: string;
     embedded?: boolean;
+    userBranch?: string;
 }
 
 export const AgentDossier: React.FC<AgentDossierProps> = ({
-    agent, onClose, onStartChat, currentUserId, embedded = false
+    agent, onClose, onStartChat, currentUserId, embedded = false, userBranch
 }) => {
     const [activeTab, setActiveTab] = useState<'profile' | 'connect'>('profile');
     const [bio, setBio] = useState('');
@@ -59,7 +60,7 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
             const { data: gsData } = await supabase
                 .from('user_game_stats')
                 .select('*')
-                .eq('user_id', agent.user_id)
+                .eq('user_id', agent.id)
                 .single();
 
             if (gsData) {
@@ -135,34 +136,36 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
 
         // 2. Rewards
         try {
-            // Increment Cash logic (if any specific RPC exists, otherwise just show success)
-            // The connection logic might need to be unified with process_fets_connection, 
-            // but for now I'll just update the local state to satisfy the UI requirement.
-            setGameData((prev: any) => ({ ...prev, total_cash: (prev?.total_cash || 200) + 10 }));
+            const isCrossLocation = userBranch && agent?.branch_assigned && userBranch !== agent.branch_assigned;
+            const bonus = isCrossLocation ? 5 : 0;
+            const targetPoints = 10 + bonus;
+            const selfPoints = 5 + bonus;
+
+            // Increment Cash logic (Update local state for target agent dossier)
+            setGameData((prev: any) => ({ ...prev, total_cash: (prev?.total_cash || 200) + targetPoints }));
 
             // 1. Process Connection (One unified RPC for scoring both users & logging)
             await supabase.rpc('process_fets_connection', {
                 p_from_user_id: currentUserId,
-                p_to_user_id: agent.user_id,
+                p_to_user_id: agent.id,
                 p_points_for_to: 10,
                 p_points_for_from: 5
             });
 
             // 3. Notify Target
             await notificationService.createNotification({
-                recipient_id: agent.user_id,
+                recipient_id: agent.id,
                 type: 'system_news',
                 title: 'New Connection',
-                message: `An agent connected with your profile. Data Shared: "${randomTrivia.question}"`,
+                message: `An agent connected with your profile${isCrossLocation ? ' (Cross-Location Sync!)' : ''}. Data Shared: "${randomTrivia.question}"`,
                 priority: 'low',
                 metadata: { sender_id: currentUserId, trivia_id: randomTrivia.id }
             });
 
             triggerConfetti();
-            toast.success("Connected! +10 Cash");
+            toast.success(`Biometric Sync Secure: +${targetPoints} Cash for ${agent.full_name}, +${selfPoints} for you.`);
         } catch (err) {
             console.error("Connection failed", err);
-            // Even if RPC fails (e.g. missing function), UI should still show success for MVP
         }
     };
 

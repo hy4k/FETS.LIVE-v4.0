@@ -233,7 +233,11 @@ export function FetsRosterPremium() {
     // Roster Handlers (rotating) must have an approved request flag.
     const isMithun = profile?.email === 'mithun@fets.in';
     const isSuperAdminRole = profile?.role === 'super_admin';
-    const bypassApproval = isMithun || isSuperAdminRole;
+    // If permission is explicitly assigned in User Management, allow bypass of approval check
+    const hasExplicitPermission = profile?.permissions &&
+      ((profile.permissions as any).can_edit_roster === true || (profile.permissions as any).roster_edit === true);
+
+    const bypassApproval = isMithun || isSuperAdminRole || hasExplicitPermission;
 
     if (!bypassApproval) {
       // Check for approved leave/shift-change request for this specific user and date

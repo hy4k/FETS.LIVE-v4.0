@@ -59,7 +59,7 @@ export const Leaderboards: React.FC = () => {
             } else if (tab === 'centre') {
                 const { data: pools, error } = await supabase
                     .from('centre_pool_stats')
-                    .select('*')
+                    .select('location, pool_balance, current_level')
                     .order('pool_balance', { ascending: false });
 
                 if (error) throw error;
@@ -67,6 +67,7 @@ export const Leaderboards: React.FC = () => {
                     id: p.location,
                     full_name: p.location,
                     points: p.pool_balance,
+                    level: p.current_level,
                     isCentre: true
                 })));
             }
@@ -173,7 +174,7 @@ export const Leaderboards: React.FC = () => {
                                             {GRANDMASTER_IDS.includes(item.id) ? (
                                                 <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-black text-[8px] font-black uppercase tracking-widest animate-pulse">GRANDMASTER</span>
                                             ) : item.level && (
-                                                <span className="px-2 py-0.5 rounded-lg bg-slate-900 text-white text-[8px] font-black uppercase tracking-widest">LVL {item.level}</span>
+                                                <span className="px-2 py-0.5 rounded-lg bg-slate-900 text-white text-[8px] font-black uppercase tracking-widest">{item.isCentre ? 'BRANCH LVL' : 'LVL'} {item.level}</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-3">

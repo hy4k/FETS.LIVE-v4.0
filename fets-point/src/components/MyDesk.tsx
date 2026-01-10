@@ -4,7 +4,7 @@ import {
   ShieldCheck, MapPin, Briefcase, GraduationCap, Sparkles,
   MessageSquare, LayoutGrid, BookOpen, UserCheck, Key, LogOut,
   Mail, History, Info, ExternalLink, Brain, ChevronDown, ChevronRight, Phone,
-  CheckSquare, Flower2, Calendar, FileText, User, Users as UsersIcon, Minimize2, Video, Mic, Crown, Award
+  CheckSquare, Flower2, Calendar, FileText, User, Users as UsersIcon, Minimize2, Video, Mic, Crown, Award, Trophy
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
@@ -22,6 +22,7 @@ import { getActiveRosterHandlerEmail } from '../utils/authUtils'
 import { useChat } from '../contexts/ChatContext'
 import { useGlobalCall } from '../contexts/CallContext'
 import { Frame } from './Frame'
+import { Leaderboards } from './Leaderboards'
 
 // --- VISUAL COMPONENT PRIMITIVES (Glass & Midnight Theme for Main UI) ---
 
@@ -118,23 +119,40 @@ const UserProfileCard = ({ profile, gameStats }: { profile: any, gameStats: any 
       </div>
 
       {/* FETS GAME STATS */}
-      <div className="w-full grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/5">
-        <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative overflow-hidden group">
-          {level >= 4 && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />}
-          <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">Level</p>
-          <div className="flex items-center justify-center gap-1">
-            <Sparkles size={10} className={level >= 4 ? 'animate-pulse text-amber-400' : 'text-amber-500'} />
-            <p className="text-lg font-black text-white leading-none">{level}</p>
+      <div className="w-full flex flex-col gap-3 mt-4 pt-4 border-t border-white/5">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative overflow-hidden group">
+            {level >= 4 && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />}
+            <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">Level</p>
+            <div className="flex items-center justify-center gap-1">
+              <Sparkles size={10} className={level >= 4 ? 'animate-pulse text-amber-400' : 'text-amber-500'} />
+              <p className="text-lg font-black text-white leading-none">{level}</p>
+            </div>
+          </div>
+          <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative">
+            <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">FETS Cash</p>
+            <p className="text-lg font-black text-white leading-none">{gameStats?.total_cash || 200}</p>
+            {gameStats?.pending_multiplier > 1 && (
+              <div className="absolute -top-1 -right-1 bg-amber-500 text-black text-[7px] font-black px-1 rounded-sm animate-pulse shadow-[0_0_5px_rgba(245,158,11,0.5)]">
+                2X
+              </div>
+            )}
           </div>
         </div>
-        <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative">
-          <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">FETS Cash</p>
-          <p className="text-lg font-black text-white leading-none">{gameStats?.total_cash || 200}</p>
-          {gameStats?.pending_multiplier > 1 && (
-            <div className="absolute -top-1 -right-1 bg-amber-500 text-black text-[7px] font-black px-1 rounded-sm animate-pulse shadow-[0_0_5px_rgba(245,158,11,0.5)]">
-              2X
-            </div>
-          )}
+
+        {/* Level Progress Bar */}
+        <div className="w-full space-y-1">
+          <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest text-gray-500">
+            <span>XP Progress</span>
+            <span>{(gameStats?.total_cash || 0) % 100}%</span>
+          </div>
+          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(gameStats?.total_cash || 0) % 100}%` }}
+              className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
+            />
+          </div>
         </div>
       </div>
     </GlassCard>
@@ -564,6 +582,7 @@ export function MyDesk() {
   const { isDetached, toggleDetach, activeUser, setActiveUser } = useChat()
   const [activeTab, setActiveTab] = useState('fetchat')
   const [gameStats, setGameStats] = useState<any>(null)
+  const [leaderboardTab, setLeaderboardTab] = useState<'weekly' | 'monthly' | 'legend' | 'centre'>('weekly')
 
   useEffect(() => {
     const fetchGameStats = async () => {
@@ -592,6 +611,7 @@ export function MyDesk() {
     { id: 'fetchat', label: 'Chat', icon: MessageSquare },
     { id: 'frame', label: 'Frame', icon: UsersIcon }, // New Frame Tab
     { id: 'todo', label: 'To Do', icon: CheckSquare },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'notes', label: 'Notes', icon: BookOpen },
     { id: 'vault', label: 'Vault', icon: Key },
     { id: 'profile', label: 'Profile', icon: User },
@@ -788,16 +808,16 @@ export function MyDesk() {
                 </motion.div>
               )}
 
-              {/* 3. NOTES */}
-              {activeTab === 'notes' && (
-                <motion.div key="notes" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
+              {/* 3. LEADERBOARD */}
+              {activeTab === 'leaderboard' && (
+                <motion.div key="leaderboard" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
                   <GlassCard className="h-full overflow-hidden" noPadding>
-                    <DigitalNotebook />
+                    <Leaderboards />
                   </GlassCard>
                 </motion.div>
               )}
 
-              {/* 4. VAULT */}
+              {/* 4. NOTES */}
               {activeTab === 'vault' && (
                 <motion.div key="vault" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
                   <GlassCard className="h-full overflow-hidden" noPadding>

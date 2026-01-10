@@ -38,9 +38,9 @@ interface Candidate {
 
 const CLIENT_LOGOS: Record<string, string> = {
   'PROMETRIC': '/client-logos/prometric.png',
-  'ETS': '/client-logos/ets.png',
-  'PEARSON VUE': '/client-logos/pearson.png',
-  'PSI': '/client-logos/psi.png'
+  'CMA US': '/client-logos/cma_usa.png',
+  'CELPIP': '/client-logos/celpip.jpg',
+  'PEARSON VUE': '/client-logos/pearson_vue.png'
 }
 
 // Simple Clean Card Component
@@ -442,7 +442,7 @@ export function CandidateTrackerPremium() {
         <div className="flex items-center space-x-4 mb-6">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Show Client:</span>
           <div className="flex flex-wrap gap-2">
-            {['all', 'PROMETRIC', 'ETS', 'PEARSON VUE', 'PSI'].map((client) => (
+            {['all', 'PROMETRIC', 'CMA US', 'CELPIP', 'PEARSON VUE'].map((client) => (
               <button
                 key={client}
                 onClick={() => setFilterClient(client)}
@@ -626,9 +626,9 @@ export function CandidateTrackerPremium() {
                     >
                       <option value="">Type or select client...</option>
                       <option value="PROMETRIC">PROMETRIC</option>
-                      <option value="ETS">ETS</option>
+                      <option value="CMA US">CMA US</option>
+                      <option value="CELPIP">CELPIP</option>
                       <option value="PEARSON VUE">PEARSON VUE</option>
-                      <option value="PSI">PSI</option>
                     </select>
                   </div>
 

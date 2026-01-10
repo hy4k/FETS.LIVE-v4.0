@@ -140,10 +140,13 @@ export const AgentDossier: React.FC<AgentDossierProps> = ({
             // but for now I'll just update the local state to satisfy the UI requirement.
             setGameData((prev: any) => ({ ...prev, total_cash: (prev?.total_cash || 200) + 10 }));
 
-            // Increment for Target
-            await supabase.rpc('increment_sparks', { target_user_id: agent.user_id, amount: 10 });
-            // Increment for Self
-            await supabase.rpc('increment_sparks', { target_user_id: currentUserId, amount: 5 });
+            // 1. Process Connection (One unified RPC for scoring both users & logging)
+            await supabase.rpc('process_fets_connection', {
+                p_from_user_id: currentUserId,
+                p_to_user_id: agent.user_id,
+                p_points_for_to: 10,
+                p_points_for_from: 5
+            });
 
             // 3. Notify Target
             await notificationService.createNotification({

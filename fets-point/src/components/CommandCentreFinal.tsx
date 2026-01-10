@@ -546,20 +546,19 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                                 <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] font-['Rajdhani']">Scheduler Interface Hub</h4>
                             </div>
 
-                            <div className="grid grid-cols-5 gap-4">
+                            <div className="grid grid-cols-4 gap-6">
                                 {[
-                                    { name: 'ACCA', logo: 'uploaded_image_0_1767992440020.png', url: 'https://www.accaglobal.com' },
-                                    { name: 'AWS', logo: 'uploaded_image_1_1767992440020.png', url: 'https://aws.amazon.com/certification' },
-                                    { name: 'CELPIP', logo: 'uploaded_image_2_1767992440020.jpg', url: 'https://www.celpip.ca' },
-                                    { name: 'CMA USA', logo: 'uploaded_image_3_1767992440020.png', url: 'https://www.imanet.org/cma-certification' },
-                                    { name: 'Microsoft', logo: 'uploaded_image_4_1767992440020.png', url: 'https://learn.microsoft.com/credentials' }
+                                    { name: 'Prometric', logo: 'client-logos/prometric.png', url: 'https://easyserve.prometric.com/my.policy' },
+                                    { name: 'CMA US', logo: 'client-logos/cma_usa.png', url: 'https://proscheduler.prometric.com/home' },
+                                    { name: 'CELPIP', logo: 'client-logos/celpip.jpg', url: 'https://testcentreportal.paragontesting.ca/TestCentrePortal/Login' },
+                                    { name: 'Pearson VUE', logo: 'client-logos/pearson_vue.png', url: 'https://connect.pearsonvue.com/Connect/#/authenticate' }
                                 ].map((client) => (
                                     <a
                                         key={client.name}
                                         href={client.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`${neuBtn} p-4 flex items-center justify-center h-24 hover:scale-105 transition-all group`}
+                                        className={`${neuBtn} p-4 flex items-center justify-center h-28 hover:scale-105 transition-all group`}
                                         title={`Access ${client.name} Scheduler`}
                                     >
                                         <img

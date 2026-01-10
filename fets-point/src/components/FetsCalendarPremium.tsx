@@ -33,7 +33,7 @@ const CLIENT_COLORS = {
     shadow: 'rgba(59, 130, 246, 0.12)',
     ring: 'ring-blue-400/30'
   },
-  'VUE': {
+  'CMA US': {
     bg: '#f0fdf4',
     text: '#166534',
     border: '#22c55e',
@@ -41,21 +41,13 @@ const CLIENT_COLORS = {
     shadow: 'rgba(34, 197, 94, 0.12)',
     ring: 'ring-green-400/30'
   },
-  'ETS': {
+  'CELPIP': {
     bg: '#fffdf0',
     text: '#92400e',
     border: '#f59e0b',
     accent: '#fef3c7',
     shadow: 'rgba(245, 158, 11, 0.12)',
     ring: 'ring-amber-400/30'
-  },
-  'PSI': {
-    bg: '#f5f3ff',
-    text: '#5b21b6',
-    border: '#8b5cf6',
-    accent: '#ede9fe',
-    shadow: 'rgba(139, 92, 246, 0.12)',
-    ring: 'ring-purple-400/30'
   },
   'PROMETRIC': {
     bg: '#fff1f2',
@@ -140,9 +132,9 @@ export function FetsCalendarPremium() {
   const normalizeClientName = (name: string): string => {
     const upper = name.toUpperCase()
     if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON'
-    if (upper.includes('ETS') || upper.includes('TOEFL') || upper.includes('GRE')) return 'ETS'
+    if (upper.includes('CELPIP')) return 'CELPIP'
+    if (upper.includes('CMA')) return 'CMA US'
     if (upper.includes('PROMETRIC')) return 'PROMETRIC'
-    if (upper.includes('PSI')) return 'PSI'
     return upper
   }
 
@@ -175,9 +167,9 @@ export function FetsCalendarPremium() {
   const getClientLogo = (clientName: string) => {
     const upperName = clientName.toUpperCase()
     if (upperName.includes('PROMETRIC')) return '/client-logos/prometric.png'
-    if (upperName.includes('ETS') || upperName.includes('TOEFL') || upperName.includes('GRE')) return '/client-logos/ets.png'
-    if (upperName.includes('PEARSON') || upperName.includes('VUE')) return '/client-logos/pearson.png'
-    if (upperName.includes('PSI')) return '/client-logos/psi.png'
+    if (upperName.includes('CMA')) return '/client-logos/cma_usa.png'
+    if (upperName.includes('CELPIP')) return '/client-logos/celpip.jpg'
+    if (upperName.includes('PEARSON') || upperName.includes('VUE')) return '/client-logos/pearson_vue.png'
     return null
   }
 
@@ -186,8 +178,8 @@ export function FetsCalendarPremium() {
     if (n.includes('PEARSON')) return 'PV';
     if (n.includes('PROMETRIC')) return 'PROM';
     if (n.includes('VUE')) return 'VUE';
-    if (n.includes('ETS')) return 'ETS';
-    if (n.includes('PSI')) return 'PSI';
+    if (n.includes('CMA')) return 'CMA';
+    if (n.includes('CELPIP')) return 'CELP';
     return n.slice(0, 4);
   }
 

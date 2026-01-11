@@ -1,212 +1,103 @@
-.fets-logo-wrapper {
-    --primary: #FFD700;
-    /* Gold/Yellow for FETS */
-    --neutral-1: #ffffff;
-    --neutral-2: #f3f4f6;
-    --radius: 16px;
-}
-
-.fets-button {
-    cursor: pointer;
-    border-radius: var(--radius);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    border: none;
-    box-shadow:
-        0 1px 1px rgba(255, 255, 255, 0.4),
-        0 12px 24px rgba(0, 0, 0, 0.15),
-        0 4px 8px rgba(0, 0, 0, 0.1);
+.fets-logo-3d-container {
     display: flex;
     align-items: center;
-    justify-content: center;
+    padding: 10px;
+}
+
+.fets-logo-3d-wrapper {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 5px 0;
+}
+
+.logo-main-text {
+    display: flex;
+    align-items: baseline;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 900;
+    font-size: 2.2rem;
+    line-height: 0.9;
+    color: #000000;
+    /* Pure Black Text */
+    letter-spacing: -0.02em;
+
+    /* 3D Extrusion Effect using text-shadow stack - Optimized for Black Text */
+    text-shadow:
+        1px 1px 0px #333333,
+        2px 2px 0px #222222,
+        3px 3px 0px #111111,
+        4px 4px 8px rgba(0, 0, 0, 0.4);
+
+    transform: skew(-5deg);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    min-width: 220px;
-    padding: 12px 22px;
-    height: 64px;
-    font-family: "Rajdhani", "Inter", system-ui, sans-serif;
-    font-style: normal;
-    font-size: 24px;
+}
+
+.text-fets {
+    text-transform: uppercase;
+}
+
+.text-live {
+    text-transform: uppercase;
     font-weight: 700;
-    letter-spacing: 0.5px;
-    background: transparent;
 }
 
-.fets-button:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow:
-        0 2px 2px rgba(255, 255, 255, 0.4),
-        0 18px 32px rgba(0, 0, 0, 0.15),
-        0 8px 12px rgba(0, 0, 0, 0.1);
+.text-dot {
+    color: #000000;
+    margin: 0 0.05em;
 }
 
-.fets-button:active {
-    transform: scale(1);
-    box-shadow:
-        0 0 1px 2px rgba(255, 255, 255, 0.3),
-        0 10px 3px -3px rgba(0, 0, 0, 0.2);
+.logo-accent-line {
+    height: 3px;
+    background: #000000;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    margin: 2px 0;
 }
 
-.fets-button:after {
-    content: "";
+.logo-accent-line.top {
+    width: 60%;
+    margin-left: 5px;
+}
+
+.logo-accent-line.bottom {
+    width: 80%;
+    margin-left: 20px;
+    height: 4px;
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+}
+
+.logo-deco-dot {
     position: absolute;
-    inset: 0;
-    border-radius: var(--radius);
-    border: 2.5px solid transparent;
-    background:
-        linear-gradient(var(--neutral-1), var(--neutral-2)) padding-box,
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.45)) border-box;
-    z-index: 0;
-    transition: all 0.4s ease;
+    width: 6px;
+    height: 6px;
+    background: #000000;
+    border-radius: 50%;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.fets-button:hover::after {
-    transform: scale(1.05, 1.1);
-    box-shadow: inset 0 -1px 3px 0 rgba(255, 255, 255, 1);
+.dot-1 {
+    top: -5px;
+    right: 25%;
 }
 
-.fets-button::before {
-    content: "";
-    inset: 7px 6px 6px 6px;
-    position: absolute;
-    background: linear-gradient(to top, var(--neutral-1), var(--neutral-2));
-    border-radius: 30px;
-    filter: blur(0.5px);
-    z-index: 2;
+.dot-2 {
+    bottom: -2px;
+    right: 0;
 }
 
-.fets-state p {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Hover Enhancement */
+.fets-logo-3d-wrapper:hover .logo-main-text {
+    transform: skew(-5deg) translate(-2px, -2px);
+    text-shadow:
+        1px 1px 0px #333333,
+        2px 2px 0px #222222,
+        4px 4px 12px rgba(0, 0, 0, 0.6),
+        6px 6px 20px rgba(0, 0, 0, 0.4);
 }
 
-.fets-state .icon {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    margin: auto;
-    transform: scale(1.25);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Outline Animation */
-.fets-outline {
-    position: absolute;
-    border-radius: inherit;
-    overflow: hidden;
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    inset: -2px -3.5px;
-}
-
-.fets-outline::before {
-    content: "";
-    position: absolute;
-    inset: -100%;
-    background: conic-gradient(from 180deg,
-            transparent 60%,
-            var(--primary) 85%,
-            transparent 100%);
-    animation: spin 2.5s linear infinite;
-    animation-play-state: paused;
-    opacity: 0.7;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.fets-button:hover .fets-outline::before {
-    animation-play-state: running;
-}
-
-/* Letters Animation */
-.fets-state p span {
-    display: block;
-    opacity: 1;
-    /* Visible by default */
-    color: #333;
-    transition: transform 0.3s ease, color 0.3s ease;
-}
-
-.fets-button:hover p span {
-    animation: wave 0.5s ease forwards calc(var(--i) * 0.05s);
-}
-
-@keyframes wave {
-    30% {
-        opacity: 1;
-        transform: translateY(4px) translateX(0) rotate(0);
-    }
-
-    50% {
-        opacity: 1;
-        transform: translateY(-4px) translateX(0) rotate(0);
-        color: var(--primary);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0) translateX(0) rotate(0);
-    }
-}
-
-@keyframes slideDown {
-    0% {
-        opacity: 0;
-        transform: translateY(-20px) translateX(5px) rotate(-90deg);
-        color: var(--primary);
-        filter: blur(5px);
-    }
-
-    30% {
-        opacity: 1;
-        transform: translateY(4px) translateX(0) rotate(0);
-        filter: blur(0);
-    }
-
-    50% {
-        opacity: 1;
-        transform: translateY(-3px) translateX(0) rotate(0);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0) translateX(0) rotate(0);
-    }
-}
-
-/* State & Icon Layout */
-.fets-state {
-    padding-left: 35px;
-    /* Space for icon */
-    padding-right: 15px;
-    z-index: 2;
-    display: flex;
-    position: relative;
-    width: 100%;
-    justify-content: center;
-}
-
-.fets-state .icon svg {
-    width: 20px;
-    height: 20px;
-    color: #4b5563;
-}
-
-.fets-button:hover .icon svg {
-    color: var(--primary);
-    transform: scale(1.1);
-    transition: color 0.3s ease, transform 0.3s ease;
+.fets-logo-3d-wrapper:hover .logo-accent-line {
+    width: 90%;
+    transition: width 0.6s ease;
 }

@@ -11,6 +11,43 @@
     --deck-text: #4E342E;
     /* Dark Chocolate Typography */
     --deck-radius: 18px;
+    --branch-tint: transparent;
+}
+
+/* Branch Specific Tints */
+body.branch-calicut {
+    --deck-bg: #F6C845;
+    /* Original Tuscan Sun */
+    --deck-shadow-dark: 6px 6px 14px #C99E22;
+    --deck-shadow-light: -6px -6px 14px #FFEA7A;
+    --branch-tint: rgba(246, 200, 69, 0.03);
+}
+
+body.branch-cochin {
+    --deck-bg: #E2C97E;
+    /* Pale Gold / Sandy */
+    --deck-shadow-dark: 6px 6px 14px #B89C4D;
+    --deck-shadow-light: -6px -6px 14px #F7E6B5;
+    --branch-tint: rgba(100, 149, 237, 0.05);
+    /* Very subtle blue wash */
+}
+
+body.branch-global {
+    --deck-bg: #E0E5EC;
+    /* Classic Neumorphic Gray */
+    --deck-shadow-dark: 9px 9px 16px #bec3c9;
+    --deck-shadow-light: -9px -9px 16px #ffffff;
+    --deck-text: #4a5568;
+}
+
+/* Global Tone Overlay */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: var(--branch-tint);
+    z-index: 9999;
 }
 
 /* Command Deck Container */

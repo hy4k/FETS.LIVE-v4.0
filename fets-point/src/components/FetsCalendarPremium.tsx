@@ -33,7 +33,7 @@ const CLIENT_COLORS = {
     shadow: 'rgba(59, 130, 246, 0.12)',
     ring: 'ring-blue-400/30'
   },
-  'CMA US': {
+  'PSI': {
     bg: '#f0fdf4',
     text: '#166534',
     border: '#22c55e',
@@ -41,7 +41,7 @@ const CLIENT_COLORS = {
     shadow: 'rgba(34, 197, 94, 0.12)',
     ring: 'ring-green-400/30'
   },
-  'CELPIP': {
+  'ITTS': {
     bg: '#fffdf0',
     text: '#92400e',
     border: '#f59e0b',
@@ -76,12 +76,21 @@ const CENTRE_COLORS = {
 type ClientType = keyof typeof CLIENT_COLORS
 
 export function FetsCalendarPremium() {
-  const { user, hasPermission } = useAuth()
+  const { user, hasPermission, profile } = useAuth()
   const canEdit = hasPermission('calendar_edit')
   const { activeBranch } = useBranch()
   const { applyFilter, isGlobalView } = useBranchFilter()
   const [currentDate, setCurrentDate] = useState(new Date())
-  const { data: sessions = [], isLoading: loading, isError, error } = useCalendarSessions(currentDate, activeBranch, applyFilter, isGlobalView)
+  const [locationFilter, setLocationFilter] = useState(activeBranch || 'all')
+
+  // Sync location filter with active branch changes from header
+  useEffect(() => {
+    setLocationFilter(activeBranch || 'all')
+  }, [activeBranch])
+
+  const sessionBranch = locationFilter === 'all' ? 'global' : locationFilter
+  const { data: sessions = [], isLoading: loading, isError, error } = useCalendarSessions(currentDate, sessionBranch as any, applyFilter, isGlobalView) // Cast to any to avoid type issues if strictly typed
+
   const { addSession, updateSession, deleteSession, isMutating } = useSessionMutations()
   const [showModal, setShowModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -167,8 +176,8 @@ export function FetsCalendarPremium() {
   const getClientLogo = (clientName: string) => {
     const upperName = clientName.toUpperCase()
     if (upperName.includes('PROMETRIC')) return '/client-logos/prometric.png'
-    if (upperName.includes('CMA')) return '/client-logos/cma_usa.png'
-    if (upperName.includes('CELPIP')) return '/client-logos/celpip.jpg'
+    if (upperName.includes('PSI')) return '/client-logos/psi.png'
+    if (upperName.includes('ITTS')) return '/client-logos/itts.png'
     if (upperName.includes('PEARSON') || upperName.includes('VUE')) return '/client-logos/pearson_vue.png'
     return null
   }
@@ -178,8 +187,8 @@ export function FetsCalendarPremium() {
     if (n.includes('PEARSON')) return 'PV';
     if (n.includes('PROMETRIC')) return 'PROM';
     if (n.includes('VUE')) return 'VUE';
-    if (n.includes('CMA')) return 'CMA';
-    if (n.includes('CELPIP')) return 'CELP';
+    if (n.includes('PSI')) return 'PSI';
+    if (n.includes('ITTS')) return 'ITTS';
     return n.slice(0, 4);
   }
 
@@ -396,6 +405,22 @@ export function FetsCalendarPremium() {
         {/* Control Toolbar - Neumorphic */}
         <div className="neomorphic-card p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
+            {/* Location Filter */}
+            <div className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm min-w-[140px]">
+              <MapPin size={16} className="text-amber-500 mr-2" />
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs font-bold uppercase tracking-widest text-slate-600 cursor-pointer w-full"
+              >
+                <option value="all">All Locations</option>
+                <option value="calicut">Calicut</option>
+                <option value="cochin">Cochin</option>
+                <option value="kannur">Kannur</option>
+                <option value="global">Global</option>
+              </select>
+            </div>
+
             {/* Month Navigation */}
             <div className="flex items-center space-x-3">
               <button
@@ -428,8 +453,14 @@ export function FetsCalendarPremium() {
           <div className="flex items-center space-x-4">
             {/* Analysis Button */}
             <button
-              onClick={() => setShowAnalysis(true)}
-              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center space-x-2"
+              onClick={() => {
+                if (profile?.role === 'super_admin') {
+                  setShowAnalysis(true)
+                } else {
+                  toast.error("Analysis is restricted to Super Admin")
+                }
+              }}
+              className={`px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center space-x-2 ${profile?.role !== 'super_admin' ? 'opacity-50 cursor-pointer' : ''}`}
             >
               <TrendingUp className="h-4 w-4 text-amber-500" />
               <span>Analysis</span>

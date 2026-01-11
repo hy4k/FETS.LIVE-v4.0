@@ -1,31 +1,23 @@
 import React from 'react';
 import './FetsLogo.css';
-import { Zap } from 'lucide-react';
 
 export function FetsLogo() {
-    const letters = "FETS.LIVE".split("");
-
     return (
-        <div className="fets-logo-wrapper">
-            <button className="fets-button">
-                <div className="fets-outline" />
-                <div className="fets-state">
-                    <div className="icon">
-                        <Zap className="w-5 h-5 fill-current" />
-                    </div>
-                    <p>
-                        {letters.map((char, index) => (
-                            <span
-                                key={index}
-                                style={{ "--i": index } as React.CSSProperties}
-                                className={char === '.' ? "mx-[2px]" : ""}
-                            >
-                                {char}
-                            </span>
-                        ))}
-                    </p>
+        <div className="fets-logo-3d-container">
+            <div className="fets-logo-3d-wrapper">
+                <div className="logo-accent-line top"></div>
+                <div className="logo-main-text">
+                    <span className="text-fets">FETS</span>
+                    <span className="text-dot main-dot">.</span>
+                    <span className="text-live">LIVE</span>
+                    <span className="text-dot end-dot">.</span>
                 </div>
-            </button>
+                <div className="logo-accent-line bottom"></div>
+
+                {/* Decorative Dots from the image */}
+                <div className="logo-deco-dot dot-1"></div>
+                <div className="logo-deco-dot dot-2"></div>
+            </div>
         </div>
     );
 }

@@ -4,7 +4,7 @@ import {
   Bell, ChevronDown, MapPin, LayoutDashboard,
   Brain, ShieldAlert, MessageSquare, ClipboardList,
   CalendarDays, UserSearch, UserCheck, Menu, LogOut,
-  Server, Cpu, Shield, X
+  Server, Cpu, Shield, X, PackageSearch
 } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -66,6 +66,21 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     }
   }, [isBranchDropdownOpen]);
 
+  // Handle Site-Wide Branch Theming
+  useEffect(() => {
+    const branchClass = `branch-${activeBranch || 'global'}`;
+
+    // Remove all branch classes
+    document.body.classList.remove('branch-calicut', 'branch-cochin', 'branch-global');
+
+    // Add active branch class
+    document.body.classList.add(branchClass);
+
+    return () => {
+      document.body.classList.remove(branchClass);
+    };
+  }, [activeBranch]);
+
   const currentBranchName = activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : 'Global View';
 
   // --- NAVIGATION ITEMS ---
@@ -83,6 +98,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'checklist-management', label: 'CHECKLIST', icon: ClipboardList },
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
+    { id: 'lost-and-found', label: 'LOST & FOUND', icon: PackageSearch },
     { id: 'fets-intelligence', label: 'FETS INTELLIGENCE', icon: Brain },
     { id: 'user-management', label: 'USER MGMT', icon: Shield },
   ].filter(item => {
@@ -236,7 +252,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <Menu size={20} />
               </button>
             )}
-            <div className={`flex flex-col justify-center h-full py-2 ${isMobile ? 'scale-75' : 'scale-90'} origin-left`}>
+            <div className={`flex flex-col items-start ${isMobile ? 'scale-75' : 'scale-90'} origin-left pt-2`}>
               <FetsLogo />
             </div>
           </div>
@@ -259,38 +275,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
           {/* RIGHT: COMMAND CONTROLS (Pills) */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
-            {/* Branch Switcher (Desktop) */}
-            <div ref={dropdownRef} className="relative hidden md:block">
-              <button
-                className="fets-pill-control"
-                onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-              >
-                <MapPin className="w-4 h-4 opacity-70" />
-                <span className="text-xs uppercase tracking-wider">{currentBranchName}</span>
-                {canSwitch && <ChevronDown className="w-3 h-3 opacity-40 ml-1" />}
-              </button>
 
-              <AnimatePresence>
-                {isBranchDropdownOpen && canSwitch && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/60 overflow-hidden z-50 p-2"
-                  >
-                    {availableBranches.map((branch) => (
-                      <button
-                        key={branch}
-                        onClick={() => { setActiveBranch(branch as any); setIsBranchDropdownOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${activeBranch === branch ? 'bg-amber-100 text-amber-900' : 'hover:bg-gray-100'}`}
-                      >
-                        <span className="font-semibold text-sm">{formatBranchName(branch)}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
 
             {/* Notifications */}
             <button
@@ -335,21 +320,98 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
         {/* --- ROW 2: UTILITY DECK (Recessed Utility Bar) --- (Hidden on Mobile, moved to Menu) */}
         {!isMobile && (
-          <div className="h-20 utility-deck flex items-center relative z-10 border-t border-black/5">
-            <div className="max-w-[1920px] mx-auto px-6 w-full flex items-center justify-center gap-6 overflow-x-auto no-scrollbar py-2">
-              {secondRowItems.map((item) => {
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab && setActiveTab(item.id)}
-                    className={`utility-btn ${isActive ? 'active' : ''}`}
-                  >
-                    <item.icon size={14} className={`${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`} />
-                    <span>{item.label}</span>
-                  </button>
-                )
-              })}
+          <div className="h-24 utility-deck flex items-center relative z-10 border-t border-black/5">
+            <div className="max-w-[1920px] mx-auto px-10 w-full flex items-center justify-between gap-10">
+
+              {/* COMPACT NEUMORPHIC BRANCH SELECTOR (Second Row) */}
+              <div ref={dropdownRef} className="relative shrink-0">
+                <button
+                  onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                  className={`
+                    group relative flex items-center gap-4 px-6 py-3.5 transition-all duration-300
+                    rounded-[18px] bg-[#F6C845] border-none
+                    ${isBranchDropdownOpen
+                      ? 'shadow-[inset_4px_4px_8px_#C99E22,inset_-4px_-4px_8px_#FFEA7A] translate-y-[0.5px]'
+                      : 'shadow-[6px_6px_14px_#C99E22,-6px_-6px_14px_#FFEA7A] hover:-translate-y-1 hover:shadow-[8px_8px_20px_#C99E22,-8px_-8px_20px_#FFEA7A]'
+                    }
+                  `}
+                >
+                  <div className="relative z-10 flex items-center gap-3">
+                    <div className={`
+                      p-2 rounded-xl bg-white/10 transition-transform duration-500
+                      ${isBranchDropdownOpen ? 'scale-90' : 'group-hover:rotate-12'}
+                    `}>
+                      <MapPin size={16} className="text-[#4E342E] opacity-70" />
+                    </div>
+
+                    <div className="flex flex-col items-start pt-0.5">
+                      <span className="text-[7px] font-black uppercase tracking-[0.4em] text-[#4E342E]/50 mb-0">Operational Node</span>
+                      <span className="text-sm font-black text-[#4E342E] uppercase tracking-wider">
+                        {currentBranchName}
+                      </span>
+                    </div>
+
+                    <div className={`
+                      ml-1 p-1 transition-transform duration-500
+                      ${isBranchDropdownOpen ? 'rotate-180' : ''}
+                    `}>
+                      <ChevronDown size={14} className="text-[#4E342E]/50" />
+                    </div>
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {isBranchDropdownOpen && canSwitch && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 mt-4 w-64 bg-[#F6C845] rounded-[24px] shadow-[15px_15px_30px_#C99E22,-15px_-15px_30px_#FFEA7A] border border-white/20 overflow-hidden z-[70] p-3"
+                    >
+                      <div className="px-5 py-3 mb-2 border-b border-[#4E342E]/10 border-dashed">
+                        <span className="text-[9px] font-black text-[#4E342E]/60 uppercase tracking-[0.4em]">Target Nodes</span>
+                      </div>
+                      <div className="space-y-1">
+                        {availableBranches.map((branch) => (
+                          <button
+                            key={branch}
+                            onClick={() => { setActiveBranch(branch as any); setIsBranchDropdownOpen(false); }}
+                            className={`
+                              w-full relative flex items-center justify-between px-5 py-3.5 rounded-xl transition-all duration-300
+                              ${activeBranch === branch
+                                ? 'shadow-[inset_3px_3px_6px_#C99E22,inset_-3px_-3px_6px_#FFEA7A] text-[#000] font-black'
+                                : 'hover:bg-white/10 text-[#4E342E]/70 hover:text-[#4E342E]'
+                              }
+                            `}
+                          >
+                            <span className="text-[11px] font-black uppercase tracking-[0.15em]">{formatBranchName(branch)}</span>
+                            {activeBranch === branch && (
+                              <div className="w-1.5 h-1.5 bg-[#4E342E] rounded-full animate-pulse" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* SECOND ROW NAVIGATION ITEMS */}
+              <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2">
+                {secondRowItems.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab && setActiveTab(item.id)}
+                      className={`utility-btn ${isActive ? 'active' : ''} px-6 py-3`}
+                    >
+                      <item.icon size={14} className={`${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`} />
+                      <span className="text-[11px] font-bold uppercase tracking-widest">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         )}

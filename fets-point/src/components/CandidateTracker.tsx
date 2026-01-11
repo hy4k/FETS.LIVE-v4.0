@@ -101,7 +101,8 @@ export function CandidateTracker() {
   // Helpers
   const deriveClientFromExamName = (name?: string): string => {
     const n = (name || '').toUpperCase()
-    if (n.includes('CMA US')) return 'PROMETRIC'
+    if (n.includes('PSI')) return 'PSI'
+    if (n.includes('ITTS')) return 'ITTS'
     if (n.includes('GRE') || n.includes('TOEFL')) return 'ETS'
     if (n.includes('VUE') || n.includes('PEARSON')) return 'PEARSON VUE'
     return 'PEARSON VUE'
@@ -322,6 +323,8 @@ export function CandidateTracker() {
             >
               <option value="all">All Clients</option>
               <option value="PROMETRIC">Prometric</option>
+              <option value="PSI">PSI</option>
+              <option value="ITTS">ITTS</option>
               <option value="PEARSON VUE">Pearson VUE</option>
               <option value="OTHERS">Others</option>
             </select>

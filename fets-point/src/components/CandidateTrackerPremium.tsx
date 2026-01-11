@@ -1,9 +1,9 @@
-import { useState, useMemo, memo } from 'react'
+import { useState, useMemo, memo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Plus, Search, Edit, UserCheck, UserX, Phone, X, Calendar,
   Trash2, FileText, Download, ChevronLeft, ChevronRight,
-  CheckCircle, Grid, List, FileSpreadsheet
+  CheckCircle, Grid, List, FileSpreadsheet, MapPin
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
@@ -38,8 +38,8 @@ interface Candidate {
 
 const CLIENT_LOGOS: Record<string, string> = {
   'PROMETRIC': '/client-logos/prometric.png',
-  'CMA US': '/client-logos/cma_usa.png',
-  'CELPIP': '/client-logos/celpip.jpg',
+  'PSI': '/client-logos/psi.png',
+  'ITTS': '/client-logos/itts.png',
   'PEARSON VUE': '/client-logos/pearson_vue.png'
 }
 
@@ -123,15 +123,132 @@ const CandidateCard = memo(({ candidate, onEdit, onDelete, onToggleNoShow }: any
   )
 })
 
+const RegistryAnalysis = ({ candidates }: { candidates: Candidate[] }) => {
+  const clientData = useMemo(() => {
+    const clients: Record<string, number> = {}
+    candidates.forEach(c => {
+      const name = c.clientName || 'Other'
+      clients[name] = (clients[name] || 0) + 1
+    })
+    return Object.entries(clients).sort((a, b) => b[1] - a[1])
+  }, [candidates])
+
+  const locationData = useMemo(() => {
+    const locs: Record<string, number> = {}
+    candidates.forEach(c => {
+      const loc = c.branchLocation || 'Unknown'
+      locs[loc] = (locs[loc] || 0) + 1
+    })
+    return Object.entries(locs).sort((a, b) => b[1] - a[1])
+  }, [candidates])
+
+  const statusData = useMemo(() => {
+    const stats: Record<string, number> = {}
+    candidates.forEach(c => {
+      stats[c.status] = (stats[c.status] || 0) + 1
+    })
+    return Object.entries(stats)
+  }, [candidates])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"
+    >
+      {/* Client Distribution */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60">
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
+          <div className="w-2 h-8 bg-amber-500 rounded-full" />
+          Client Volume Analysis
+        </h3>
+        <div className="space-y-6">
+          {clientData.map(([name, count]) => {
+            const percentage = (count / candidates.length) * 100
+            return (
+              <div key={name} className="space-y-2">
+                <div className="flex justify-between items-end">
+                  <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">{name}</span>
+                  <span className="text-lg font-black text-slate-800">{count} <span className="text-[10px] text-slate-400">PAX</span></span>
+                </div>
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    className="h-full bg-gradient-to-r from-slate-700 to-slate-900 rounded-full"
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Location Distribution */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60">
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
+          <div className="w-2 h-8 bg-blue-500 rounded-full" />
+          Node Deployment Stats
+        </h3>
+        <div className="grid grid-cols-2 gap-6">
+          {locationData.map(([loc, count]) => (
+            <div key={loc} className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1 group-hover:text-blue-500 transition-colors">{loc}</span>
+              <span className="text-3xl font-black text-slate-800">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Status Breakdown */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60 lg:col-span-2">
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
+          <div className="w-2 h-8 bg-emerald-500 rounded-full" />
+          Operational Status Efficiency
+        </h3>
+        <div className="flex flex-wrap gap-8 justify-around">
+          {statusData.map(([status, count]) => (
+            <div key={status} className="flex flex-col items-center">
+              <div className="w-32 h-32 rounded-full border-[12px] border-slate-100 flex items-center justify-center relative">
+                <span className="text-2xl font-black text-slate-800">{count}</span>
+                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="58"
+                    fill="transparent"
+                    stroke={status === 'no_show' ? '#f43f5e' : status === 'completed' ? '#10b981' : '#3b82f6'}
+                    strokeWidth="12"
+                    strokeDasharray={2 * Math.PI * 58}
+                    strokeDashoffset={2 * Math.PI * 58 * (1 - count / candidates.length)}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <span className="mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">{status.replace('_', ' ')}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 export function CandidateTrackerPremium() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { activeBranch } = useBranch()
   const { isGlobalView } = useBranchFilter()
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [activeTab, setActiveTab] = useState<'register' | 'analysis'>('register')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterClient, setFilterClient] = useState('all')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [locationFilter, setLocationFilter] = useState(activeBranch || 'all')
+
+  useEffect(() => {
+    setLocationFilter(activeBranch || 'all')
+  }, [activeBranch])
 
   const [showModal, setShowModal] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
@@ -145,8 +262,8 @@ export function CandidateTrackerPremium() {
 
   // Queries
   const filters = useMemo(() => ({
-    branch_location: !isGlobalView ? activeBranch : undefined
-  }), [isGlobalView, activeBranch])
+    branch_location: locationFilter !== 'all' ? locationFilter : undefined
+  }), [locationFilter])
 
   const { data: rawCandidates, isLoading, refetch } = useCandidates(filters)
 
@@ -260,13 +377,10 @@ export function CandidateTrackerPremium() {
 
   const exportToExcel = () => {
     const data = filteredCandidates.map(c => ({
-      'Confirmation': c.confirmationNumber,
-      'Full Name': c.fullName,
-      'Client': c.clientName,
-      'Exam': c.examName,
       'Date': c.examDate ? format(c.examDate, 'dd/MM/yyyy') : '',
-      'Phone': c.phone,
-      'Status': c.status
+      'Name': c.fullName,
+      'Phone no': c.phone || 'N/A',
+      'Place': c.address || 'N/A'
     }))
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -278,15 +392,13 @@ export function CandidateTrackerPremium() {
   const exportToPDF = () => {
     const doc = new jsPDF()
     const tableData = filteredCandidates.map(c => [
-      c.confirmationNumber,
-      c.fullName,
-      c.clientName || '',
-      c.examName || '',
       c.examDate ? format(c.examDate, 'dd/MM/yyyy') : '',
-      c.status
+      c.fullName,
+      c.phone || 'N/A',
+      c.address || 'N/A'
     ])
     autoTable(doc, {
-      head: [['ID', 'Name', 'Client', 'Exam', 'Date', 'Status']],
+      head: [['Date', 'Name', 'Phone no', 'Place']],
       body: tableData,
       styles: { fontSize: 8 }
     })
@@ -332,217 +444,257 @@ export function CandidateTrackerPremium() {
           </div>
         </motion.div>
 
-        {/* Control Toolbar - Neumorphic */}
-        <div className="neomorphic-card p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            {/* Month Navigation */}
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                className="neomorphic-btn-icon"
-                title="Previous month"
-              >
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
-              </button>
-              <div className="text-xl font-bold text-gray-700 min-w-[200px] text-center">
-                {format(currentDate, 'MMMM yyyy')}
+        {/* Tab Navigation */}
+        <div className="flex space-x-2 mb-8 p-1 bg-slate-200/50 rounded-2xl w-fit">
+          <button
+            onClick={() => setActiveTab('register')}
+            className={`px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${activeTab === 'register' ? 'bg-white shadow-md text-slate-800' : 'text-slate-500 hover:bg-white/50'}`}
+          >
+            Registry Journal
+          </button>
+          <button
+            onClick={() => setActiveTab('analysis')}
+            className={`px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${activeTab === 'analysis' ? 'bg-white shadow-md text-slate-800' : 'text-slate-500 hover:bg-white/50'}`}
+          >
+            Intelligence Analysis
+          </button>
+        </div>
+
+        {activeTab === 'register' ? (
+          <>
+            {/* Control Toolbar - Neumorphic */}
+            <div className="neomorphic-card p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                {/* Location Filter */}
+                <div className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm min-w-[140px]">
+                  <MapPin size={16} className="text-amber-500 mr-2" />
+                  <select
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs font-bold uppercase tracking-widest text-slate-600 cursor-pointer w-full"
+                  >
+                    <option value="all">All Locations</option>
+                    <option value="calicut">Calicut</option>
+                    <option value="cochin">Cochin</option>
+                    <option value="kannur">Kannur</option>
+                    <option value="global">Global</option>
+                  </select>
+                </div>
+
+                {/* Month Navigation */}
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                    className="neomorphic-btn-icon"
+                    title="Previous month"
+                  >
+                    <ChevronLeft className="h-5 w-5 text-gray-600" />
+                  </button>
+                  <div className="text-xl font-bold text-gray-700 min-w-[200px] text-center">
+                    {format(currentDate, 'MMMM yyyy')}
+                  </div>
+                  <button
+                    onClick={() => setCurrentDate(subMonths(currentDate, -1))}
+                    className="neomorphic-btn-icon"
+                    title="Next month"
+                  >
+                    <ChevronRight className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setCurrentDate(new Date())}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm"
+                >
+                  Today
+                </button>
               </div>
-              <button
-                onClick={() => setCurrentDate(subMonths(currentDate, -1))}
-                className="neomorphic-btn-icon"
-                title="Next month"
-              >
-                <ChevronRight className="h-5 w-5 text-gray-600" />
-              </button>
+
+              <div className="flex items-center space-x-4 flex-wrap gap-2">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search candidates..."
+                    className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none w-64 shadow-sm"
+                  />
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    <Grid size={18} />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    <List size={18} />
+                  </button>
+                </div>
+
+                {/* Export Actions */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={exportToExcel}
+                    className="p-2.5 bg-white border border-slate-200 text-green-600 rounded-xl shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
+                    title="Export to Excel"
+                  >
+                    <FileSpreadsheet size={18} />
+                  </button>
+                  <button
+                    onClick={exportToPDF}
+                    className="p-2.5 bg-white border border-slate-200 text-red-600 rounded-xl shadow-sm hover:shadow-md hover:bg-red-50 transition-all"
+                    title="Export to PDF"
+                  >
+                    <FileText size={18} />
+                  </button>
+                </div>
+
+                {/* Add Candidate Button */}
+                <button
+                  onClick={handleOpenAdd}
+                  className="px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center space-x-2 font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                >
+                  <Plus size={18} />
+                  <span>Add Candidate</span>
+                </button>
+              </div>
             </div>
 
-            <button
-              onClick={() => setCurrentDate(new Date())}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm"
-            >
-              Today
-            </button>
-          </div>
+            {/* Stats Section - Premium Chips */}
+            {profile?.role === 'super_admin' && (
+              <div className="flex flex-wrap gap-4 mb-8">
+                <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registered</span>
+                  <span className="text-2xl font-black text-slate-800">{totalRegistered}</span>
+                </div>
+                <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                  <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Absent</span>
+                  <span className="text-2xl font-black text-rose-600">{noShows}</span>
+                </div>
+                <div className="px-6 py-4 bg-amber-50 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
+                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Net Candidates</span>
+                  <span className="text-2xl font-black text-amber-700">{netCount}</span>
+                </div>
+              </div>
+            )}
 
-          <div className="flex items-center space-x-4 flex-wrap gap-2">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search candidates..."
-                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none w-64 shadow-sm"
-              />
+            {/* Filters */}
+            <div className="flex items-center space-x-4 mb-6">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Show Client:</span>
+              <div className="flex flex-wrap gap-2">
+                {['all', 'PROMETRIC', 'PSI', 'ITTS', 'PEARSON VUE'].map((client) => (
+                  <button
+                    key={client}
+                    onClick={() => setFilterClient(client)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterClient === client
+                      ? 'bg-amber-500 text-white shadow-md'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-amber-300'
+                      }`}
+                  >
+                    {client.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                <Grid size={18} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                <List size={18} />
-              </button>
-            </div>
-
-            {/* Export Actions */}
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={exportToExcel}
-                className="p-2.5 bg-white border border-slate-200 text-green-600 rounded-xl shadow-sm hover:shadow-md hover:bg-green-50 transition-all"
-                title="Export to Excel"
-              >
-                <FileSpreadsheet size={18} />
-              </button>
-              <button
-                onClick={exportToPDF}
-                className="p-2.5 bg-white border border-slate-200 text-red-600 rounded-xl shadow-sm hover:shadow-md hover:bg-red-50 transition-all"
-                title="Export to PDF"
-              >
-                <FileText size={18} />
-              </button>
-            </div>
-
-            {/* Add Candidate Button */}
-            <button
-              onClick={handleOpenAdd}
-              className="px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center space-x-2 font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-            >
-              <Plus size={18} />
-              <span>Add Candidate</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Section - Premium Chips */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registered</span>
-            <span className="text-2xl font-black text-slate-800">{totalRegistered}</span>
-          </div>
-          <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-            <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Absent</span>
-            <span className="text-2xl font-black text-rose-600">{noShows}</span>
-          </div>
-          <div className="px-6 py-4 bg-amber-50 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Net Candidates</span>
-            <span className="text-2xl font-black text-amber-700">{netCount}</span>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center space-x-4 mb-6">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Show Client:</span>
-          <div className="flex flex-wrap gap-2">
-            {['all', 'PROMETRIC', 'CMA US', 'CELPIP', 'PEARSON VUE'].map((client) => (
-              <button
-                key={client}
-                onClick={() => setFilterClient(client)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterClient === client
-                  ? 'bg-amber-500 text-white shadow-md'
-                  : 'bg-white text-slate-500 border border-slate-200 hover:border-amber-300'
-                  }`}
-              >
-                {client.split(' ')[0]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Candidates Grid/List Content */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.8),9px_9px_16px_#bec3c9] min-h-[600px] border border-white/60">
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCandidates.map(candidate => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  onEdit={handleOpenEdit}
-                  onDelete={handleDelete}
-                  onToggleNoShow={handleToggleNoShow}
-                />
-              ))}
-              {filteredCandidates.length === 0 && (
-                <div className="col-span-full py-20 text-center opacity-60">
-                  <Search size={48} className="mx-auto mb-4 text-slate-300" />
-                  <p className="text-xl font-bold text-slate-400">No candidates found matching your criteria</p>
+            {/* Candidates Grid/List Content */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.8),9px_9px_16px_#bec3c9] min-h-[600px] border border-white/60">
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredCandidates.map(candidate => (
+                    <CandidateCard
+                      key={candidate.id}
+                      candidate={candidate}
+                      onEdit={handleOpenEdit}
+                      onDelete={handleDelete}
+                      onToggleNoShow={handleToggleNoShow}
+                    />
+                  ))}
+                  {filteredCandidates.length === 0 && (
+                    <div className="col-span-full py-20 text-center opacity-60">
+                      <Search size={48} className="mx-auto mb-4 text-slate-300" />
+                      <p className="text-xl font-bold text-slate-400">No candidates found matching your criteria</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredCandidates.map(candidate => (
+                        <tr key={candidate.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600 font-bold">
+                            {candidate.confirmationNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
+                            {candidate.fullName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
+                            {candidate.clientName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
+                            {candidate.examName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-3 py-1 inline-flex text-[10px] leading-5 font-black uppercase tracking-tight rounded-full ${candidate.status === 'no_show'
+                              ? 'bg-red-100 text-red-600'
+                              : candidate.status === 'completed'
+                                ? 'bg-emerald-100 text-emerald-600'
+                                : 'bg-blue-100 text-blue-600'
+                              }`}>
+                              {candidate.status?.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                            <button
+                              onClick={() => handleOpenEdit(candidate)}
+                              className="text-amber-600 hover:text-amber-700 font-bold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(candidate.id)}
+                              className="text-rose-600 hover:text-rose-700 font-bold"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredCandidates.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-20 text-center opacity-60">
+                            <p className="text-sm font-bold text-slate-400">No candidates found matching your criteria</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
-          ) : (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Client</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredCandidates.map(candidate => (
-                    <tr key={candidate.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600 font-bold">
-                        {candidate.confirmationNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
-                        {candidate.fullName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
-                        {candidate.clientName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
-                        {candidate.examName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-[10px] leading-5 font-black uppercase tracking-tight rounded-full ${candidate.status === 'no_show'
-                          ? 'bg-red-100 text-red-600'
-                          : candidate.status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-600'
-                            : 'bg-blue-100 text-blue-600'
-                          }`}>
-                          {candidate.status?.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                        <button
-                          onClick={() => handleOpenEdit(candidate)}
-                          className="text-amber-600 hover:text-amber-700 font-bold"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(candidate.id)}
-                          className="text-rose-600 hover:text-rose-700 font-bold"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredCandidates.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-20 text-center opacity-60">
-                        <p className="text-sm font-bold text-slate-400">No candidates found matching your criteria</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <RegistryAnalysis candidates={candidates} />
+        )}
       </div>
 
       {/* Modal - Clean and Simple like the image */}
@@ -626,8 +778,8 @@ export function CandidateTrackerPremium() {
                     >
                       <option value="">Type or select client...</option>
                       <option value="PROMETRIC">PROMETRIC</option>
-                      <option value="CMA US">CMA US</option>
-                      <option value="CELPIP">CELPIP</option>
+                      <option value="PSI">PSI</option>
+                      <option value="ITTS">ITTS</option>
                       <option value="PEARSON VUE">PEARSON VUE</option>
                     </select>
                   </div>

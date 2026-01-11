@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Users, Activity, CheckCircle, Play, Sparkles, ListChecks,
     Settings, ChevronRight, Bell, AlertTriangle, Shield, ClipboardCheck,
-    CheckCircle2, AlertCircle, Quote, Star, MessageSquare,
+    CheckCircle2, AlertCircle, Quote, Star, MessageSquare, Search,
     Pause, RotateCcw, Coffee
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
@@ -122,21 +122,32 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
     const handleOpenChecklist = async (type: 'pre_exam' | 'post_exam' | 'custom') => {
         try {
+            // First fetch relevant templates
             const { data, error } = await supabase
                 .from('checklist_templates' as any)
                 .select('*')
                 .eq('type', type)
                 .eq('is_active', true)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
+                .order('created_at', { ascending: false });
 
-            if (error || !data) {
+            if (error || !data || data.length === 0) {
                 toast.error(`No active ${type.replace('_', ' ')} checklist found.`);
                 return;
             }
 
-            setActiveTemplate(data as unknown as ChecklistTemplate);
+            // Find best match: Specific branch > Global > First available
+            let bestMatch = data.find((t: any) => t.branch_location === activeBranch);
+
+            if (!bestMatch) {
+                bestMatch = data.find((t: any) => t.branch_location === 'global' || !t.branch_location);
+            }
+
+            if (!bestMatch) {
+                // If no specific and no global, just take the newest one (fallback)
+                bestMatch = data[0];
+            }
+
+            setActiveTemplate(bestMatch as unknown as ChecklistTemplate);
             setShowChecklistModal(true);
         } catch (err) {
             console.error(err);
@@ -204,6 +215,7 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                             Command <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-600 drop-shadow-sm">Centre</span>
                         </h1>
                     </div>
+
 
                     {/* Right: Duty Officer Profile (Dominant Display) */}
                     <div className="flex flex-wrap items-center gap-8 w-full lg:w-auto">
@@ -288,6 +300,36 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                         </div>
                     </div>
                 </motion.div>
+
+                {/* --- FETS Intelligence Search Bar --- */}
+                <div className="w-full mb-10 flex justify-center">
+                    <div className="relative group w-full max-w-5xl">
+                        {/* Neumorphic Search Container */}
+                        <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className={`${neuInset} flex items-center p-2 relative bg-[#EEF2F9] border-2 border-amber-500/50 w-full`}>
+                            <div className="pl-6 pr-4 text-amber-500">
+                                <Sparkles size={24} className="animate-pulse" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Ask FETS Intelligence AI about protocols, rosters, or incidents..."
+                                className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 font-medium px-4 py-4 text-lg"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        onNavigate && onNavigate('fets-intelligence');
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={() => onNavigate && onNavigate('fets-intelligence')}
+                                className={`${neuBtn} px-8 py-3 text-amber-600 hover:text-amber-700 hover:scale-[1.02] active:scale-[0.98] border-none flex items-center gap-2 mr-1`}
+                            >
+                                <Search size={22} />
+                                <span className="uppercase font-bold tracking-widest text-xs hidden md:inline-block">Search Intel</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Main Grid Layout */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
@@ -549,8 +591,8 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                             <div className="grid grid-cols-4 gap-6">
                                 {[
                                     { name: 'Prometric', logo: 'client-logos/prometric.png', url: 'https://easyserve.prometric.com/my.policy' },
-                                    { name: 'CMA US', logo: 'client-logos/cma_usa.png', url: 'https://proscheduler.prometric.com/home' },
-                                    { name: 'CELPIP', logo: 'client-logos/celpip.jpg', url: 'https://testcentreportal.paragontesting.ca/TestCentrePortal/Login' },
+                                    { name: 'PSI', logo: 'client-logos/psi.png', url: 'https://test-takers.psiexams.com/' },
+                                    { name: 'ITTS', logo: 'client-logos/itts.png', url: 'https://www.itts.com/' },
                                     { name: 'Pearson VUE', logo: 'client-logos/pearson_vue.png', url: 'https://connect.pearsonvue.com/Connect/#/authenticate' }
                                 ].map((client) => (
                                     <a

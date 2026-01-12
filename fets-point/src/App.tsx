@@ -40,6 +40,7 @@ const SystemManager = lazy(() => import('./components/SystemManager').then(modul
 const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager').then(module => ({ default: module.ChecklistManager })))
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
+const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 
 // Create QueryClient instance with optimized settings
 const queryClient = new QueryClient({
@@ -208,6 +209,7 @@ function AppContent() {
       'system-manager': { component: <SystemManager />, name: 'System Manager' },
       'news-manager': { component: <NewsManager />, name: 'News Manager' },
       'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
+      'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'settings': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
       'user-management': { component: <UserManagement />, name: 'User Management' }
     }

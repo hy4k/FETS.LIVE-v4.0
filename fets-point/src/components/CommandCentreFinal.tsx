@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
 import { NotificationBanner } from './NotificationBanner'
 import { ChecklistTemplate } from '../types/checklist'
+import { StaffBranchSelector } from './checklist/StaffBranchSelector'
 
 export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: string) => void }) {
     const { profile } = useAuth()
@@ -31,6 +32,10 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
     const [activeTemplate, setActiveTemplate] = useState<ChecklistTemplate | null>(null);
     const [showChecklistModal, setShowChecklistModal] = useState(false);
+
+    // Select Flow
+    const [showStaffSelector, setShowStaffSelector] = useState(false);
+    const [preSelection, setPreSelection] = useState<{ staffId: string; branchId: string; staffName: string } | null>(null);
 
     // --- Integrated Analysis Data Fetching ---
     const [opsMetrics, setOpsMetrics] = useState({ healthScore: 100, critical: 0, open: 0, topIssue: 'None' })
@@ -148,7 +153,7 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
             }
 
             setActiveTemplate(bestMatch as unknown as ChecklistTemplate);
-            setShowChecklistModal(true);
+            setShowStaffSelector(true); // Open selector first
         } catch (err) {
             console.error(err);
             toast.error('Failed to load checklist');
@@ -182,13 +187,13 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
 
     if (isLoadingStats || isLoadingSchedule) {
-        return <div className="flex items-center justify-center h-screen bg-[#EEF2F9]"><div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-500"></div></div>
+        return <div className="flex items-center justify-center h-screen bg-[var(--dashboard-bg, #EEF2F9)]"><div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-500"></div></div>
     }
 
-    const bgBase = "bg-[#EEF2F9]"
-    const neuCard = "bg-[#EEF2F9] rounded-3xl shadow-[9px_9px_16px_rgb(209,217,230),-9px_-9px_16px_rgba(255,255,255,0.8)] border border-white/50"
-    const neuInset = "bg-[#EEF2F9] rounded-2xl shadow-[inset_6px_6px_12px_rgb(209,217,230),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]"
-    const neuBtn = "bg-[#EEF2F9] text-slate-600 font-bold rounded-2xl shadow-[6px_6px_10px_rgb(209,217,230),-6px_-6px_10px_rgba(255,255,255,0.8)] hover:shadow-[4px_4px_8px_rgb(209,217,230),-4px_-4px_8px_rgba(255,255,255,0.8)] active:shadow-[inset_4px_4px_8px_rgb(209,217,230),inset_-4px_-4px_8px_rgba(255,255,255,0.8)] transition-all border border-white/40"
+    const bgBase = "bg-[var(--dashboard-bg, #EEF2F9)]"
+    const neuCard = "bg-[var(--dashboard-bg, #EEF2F9)] rounded-3xl shadow-[9px_9px_16px_var(--neu-dark-shadow,rgb(209,217,230)),-9px_-9px_16px_var(--neu-light-shadow,rgba(255,255,255,0.8))] border border-white/50"
+    const neuInset = "bg-[var(--dashboard-bg, #EEF2F9)] rounded-2xl shadow-[inset_6px_6px_12px_var(--neu-dark-shadow,rgb(209,217,230)),inset_-6px_-6px_12px_var(--neu-light-shadow,rgba(255,255,255,0.9))]"
+    const neuBtn = "bg-[var(--dashboard-bg, #EEF2F9)] text-slate-600 font-bold rounded-2xl shadow-[6px_6px_10px_var(--neu-dark-shadow,rgb(209,217,230)),-6px_-6px_10px_var(--neu-light-shadow,rgba(255,255,255,0.8))] hover:shadow-[4px_4px_8px_var(--neu-dark-shadow,rgb(209,217,230)),-4px_-4px_8px_var(--neu-light-shadow,rgba(255,255,255,0.8))] active:shadow-[inset_4px_4px_8px_var(--neu-dark-shadow,rgb(209,217,230)),inset_-4px_-4px_8px_var(--neu-light-shadow,rgba(255,255,255,0.8))] transition-all border border-white/40"
 
     return (
         <div className={`min-h-screen ${bgBase} text-slate-700 font-sans pb-12 overflow-x-hidden`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
@@ -457,8 +462,8 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                         >
                             {/* Gold Gradient Spine */}
                             <div className="h-2 w-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600"></div>
-                            <div className="p-2 bg-slate-100/50 h-full rounded-b-3xl">
-                                <div className="bg-[#EEF2F9] rounded-2xl shadow-sm border border-white/60 h-full p-2">
+                            <div className="p-2 bg-[var(--dashboard-bg)]/50 h-full rounded-b-3xl">
+                                <div className="bg-[var(--dashboard-bg)] rounded-2xl shadow-sm border border-white/60 h-full p-2">
                                     <ExamScheduleWidget onNavigate={onNavigate} />
                                 </div>
                             </div>
@@ -490,7 +495,7 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                             </div>
 
                             {/* The Board Itself */}
-                            <div className="w-full bg-[#FFFBEB] rounded-3xl relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_15px_30px_-10px_rgba(0,0,0,0.1)] border-[12px] border-[#D6CAB0] min-h-[550px] flex flex-col items-center pt-16 pb-12 px-6">
+                            <div className="w-full bg-[var(--dashboard-bg)] rounded-3xl relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_15px_30px_-10px_rgba(0,0,0,0.1)] border-[12px] border-[var(--neu-dark-shadow)] min-h-[550px] flex flex-col items-center pt-16 pb-12 px-6">
 
                                 {/* Inner Shadow for Recessed Depth */}
                                 <div className="absolute inset-0 rounded-[1.2rem] shadow-[inset_0_10px_20px_rgba(0,0,0,0.04)] pointer-events-none" />
@@ -619,12 +624,24 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
             </div>
 
             <AnimatePresence>
+                {showStaffSelector && activeTemplate && (
+                    <StaffBranchSelector
+                        onSelect={(data) => {
+                            setPreSelection(data);
+                            setShowStaffSelector(false);
+                            setShowChecklistModal(true);
+                        }}
+                        onClose={() => setShowStaffSelector(false)}
+                    />
+                )}
                 {showChecklistModal && activeTemplate && (
                     <ChecklistFormModal
                         template={activeTemplate}
                         onClose={() => setShowChecklistModal(false)}
                         onSuccess={fetchAnalysis}
                         currentUser={profile}
+                        overrideStaff={preSelection ? { id: preSelection.staffId, name: preSelection.staffName } : undefined}
+                        overrideBranch={preSelection?.branchId}
                     />
                 )}
             </AnimatePresence>

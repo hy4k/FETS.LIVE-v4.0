@@ -24,12 +24,19 @@ body.branch-calicut {
 }
 
 body.branch-cochin {
-    --deck-bg: #E2C97E;
-    /* Pale Gold / Sandy */
-    --deck-shadow-dark: 6px 6px 14px #B89C4D;
-    --deck-shadow-light: -6px -6px 14px #F7E6B5;
-    --branch-tint: rgba(100, 149, 237, 0.05);
-    /* Very subtle blue wash */
+    --deck-bg: #FFC107;
+    /* Deep Amber / Vibrant Yellow */
+    --deck-shadow-dark: 6px 6px 14px #D9A406;
+    --deck-shadow-light: -6px -6px 14px #FFD54F;
+    --branch-tint: rgba(255, 193, 7, 0.04);
+}
+
+body.branch-kannur {
+    --deck-bg: #FFD600;
+    /* Electric / Safety Yellow */
+    --deck-shadow-dark: 6px 6px 14px #C9A900;
+    --deck-shadow-light: -6px -6px 14px #FFE54D;
+    --branch-tint: rgba(255, 214, 0, 0.04);
 }
 
 body.branch-global {
@@ -40,7 +47,7 @@ body.branch-global {
     --deck-text: #4a5568;
 }
 
-/* Global Tone Overlay */
+/* Global Tone Overlay with Transition */
 body::after {
     content: '';
     position: fixed;
@@ -48,12 +55,14 @@ body::after {
     pointer-events: none;
     background: var(--branch-tint);
     z-index: 9999;
+    transition: background 0.8s ease-in-out;
 }
 
-/* Command Deck Container */
+/* Command Deck Container with Smooth Transition */
 .fets-command-deck {
     background-color: var(--deck-bg);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Neumorphic Module Button (Top Row) */

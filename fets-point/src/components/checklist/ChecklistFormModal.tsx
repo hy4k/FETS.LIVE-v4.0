@@ -11,9 +11,11 @@ interface ChecklistFormModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     currentUser: any;
+    overrideStaff?: { id: string; name: string };
+    overrideBranch?: string;
 }
 
-export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template, onClose, onSuccess, currentUser }) => {
+export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template, onClose, onSuccess, currentUser, overrideStaff, overrideBranch }) => {
     const { register, handleSubmit, formState: { errors }, watch } = useForm();
     const [submitting, setSubmitting] = useState(false);
 
@@ -30,8 +32,8 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
         try {
             const submission = {
                 template_id: template.id,
-                submitted_by: currentUser.user_id || currentUser.id,
-                branch_id: currentUser.branch_assigned || currentUser.branch_id || null,
+                submitted_by: overrideStaff?.id || currentUser.user_id || currentUser.id,
+                branch_id: overrideBranch || currentUser.branch_assigned || currentUser.branch_id || null,
                 submitted_at: new Date().toISOString(),
                 answers: data,
                 status: 'submitted'
@@ -209,7 +211,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                     <div className="flex items-center justify-between">
                         <div className="hidden md:block">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Operator Verification Required</p>
-                            <p className="text-slate-500 text-sm font-semibold">{currentUser.full_name || currentUser.username}</p>
+                            <p className="text-slate-500 text-sm font-semibold">{overrideStaff?.name || currentUser.full_name || currentUser.username}</p>
                         </div>
                         <div className="flex gap-4 w-full md:w-auto">
                             <button

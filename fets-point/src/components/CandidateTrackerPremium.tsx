@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Plus, Search, Edit, UserCheck, UserX, Phone, X, Calendar,
   Trash2, FileText, Download, ChevronLeft, ChevronRight,
-  CheckCircle, Grid, List, FileSpreadsheet, MapPin
+  CheckCircle, Grid, List, FileSpreadsheet, MapPin, Activity, TrendingUp
 } from 'lucide-react'
+import { CandidateAnalysis } from './CandidateAnalysis'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
 import { useBranchFilter } from '../hooks/useBranchFilter'
@@ -123,116 +124,7 @@ const CandidateCard = memo(({ candidate, onEdit, onDelete, onToggleNoShow }: any
   )
 })
 
-const RegistryAnalysis = ({ candidates }: { candidates: Candidate[] }) => {
-  const clientData = useMemo(() => {
-    const clients: Record<string, number> = {}
-    candidates.forEach(c => {
-      const name = c.clientName || 'Other'
-      clients[name] = (clients[name] || 0) + 1
-    })
-    return Object.entries(clients).sort((a, b) => b[1] - a[1])
-  }, [candidates])
 
-  const locationData = useMemo(() => {
-    const locs: Record<string, number> = {}
-    candidates.forEach(c => {
-      const loc = c.branchLocation || 'Unknown'
-      locs[loc] = (locs[loc] || 0) + 1
-    })
-    return Object.entries(locs).sort((a, b) => b[1] - a[1])
-  }, [candidates])
-
-  const statusData = useMemo(() => {
-    const stats: Record<string, number> = {}
-    candidates.forEach(c => {
-      stats[c.status] = (stats[c.status] || 0) + 1
-    })
-    return Object.entries(stats)
-  }, [candidates])
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"
-    >
-      {/* Client Distribution */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60">
-        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
-          <div className="w-2 h-8 bg-amber-500 rounded-full" />
-          Client Volume Analysis
-        </h3>
-        <div className="space-y-6">
-          {clientData.map(([name, count]) => {
-            const percentage = (count / candidates.length) * 100
-            return (
-              <div key={name} className="space-y-2">
-                <div className="flex justify-between items-end">
-                  <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">{name}</span>
-                  <span className="text-lg font-black text-slate-800">{count} <span className="text-[10px] text-slate-400">PAX</span></span>
-                </div>
-                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    className="h-full bg-gradient-to-r from-slate-700 to-slate-900 rounded-full"
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Location Distribution */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60">
-        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
-          <div className="w-2 h-8 bg-blue-500 rounded-full" />
-          Node Deployment Stats
-        </h3>
-        <div className="grid grid-cols-2 gap-6">
-          {locationData.map(([loc, count]) => (
-            <div key={loc} className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1 group-hover:text-blue-500 transition-colors">{loc}</span>
-              <span className="text-3xl font-black text-slate-800">{count}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Status Breakdown */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl border border-white/60 lg:col-span-2">
-        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8 flex items-center gap-3">
-          <div className="w-2 h-8 bg-emerald-500 rounded-full" />
-          Operational Status Efficiency
-        </h3>
-        <div className="flex flex-wrap gap-8 justify-around">
-          {statusData.map(([status, count]) => (
-            <div key={status} className="flex flex-col items-center">
-              <div className="w-32 h-32 rounded-full border-[12px] border-slate-100 flex items-center justify-center relative">
-                <span className="text-2xl font-black text-slate-800">{count}</span>
-                <svg className="absolute inset-0 w-full h-full -rotate-90">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="58"
-                    fill="transparent"
-                    stroke={status === 'no_show' ? '#f43f5e' : status === 'completed' ? '#10b981' : '#3b82f6'}
-                    strokeWidth="12"
-                    strokeDasharray={2 * Math.PI * 58}
-                    strokeDashoffset={2 * Math.PI * 58 * (1 - count / candidates.length)}
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <span className="mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">{status.replace('_', ' ')}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
 
 export function CandidateTrackerPremium() {
   const { user, profile } = useAuth()
@@ -445,17 +337,19 @@ export function CandidateTrackerPremium() {
         </motion.div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-2 mb-8 p-1 bg-slate-200/50 rounded-2xl w-fit">
+        <div className="flex space-x-2 mb-8 p-1.5 bg-slate-200/50 rounded-2xl w-fit shadow-inner">
           <button
             onClick={() => setActiveTab('register')}
-            className={`px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${activeTab === 'register' ? 'bg-white shadow-md text-slate-800' : 'text-slate-500 hover:bg-white/50'}`}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'register' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
           >
+            <List size={14} />
             Registry Journal
           </button>
           <button
             onClick={() => setActiveTab('analysis')}
-            className={`px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${activeTab === 'analysis' ? 'bg-white shadow-md text-slate-800' : 'text-slate-500 hover:bg-white/50'}`}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'analysis' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
           >
+            <Activity size={14} />
             Intelligence Analysis
           </button>
         </div>
@@ -693,7 +587,7 @@ export function CandidateTrackerPremium() {
             </div>
           </>
         ) : (
-          <RegistryAnalysis candidates={candidates} />
+          <CandidateAnalysis onClose={() => setActiveTab('register')} />
         )}
       </div>
 

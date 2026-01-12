@@ -191,9 +191,11 @@ export function BranchProvider({ children }: BranchProviderProps) {
     if (profile) {
       const defaultBranch = profile.branch_assigned === 'both' ? 'calicut' : profile.branch_assigned;
 
-      // If no manually saved branch, or current active branch is not in user's access list, set to default
+      // If no manually saved branch, or (if not super admin) current active branch is not in user's access list, set to default
       const savedBranch = localStorage.getItem('fets_active_branch');
-      if (!savedBranch || (profile.branch_assigned !== 'both' && profile.branch_assigned !== 'global' && savedBranch !== profile.branch_assigned)) {
+      const isSuper = profile.role === 'super_admin';
+
+      if (!savedBranch || (!isSuper && profile.branch_assigned !== 'both' && profile.branch_assigned !== 'global' && savedBranch !== profile.branch_assigned)) {
         setActiveBranchState(defaultBranch as BranchType);
         localStorage.setItem('fets_active_branch', defaultBranch);
       }

@@ -16,29 +16,35 @@
   --calicut-card-hover: rgba(231, 187, 90, 0.08);
   --calicut-focus-ring: rgba(231, 187, 90, 0.3);
 
-  /* Cochin Branch - Fresh Mint Green Accents */
-  --cochin-primary: #4ade80;
-  --cochin-secondary: #34d399;
-  --cochin-light: #ecfdf5;
-  --cochin-glow: rgba(74, 222, 128, 0.2);
-  --cochin-border: rgba(74, 222, 128, 0.3);
-  --cochin-bg-tint: rgba(74, 222, 128, 0.02);
-  --cochin-bg-hover: rgba(74, 222, 128, 0.05);
-  --cochin-card-border: rgba(74, 222, 128, 0.12);
-  --cochin-card-hover: rgba(74, 222, 128, 0.08);
-  --cochin-focus-ring: rgba(74, 222, 128, 0.3);
+  /* Cochin Branch - Mango Yellow Accents */
+  --cochin-primary: #ffc107;
+  --cochin-secondary: #ffb300;
+  --cochin-light: #fff8e1;
+  --cochin-glow: rgba(255, 193, 7, 0.2);
+  --cochin-border: rgba(255, 193, 7, 0.3);
+  --cochin-bg-tint: rgba(255, 193, 7, 0.02);
+  --cochin-bg-hover: rgba(255, 193, 7, 0.05);
+  --cochin-card-border: rgba(255, 193, 7, 0.12);
+  --cochin-card-hover: rgba(255, 193, 7, 0.08);
+  --cochin-focus-ring: rgba(255, 193, 7, 0.3);
 
-  /* Kannur Branch - Energetic Rose Accents */
-  --kannur-primary: #f43f5e;
-  --kannur-secondary: #fb7185;
-  --kannur-light: #fff1f2;
-  --kannur-glow: rgba(244, 63, 94, 0.2);
-  --kannur-border: rgba(244, 63, 94, 0.3);
-  --kannur-bg-tint: rgba(244, 63, 94, 0.02);
-  --kannur-bg-hover: rgba(244, 63, 94, 0.05);
-  --kannur-card-border: rgba(244, 63, 94, 0.12);
-  --kannur-card-hover: rgba(244, 63, 94, 0.08);
-  --kannur-focus-ring: rgba(244, 63, 94, 0.3);
+  /* Kannur Branch - Electric Safety Yellow Accents */
+  --kannur-primary: #ffd600;
+  --kannur-secondary: #ffea00;
+  --kannur-light: #fffde7;
+  --kannur-glow: rgba(255, 214, 0, 0.2);
+  --kannur-border: rgba(255, 214, 0, 0.3);
+  --kannur-bg-tint: rgba(255, 214, 0, 0.02);
+  --kannur-bg-hover: rgba(255, 214, 0, 0.05);
+  --kannur-card-border: rgba(255, 214, 0, 0.12);
+  --kannur-card-hover: rgba(255, 214, 0, 0.08);
+  --kannur-focus-ring: rgba(255, 214, 0, 0.3);
+
+  /* Dashboard Yellow Essence - Unified Base */
+  --dashboard-bg: #FCF8E8;
+  /* Very light cream/yellow essence */
+  --neu-dark-shadow: #DEDAB8;
+  --neu-light-shadow: #FFFFFF;
 
   /* Global Mode - Blue-Purple Gradient */
   --global-primary: #3b82f6;
@@ -51,6 +57,13 @@
   --global-card-border: rgba(59, 130, 246, 0.12);
   --global-card-hover: rgba(59, 130, 246, 0.08);
   --global-focus-ring: rgba(59, 130, 246, 0.3);
+}
+
+/* Base Transition for all branch classes */
+[class*="branch-"] {
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* ==========================================================================
@@ -159,11 +172,11 @@
   box-shadow: 0 0 20px var(--calicut-glow) !important;
 }
 
-/* Smooth Transitions */
+/* Smooth Transitions Managed Globally at Line 63 */
 .branch-calicut {
-  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-bottom: 3px solid var(--calicut-primary) !important;
+  box-shadow: 0 4px 20px rgba(231, 187, 90, 0.08) !important;
 }
 
 
@@ -174,7 +187,7 @@
   /* Header styling - Subtle neutral base with light accent tints */
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
   border-bottom: 3px solid var(--cochin-primary) !important;
-  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(255, 193, 7, 0.08) !important;
 }
 
 .branch-cochin .banner-greeting {
@@ -187,8 +200,8 @@
 
 .branch-cochin .banner-location {
   color: #374151 !important;
-  background: rgba(74, 222, 128, 0.1) !important;
-  border: 1px solid rgba(74, 222, 128, 0.2) !important;
+  background: rgba(255, 193, 7, 0.1) !important;
+  border: 1px solid rgba(255, 193, 7, 0.2) !important;
 }
 
 .branch-cochin .banner-user-info {
@@ -197,12 +210,12 @@
 
 .branch-cochin .banner-icon-button {
   color: #374151 !important;
-  background: rgba(74, 222, 128, 0.08) !important;
-  border: 1px solid rgba(74, 222, 128, 0.15) !important;
+  background: rgba(255, 193, 7, 0.08) !important;
+  border: 1px solid rgba(255, 193, 7, 0.15) !important;
 }
 
 .branch-cochin .banner-icon-button:hover {
-  background: rgba(74, 222, 128, 0.15) !important;
+  background: rgba(255, 193, 7, 0.15) !important;
   transform: translateY(-1px);
 }
 
@@ -273,13 +286,6 @@
   box-shadow: 0 0 20px var(--cochin-glow) !important;
 }
 
-/* Smooth Transitions */
-.branch-cochin {
-  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 
 /* ==========================================================================
    KANNUR BRANCH THEME - SUBTLE ACCENT STYLING
@@ -288,7 +294,7 @@
   /* Header styling - Subtle neutral base with light accent tints */
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
   border-bottom: 3px solid var(--kannur-primary) !important;
-  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(255, 214, 0, 0.08) !important;
 }
 
 .branch-kannur .banner-greeting {
@@ -301,8 +307,8 @@
 
 .branch-kannur .banner-location {
   color: #374151 !important;
-  background: rgba(244, 63, 94, 0.1) !important;
-  border: 1px solid rgba(244, 63, 94, 0.2) !important;
+  background: rgba(255, 214, 0, 0.1) !important;
+  border: 1px solid rgba(255, 214, 0, 0.2) !important;
 }
 
 .branch-kannur .banner-user-info {
@@ -311,12 +317,12 @@
 
 .branch-kannur .banner-icon-button {
   color: #374151 !important;
-  background: rgba(244, 63, 94, 0.08) !important;
-  border: 1px solid rgba(244, 63, 94, 0.15) !important;
+  background: rgba(255, 214, 0, 0.08) !important;
+  border: 1px solid rgba(255, 214, 0, 0.15) !important;
 }
 
 .branch-kannur .banner-icon-button:hover {
-  background: rgba(244, 63, 94, 0.15) !important;
+  background: rgba(255, 214, 0, 0.15) !important;
   transform: translateY(-1px);
 }
 
@@ -387,19 +393,34 @@
   box-shadow: 0 0 20px var(--kannur-glow) !important;
 }
 
-/* Smooth Transitions */
+/* Smooth Transitions Managed Globally at Line 63 */
 .branch-kannur {
-  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+  border-bottom: 3px solid var(--kannur-primary) !important;
+  box-shadow: 0 4px 20px rgba(255, 214, 0, 0.08) !important;
 }
 
 
 /* ==========================================================================
    GLOBAL MODE THEME
    ========================================================================== */
+/* ==========================================================================
+   DASHBOARD YELLOW ESSENCE - NEW GLOBAL OVERLAY 
+   Applied to all branches to give the essence of the top banner.
+   ========================================================================== */
+[class*="branch-"] {
+  --bg-neumorphic: var(--dashboard-bg) !important;
+}
+
+/* Update backgrounds for dashboard content */
+.branch-calicut,
+.branch-cochin,
+.branch-kannur {
+  background-color: var(--dashboard-bg) !important;
+}
+
 .branch-global {
-  /* Remove background styling - only header should change color */
+  /* Global mode remains neutral but can have a tint */
   border-bottom-color: var(--global-border) !important;
 }
 
@@ -496,11 +517,10 @@
   box-shadow: 0 0 20px var(--global-glow) !important;
 }
 
-/* Smooth Transitions */
+/* Smooth Transitions Managed Globally */
 .branch-global {
-  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Global mode remains neutral but can have a tint */
+  border-bottom-color: var(--global-border) !important;
 }
 
 

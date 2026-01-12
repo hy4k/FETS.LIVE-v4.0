@@ -311,9 +311,9 @@ export function FetsCalendar() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E6E8EC] p-8">
+    <div className="min-h-screen bg-[var(--dashboard-bg,#E6E8EC)] p-8 transition-colors duration-700">
       {/* Premium Neumorphic Header */}
-      <div className="rounded-3xl bg-[#E6E8EC] shadow-[8px_8px_16px_rgba(163,177,198,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] border border-white/40 mb-8 p-8 relative overflow-hidden">
+      <div className="rounded-3xl bg-[var(--dashboard-bg,#E6E8EC)] shadow-[8px_8px_16px_var(--neu-dark-shadow,rgba(163,177,198,0.6)),-8px_-8px_16px_var(--neu-light-shadow,rgba(255,255,255,0.8))] border border-white/40 mb-8 p-8 relative overflow-hidden transition-all duration-700">
 
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
@@ -336,10 +336,10 @@ export function FetsCalendar() {
           {/* Controls */}
           <div className="flex items-center gap-6">
             {/* Branch Indicator */}
-            <div className="px-6 py-3 rounded-xl bg-[#E6E8EC] shadow-[inset_4px_4px_8px_rgba(163,177,198,0.5),inset_-4px_-4px_8px_rgba(255,255,255,0.8)] flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${activeBranch === 'global' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-[0_0_10px_currentColor]`}></div>
+            <div className="px-6 py-3 rounded-xl bg-[var(--dashboard-bg,#E6E8EC)] shadow-[inset_4px_4px_8px_var(--neu-dark-shadow,rgba(163,177,198,0.5)),inset_-4px_-4px_8px_var(--neu-light-shadow,rgba(255,255,255,0.8))] flex items-center gap-3 transition-all duration-700">
+              <div className={`w-3 h-3 rounded-full ${activeBranch === 'global' ? 'bg-blue-500' : 'bg-amber-500'} shadow-[0_0_10px_currentColor] transition-colors duration-700`}></div>
               <span className="font-bold text-slate-600 uppercase tracking-wider text-sm">
-                {activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : 'Global View'}
+                {activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : activeBranch === 'kannur' ? 'Kannur' : 'Global View'}
               </span>
             </div>
 
@@ -409,11 +409,11 @@ export function FetsCalendar() {
                   whileHover={{ y: -5, scale: 1.02 }}
                   onClick={() => openDetailsModal(date)}
                   className={`
-                    h-52 p-4 cursor-pointer transition-all duration-300 rounded-[2.5rem] group flex flex-col relative overflow-hidden
+                    h-52 p-4 cursor-pointer transition-all duration-700 rounded-[2.5rem] group flex flex-col relative overflow-hidden
                     ${opacityClass}
                     ${isCurrentDay
-                      ? 'bg-[#EEF2F9] shadow-[inset_9px_9px_16px_#bec3c9,inset_-9px_-9px_16px_#ffffff] border-2 border-amber-400/30'
-                      : 'bg-[#EEF2F9] shadow-[9px_9px_16px_#bec3c9,-9px_-9px_16px_#ffffff] border border-white/60 hover:shadow-[14px_14px_28px_#bec3c9,-14px_-14px_28px_#ffffff]'
+                      ? 'bg-[var(--dashboard-bg,#EEF2F9)] shadow-[inset_9px_9px_16px_var(--neu-dark-shadow,#bec3c9),inset_-9px_-9px_16px_var(--neu-light-shadow,#ffffff)] border-2 border-amber-400/30'
+                      : 'bg-[var(--dashboard-bg,#EEF2F9)] shadow-[9px_9px_16px_var(--neu-dark-shadow,#bec3c9),-9px_-9px_16px_var(--neu-light-shadow,#ffffff)] border border-white/60 hover:shadow-[14px_14px_28px_var(--neu-dark-shadow,#bec3c9),-14px_-14px_28px_var(--neu-light-shadow,#ffffff)]'
                     }
                   `}
                 >
@@ -510,7 +510,7 @@ export function FetsCalendar() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-5xl bg-[#EEF2F9] rounded-[3rem] shadow-[25px_25px_50px_#bec3c9,-25px_-25px_50px_#ffffff] border border-white/60 overflow-hidden max-h-[90vh] flex flex-col"
+              className="relative w-full max-w-5xl bg-[var(--dashboard-bg,#EEF2F9)] rounded-[3rem] shadow-[25px_25px_50px_var(--neu-dark-shadow,#bec3c9),-25px_-25px_50px_var(--neu-light-shadow,#ffffff)] border border-white/60 overflow-hidden max-h-[90vh] flex flex-col transition-all duration-700"
             >
               {/* Premium Modal Header */}
               <div className="px-12 py-10 border-b border-slate-200 bg-white/30 backdrop-blur-md relative overflow-hidden">
@@ -588,7 +588,7 @@ export function FetsCalendar() {
                             <motion.div
                               key={session.id || sIdx}
                               whileHover={{ y: -5 }}
-                              className="bg-[#EEF2F9] rounded-[2rem] shadow-[12px_12px_24px_#bec3c9,-12px_-12px_24px_#ffffff] border border-white/60 overflow-hidden flex flex-col"
+                              className="bg-[var(--dashboard-bg,#EEF2F9)] rounded-[2rem] shadow-[12px_12px_24px_var(--neu-dark-shadow,#bec3c9),-12px_-12px_24px_var(--neu-light-shadow,#ffffff)] border border-white/60 overflow-hidden flex flex-col transition-all duration-700"
                             >
                               <div className="p-8 flex-1">
                                 <div className="flex justify-between items-start mb-6">

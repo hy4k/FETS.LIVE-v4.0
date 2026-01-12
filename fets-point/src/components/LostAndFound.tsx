@@ -41,7 +41,7 @@ interface StaffProfile {
 }
 
 export function LostAndFound() {
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const { activeBranch } = useBranch()
     const [items, setItems] = useState<LostFoundItem[]>([])
     const [staff, setStaff] = useState<StaffProfile[]>([])
@@ -148,7 +148,7 @@ export function LostAndFound() {
         try {
             const itemToSave = {
                 ...formItem,
-                found_by_user_id: profile?.id,
+                found_by_user_id: user?.id,
                 branch_location: activeBranch === 'global' ? (formItem.branch_location || 'calicut') : activeBranch,
                 status: formItem.status || 'active'
             }

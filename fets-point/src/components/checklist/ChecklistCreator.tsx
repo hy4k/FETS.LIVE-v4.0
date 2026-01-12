@@ -32,6 +32,7 @@ export const ChecklistCreator: React.FC<ChecklistCreatorProps> = ({ onCancel, on
             type: initialData?.type || 'custom',
             questions: initialData?.questions || [],
             is_active: initialData?.is_active ?? true,
+            branch_location: initialData?.branch_location || 'global',
         }
     });
 
@@ -54,6 +55,7 @@ export const ChecklistCreator: React.FC<ChecklistCreatorProps> = ({ onCancel, on
                         type: data.type,
                         questions: data.questions,
                         is_active: data.is_active,
+                        branch_location: data.branch_location,
                     })
                     .eq('id', initialData.id);
 
@@ -69,6 +71,7 @@ export const ChecklistCreator: React.FC<ChecklistCreatorProps> = ({ onCancel, on
                         type: data.type,
                         questions: data.questions,
                         is_active: data.is_active,
+                        branch_location: data.branch_location || 'global',
                         created_by: currentUser.user_id,
                     });
 
@@ -168,9 +171,29 @@ export const ChecklistCreator: React.FC<ChecklistCreatorProps> = ({ onCancel, on
                             </select>
                         </div>
                         <div>
+                            <label className="block text-gray-700 font-medium mb-2">Branch / Centre</label>
+                            <select {...register('branch_location')} className={`w-full p-3 ${neumorphicInset} outline-none bg-transparent`}>
+                                <option value="global">Global (All Centres)</option>
+                                <option value="cochin">Cochin</option>
+                                <option value="calicut">Calicut</option>
+                                <option value="kannur">Kannur</option>
+                                <option value="trivandrum">Trivandrum</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
                             <label className="block text-gray-700 font-medium mb-2">Checklist Name</label>
                             <input {...register('title', { required: true })} className={`w-full p-3 ${neumorphicInset} outline-none bg-transparent`} placeholder="e.g., Morning Opening Protocol" />
                             {errors.title && <span className="text-red-500 text-sm">Required</span>}
+                        </div>
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Status</label>
+                            <select {...register('is_active')} className={`w-full p-3 ${neumorphicInset} outline-none bg-transparent`} defaultValue="true">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
                         </div>
                     </div>
                 </div>

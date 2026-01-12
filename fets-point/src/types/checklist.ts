@@ -26,6 +26,7 @@ export interface ChecklistTemplate {
   type: ChecklistType;
   questions: Question[];
   is_active: boolean;
+  branch_location?: string;
   created_by: string;
   created_at: string;
   updated_at: string;

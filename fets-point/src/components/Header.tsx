@@ -71,7 +71,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     const branchClass = `branch-${activeBranch || 'global'}`;
 
     // Remove all branch classes
-    document.body.classList.remove('branch-calicut', 'branch-cochin', 'branch-global');
+    document.body.classList.remove('branch-calicut', 'branch-cochin', 'branch-kannur', 'branch-global');
 
     // Add active branch class
     document.body.classList.add(branchClass);
@@ -81,7 +81,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     };
   }, [activeBranch]);
 
-  const currentBranchName = activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : 'Global View';
+  const currentBranchName = activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : activeBranch === 'kannur' ? 'Kannur' : 'Global View';
 
   // --- NAVIGATION ITEMS ---
   const topNavItems = [

@@ -392,7 +392,7 @@ export function FetsCalendarPremium() {
               FETS Calendar
             </h1>
             <p className="text-lg text-gray-600 font-medium">
-              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Session Planning & Overview
+              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Exam Schedule
             </p>
           </div>
           <div className="text-right">
@@ -454,13 +454,9 @@ export function FetsCalendarPremium() {
             {/* Analysis Button */}
             <button
               onClick={() => {
-                if (profile?.role === 'super_admin') {
-                  setShowAnalysis(true)
-                } else {
-                  toast.error("Analysis is restricted to Super Admin")
-                }
+                setShowAnalysis(true)
               }}
-              className={`px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center space-x-2 ${profile?.role !== 'super_admin' ? 'opacity-50 cursor-pointer' : ''}`}
+              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center space-x-2"
             >
               <TrendingUp className="h-4 w-4 text-amber-500" />
               <span>Analysis</span>
@@ -570,7 +566,7 @@ export function FetsCalendarPremium() {
                             </span>
                           </div>
                           <p className={`text-[8px] font-black uppercase tracking-[0.4em] mt-2 ${isCurrentDay ? 'text-[#185a86]/50' : 'text-[#80b8d6]'}`}>
-                            Unit Volume
+                            Total Count
                           </p>
                         </div>
                       ) : (
@@ -581,34 +577,33 @@ export function FetsCalendarPremium() {
                     </div>
 
                     {/* 3. SESSIONS: COMPACT LIST */}
-                    <div className="mt-4 space-y-1.5">
-                      {daySessions.slice(0, 2).map((session, sIdx) => (
+                    <div className="mt-4 space-y-1.5 flex-1">
+                      {Object.entries(clientAggregates).slice(0, 3).map(([key, stat]) => (
                         <div
-                          key={session.id || sIdx}
+                          key={key}
                           className={`
-                            px-3 py-2.5 rounded-xl border transition-all duration-300
+                            px-3 py-2 rounded-xl border transition-all duration-300 flex justify-between items-center
                             ${isCurrentDay
                               ? 'bg-white/50 text-[#185a86] border-[#185a86]/10'
                               : 'bg-white/10 text-white border-white/5'
                             }
                           `}
                         >
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-[9px] font-black uppercase tracking-tighter truncate w-24 opacity-80">{getShortClient(session.client_name)}</span>
-                            <span className="text-[8px] font-bold opacity-60">{getShortTime(session.start_time)}</span>
-                          </div>
-                          <p className={`text-[10px] font-black leading-tight truncate ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
-                            {getShortExam(session.exam_name)}
-                          </p>
+                          <span className="text-[10px] font-black uppercase truncate w-24">
+                            {stat.displayName}
+                          </span>
+                          <span className={`text-[11px] font-black ${isCurrentDay ? 'text-[#185a86]' : 'text-[#f6ba41]'}`}>
+                            {stat.candidates}
+                          </span>
                         </div>
                       ))}
-
-                      {daySessions.length > 2 && (
+                      
+                      {Object.entries(clientAggregates).length > 3 && (
                         <div className={`
-                          text-[9px] font-black text-center py-2 rounded-xl border border-dashed uppercase tracking-widest
-                          ${isCurrentDay ? 'bg-[#185a86]/5 text-[#185a86]/50 border-[#185a86]/20' : 'bg-white/5 text-white/30 border-white/10'}
+                          text-[8px] font-black text-center py-1 rounded-lg border border-dashed uppercase tracking-widest
+                          ${isCurrentDay ? 'text-[#185a86]/50 border-[#185a86]/20' : 'text-white/30 border-white/10'}
                         `}>
-                          + {daySessions.length - 2} Active Units
+                          + {Object.entries(clientAggregates).length - 3} more clients
                         </div>
                       )}
                     </div>
@@ -719,7 +714,7 @@ export function FetsCalendarPremium() {
                       <div key={key} className="space-y-4">
                         <div className="flex items-center gap-4 px-4">
                           <div className="w-2 h-8 rounded-full" style={{ backgroundColor: clientColor.border }} />
-                          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">{stat.displayName} Intelligence</h4>
+                          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">{stat.displayName}</h4>
                           <div className="h-px flex-1 bg-slate-200" />
                         </div>
 
@@ -742,25 +737,33 @@ export function FetsCalendarPremium() {
                                     </div>
                                     <div>
                                       <h5 className="font-black uppercase tracking-tight leading-none" style={{ color: clientColor.text }}>{session.exam_name}</h5>
-                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Industrial Phase Verification</p>
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Confirmed Session</p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6">
-                                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Clock size={12} style={{ color: clientColor.border }} />
-                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Time Slot</span>
-                                    </div>
-                                    <p className="text-xs font-black text-slate-700">{formatTimeRange(session.start_time, session.end_time)}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 bg-white/50 p-6 rounded-2xl mb-4">
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Exam Description</span>
+                                    <p className="text-sm font-bold text-slate-800 leading-tight">{session.exam_name}</p>
                                   </div>
-                                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Users size={12} style={{ color: clientColor.border }} />
-                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Capacity</span>
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Time Slot</span>
+                                    <div className="flex items-center gap-2">
+                                      <Clock size={14} className="text-amber-500" />
+                                      <p className="text-sm font-bold text-slate-800">{formatTimeRange(session.start_time, session.end_time)}</p>
                                     </div>
-                                    <p className="text-xs font-black text-slate-700">{session.candidate_count} CAND</p>
+                                  </div>
+                                  <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Client</span>
+                                    <p className="text-sm font-bold text-slate-800">{session.client_name}</p>
+                                  </div>
+                                  <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Candidates</span>
+                                    <div className="flex items-center gap-2">
+                                      <Users size={14} className="text-amber-500" />
+                                      <p className="text-lg font-black text-slate-800">{session.candidate_count}</p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -793,7 +796,7 @@ export function FetsCalendarPremium() {
                     <div className="w-24 h-24 rounded-[2rem] bg-[#EEF2F9] shadow-[12px_12px_24px_#bec3c9,-12px_-12px_24px_#ffffff] flex items-center justify-center text-slate-300 mb-6">
                       <Calendar size={40} />
                     </div>
-                    <p className="text-xl font-black text-slate-400 uppercase tracking-widest">No Strategic Sessions</p>
+                    <p className="text-xl font-black text-slate-400 uppercase tracking-widest">No Sessions Scheduled</p>
                   </div>
                 )}
               </div>
@@ -805,7 +808,7 @@ export function FetsCalendarPremium() {
                   onClick={() => openModal(selectedDate)}
                   className="px-12 py-5 rounded-2xl bg-slate-800 text-white font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black hover:scale-105 transition-all text-xs flex items-center gap-4 disabled:opacity-30"
                 >
-                  <Plus size={18} /> Add Strategic Session
+                  <Plus size={18} /> Add Session
                 </button>
               </div>
             </motion.div>

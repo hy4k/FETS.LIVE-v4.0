@@ -463,22 +463,20 @@ export function CandidateTrackerPremium() {
             </div>
 
             {/* Stats Section - Premium Chips */}
-            {profile?.role === 'super_admin' && (
-              <div className="flex flex-wrap gap-4 mb-8">
-                <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registered</span>
-                  <span className="text-2xl font-black text-slate-800">{totalRegistered}</span>
-                </div>
-                <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-                  <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Absent</span>
-                  <span className="text-2xl font-black text-rose-600">{noShows}</span>
-                </div>
-                <div className="px-6 py-4 bg-amber-50 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
-                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Net Candidates</span>
-                  <span className="text-2xl font-black text-amber-700">{netCount}</span>
-                </div>
+            <div className="flex flex-wrap gap-4 mb-8">
+              <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Registered</span>
+                <span className="text-2xl font-black text-slate-800">{totalRegistered}</span>
               </div>
-            )}
+              <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Total Absent</span>
+                <span className="text-2xl font-black text-rose-600">{noShows}</span>
+              </div>
+              <div className="px-6 py-4 bg-amber-50 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Net Candidates</span>
+                <span className="text-2xl font-black text-amber-700">{netCount}</span>
+              </div>
+            </div>
 
             {/* Filters */}
             <div className="flex items-center space-x-4 mb-6">

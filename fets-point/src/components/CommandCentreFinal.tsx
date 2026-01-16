@@ -202,6 +202,7 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
             <div className="max-w-[1800px] mx-auto px-6 pt-8">
 
+
                 {/* --- PREMIUM COMMAND HEADER --- */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

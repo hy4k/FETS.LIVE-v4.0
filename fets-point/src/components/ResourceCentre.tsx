@@ -131,7 +131,7 @@ export default function ResourceCentre() {
       setUserRole(userProfile?.role || null)
 
       let query = supabase
-        .from('vault')
+        .from('fets_vault')
         .select('*')
         .eq('is_deleted', false)
         .order('priority', { ascending: false })
@@ -253,7 +253,7 @@ export default function ResourceCentre() {
     setSubmitting(true)
     try {
       const { error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .insert({
           title: newResource.title,
           description: newResource.description,
@@ -299,7 +299,7 @@ export default function ResourceCentre() {
     setSubmitting(true)
     try {
       const { error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .update({
           title: editResource.title,
           description: editResource.description,
@@ -332,7 +332,7 @@ export default function ResourceCentre() {
 
     try {
       const { error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .update({
           is_deleted: true,
           updated_at: new Date().toISOString()

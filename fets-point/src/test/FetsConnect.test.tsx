@@ -2,10 +2,10 @@ import { render, screen } from '@testing-library/react';
 import FetsConnect from '../components/FetsConnect';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../contexts/AuthContext';
-import { vi } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 
 // Mock the hooks
-vi.mock('../hooks/useAuth', () => ({ 
+vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ profile: { id: '1', full_name: 'Test User' } })
 }));
 

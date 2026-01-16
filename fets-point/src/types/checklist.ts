@@ -43,9 +43,13 @@ export interface ChecklistSubmission {
 }
 
 export interface ChecklistSubmissionWithDetails extends ChecklistSubmission {
-  template: ChecklistTemplate;
-  submitter?: {
-    full_name: string;
-    email: string;
+  checklist_templates: {
+    title: string;
+    type: ChecklistType;
+    questions?: any;
   };
+  submitted_by_profile: {
+    full_name: string;
+  };
+  created_at: string;
 }

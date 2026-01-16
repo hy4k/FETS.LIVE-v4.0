@@ -12,7 +12,7 @@ const fetchCalendarSessions = async (currentDate: Date, activeBranch: string, ap
   const endDateIST = formatDateForIST(endOfMonth)
 
   let query = supabase
-    .from('sessions')
+    .from('calendar_sessions')
     .select('*')
     .gte('date', startDateIST)
     .lte('date', endDateIST)
@@ -30,7 +30,7 @@ const fetchCalendarSessions = async (currentDate: Date, activeBranch: string, ap
     const isMissingColumnError = (error as any)?.message?.includes('branch_location')
     if ((isMissingColumnError || data?.length === 0) && activeBranch === 'calicut' && !isGlobalView) {
       const fallbackQuery = supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .select('*')
         .gte('date', startDateIST)
         .lte('date', endDateIST)
@@ -60,17 +60,17 @@ export const useCalendarSessions = (currentDate: Date, activeBranch: string, app
 }
 
 const addSession = async (sessionData: Omit<Session, 'id'>) => {
-  const { error } = await supabase.from('sessions').insert([sessionData])
+  const { error } = await supabase.from('calendar_sessions').insert([sessionData])
   if (error) throw error
 }
 
 const updateSession = async (sessionData: Partial<Session> & { id: number }) => {
-  const { error } = await supabase.from('sessions').update(sessionData).eq('id', sessionData.id)
+  const { error } = await supabase.from('calendar_sessions').update(sessionData).eq('id', sessionData.id)
   if (error) throw error
 }
 
 const deleteSession = async (sessionId: number) => {
-  const { error } = await supabase.from('sessions').delete().eq('id', sessionId)
+  const { error } = await supabase.from('calendar_sessions').delete().eq('id', sessionId)
   if (error) throw error
 }
 

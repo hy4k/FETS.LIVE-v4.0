@@ -11,7 +11,6 @@ import { useBranch } from '../hooks/useBranch'
 import { toast } from 'react-hot-toast'
 import { format } from 'date-fns'
 import { supabase } from '../lib/supabase'
-
 // Imported Components
 import { ProfilePictureUpload } from './ProfilePictureUpload'
 import { Fetchat } from './Fetchat'
@@ -22,7 +21,7 @@ import { getActiveRosterHandlerEmail } from '../utils/authUtils'
 import { useChat } from '../contexts/ChatContext'
 import { useGlobalCall } from '../contexts/CallContext'
 import { Frame } from './Frame'
-import { Leaderboards } from './Leaderboards'
+
 
 // --- VISUAL COMPONENT PRIMITIVES (Glass & Midnight Theme for Main UI) ---
 
@@ -70,44 +69,16 @@ const NeonButton = ({ children, onClick, active = false, variant = 'primary', cl
 
 // --- SUB-COMPONENTS ---
 
-const UserProfileCard = ({ profile, gameStats }: { profile: any, gameStats: any }) => {
-  const level = gameStats?.current_level || 1;
-  const isElite = level >= 5;
-
-  const getLevelStyles = () => {
-    switch (level) {
-      case 2: return 'ring-2 ring-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]';
-      case 3: return 'ring-2 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.4)]';
-      case 4: return 'ring-2 ring-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.5)]';
-      case 5: return 'ring-2 ring-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.6)] animate-pulse';
-      default: return 'border-amber-500/30';
-    }
-  };
-
+const UserProfileCard = ({ profile }: { profile: any }) => {
   return (
-    <GlassCard className={`flex flex-col items-center text-center relative flex-shrink-0 transition-all duration-500 ${getLevelStyles()}`}>
-      {isElite && (
-        <motion.div
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 text-amber-500 drop-shadow-lg"
-        >
-          <Crown size={32} fill="currentColor" />
-        </motion.div>
-      )}
-
-      <div className={`p-1.5 rounded-full border bg-black/40 backdrop-blur-sm relative z-10 mb-2 ${level >= 4 ? 'border-amber-400' : 'border-amber-500/30'}`}>
+    <GlassCard className="flex flex-col items-center text-center relative flex-shrink-0 transition-all duration-500 border-amber-500/30">
+      <div className="p-1.5 rounded-full border bg-black/40 backdrop-blur-sm relative z-10 mb-2 border-amber-500/30">
         <ProfilePictureUpload
           staffId={profile?.id || ''}
           staffName={profile?.full_name || 'User'}
           currentAvatarUrl={profile?.avatar_url}
           onAvatarUpdate={() => window.location.reload()}
         />
-        {level >= 3 && (
-          <div className="absolute -bottom-1 -right-1 bg-slate-900 border border-white/10 rounded-full p-1 text-amber-500 shadow-lg">
-            <Award size={10} />
-          </div>
-        )}
       </div>
       <h2 className="text-xl font-black text-white uppercase tracking-tight leading-none mb-1">
         {profile?.full_name}
@@ -118,41 +89,10 @@ const UserProfileCard = ({ profile, gameStats }: { profile: any, gameStats: any 
         </span>
       </div>
 
-      {/* FETS GAME STATS */}
       <div className="w-full flex flex-col gap-3 mt-4 pt-4 border-t border-white/5">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative overflow-hidden group">
-            {level >= 4 && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />}
-            <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">Level</p>
-            <div className="flex items-center justify-center gap-1">
-              <Sparkles size={10} className={level >= 4 ? 'animate-pulse text-amber-400' : 'text-amber-500'} />
-              <p className="text-lg font-black text-white leading-none">{level}</p>
-            </div>
-          </div>
-          <div className="bg-black/20 rounded-lg p-2 border border-white/5 relative">
-            <p className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">FETS Cash</p>
-            <p className="text-lg font-black text-white leading-none">{gameStats?.total_cash || 200}</p>
-            {gameStats?.pending_multiplier > 1 && (
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-black text-[7px] font-black px-1 rounded-sm animate-pulse shadow-[0_0_5px_rgba(245,158,11,0.5)]">
-                2X
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Level Progress Bar */}
-        <div className="w-full space-y-1">
-          <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest text-gray-500">
-            <span>XP Progress</span>
-            <span>{(gameStats?.total_cash || 0) % 100}%</span>
-          </div>
-          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(gameStats?.total_cash || 0) % 100}%` }}
-              className="h-full bg-gradient-to-r from-amber-600 to-amber-400"
-            />
-          </div>
+        <div className="bg-black/20 rounded-lg p-3 border border-white/5 text-center">
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Department</p>
+          <p className="text-sm font-bold text-white">{profile?.department || 'General'}</p>
         </div>
       </div>
     </GlassCard>
@@ -581,41 +521,7 @@ export function MyDesk() {
   const { activeBranch } = useBranch()
   const { isDetached, toggleDetach, activeUser, setActiveUser } = useChat()
   const [activeTab, setActiveTab] = useState('fetchat')
-  const [gameStats, setGameStats] = useState<any>(null)
-  const [leaderboardTab, setLeaderboardTab] = useState<'weekly' | 'monthly' | 'legend' | 'centre'>('weekly')
 
-  useEffect(() => {
-    const fetchGameStats = async () => {
-      if (!profile?.id) return
-      const { data } = await supabase
-        .from('user_game_stats')
-        .select('*')
-        .eq('user_id', profile.id)
-        .single()
-
-      if (data) setGameStats(data)
-    }
-
-    fetchGameStats()
-
-    // Real-time subscription for status updates
-    if (profile?.id) {
-      const channel = supabase.channel(`game_stats_${profile.id}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'user_game_stats',
-          filter: `user_id=eq.${profile.id}`
-        }, payload => {
-          if (payload.new) setGameStats(payload.new)
-        })
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [profile?.id])
 
   // Global Call Support
   const { callState, startCall, isMinimized, setIsMinimized } = useGlobalCall()
@@ -629,8 +535,7 @@ export function MyDesk() {
     { id: 'fetchat', label: 'Chat', icon: MessageSquare },
     { id: 'frame', label: 'Frame', icon: UsersIcon }, // New Frame Tab
     { id: 'todo', label: 'To Do', icon: CheckSquare },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'notes', label: 'Notes', icon: BookOpen },
+    { id: 'notes', label: 'Codex', icon: BookOpen },
     { id: 'vault', label: 'Vault', icon: Key },
     { id: 'profile', label: 'Profile', icon: User },
   ]
@@ -668,7 +573,7 @@ export function MyDesk() {
 
           <GlassCard className="flex-1 flex flex-col gap-6" noPadding>
             <div className="p-6 pb-0">
-              <UserProfileCard profile={profile} gameStats={gameStats} />
+              <UserProfileCard profile={profile} />
             </div>
 
             {/* MAIN MENU */}
@@ -826,12 +731,12 @@ export function MyDesk() {
                 </motion.div>
               )}
 
-              {/* 3. LEADERBOARD */}
-              {activeTab === 'leaderboard' && (
-                <motion.div key="leaderboard" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
-                  <GlassCard className="h-full overflow-hidden" noPadding>
-                    <Leaderboards />
-                  </GlassCard>
+              {/* 3. CODEX (Notes) */}
+              {activeTab === 'notes' && (
+                <motion.div key="notes" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
+                  <div className="h-full rounded-2xl overflow-hidden shadow-2xl relative">
+                    <DigitalNotebook isOpen={true} onClose={() => setActiveTab('fetchat')} />
+                  </div>
                 </motion.div>
               )}
 

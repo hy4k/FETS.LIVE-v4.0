@@ -111,7 +111,7 @@ export default function EventManager() {
         .from('incidents')
         .select(`
           *,
-          profiles!incidents_user_id_fkey(full_name)
+          staff_profiles!incidents_user_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false })
 
@@ -130,7 +130,7 @@ export default function EventManager() {
         priority: incident.severity as 'critical' | 'major' | 'minor',
         status: incident.status as 'open' | 'assigned' | 'in_progress' | 'escalated' | 'closed',
         reporter_id: incident.user_id,
-        reporter_name: incident.profiles?.full_name || incident.reporter || 'Unknown',
+        reporter_name: incident.staff_profiles?.full_name || incident.reporter || 'Unknown',
         assigned_to: incident.assigned_to,
         assigned_to_name: incident.assigned_to,
         created_at: incident.created_at,

@@ -41,14 +41,14 @@ export const useSocialPosts = () => {
         .from('social_posts' as any)
         .select(`
           *,
-          user:staff_profiles!social_posts_user_id_fkey(id, full_name, avatar_url, role),
-          likes:social_likes(user_id),
-          comments:social_comments(
+          user:staff_profiles!social_posts_author_id_fkey(id, full_name, avatar_url, role),
+          likes:social_post_likes(user_id),
+          comments:social_post_comments(
             id,
-            user_id,
+            author_id,
             content,
             created_at,
-            user:staff_profiles!social_comments_user_id_fkey(full_name, avatar_url)
+            user:staff_profiles!social_post_comments_author_id_fkey(full_name, avatar_url)
           )
         `)
         .order('created_at', { ascending: false });

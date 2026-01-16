@@ -58,15 +58,15 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
             const today = new Date().toISOString().split('T')[0]
             const startOfMonth = new Date(); startOfMonth.setDate(1);
 
-            // --- Operational Events ---
+            // --- Operational Incidents ---
             const { data: events } = await (supabase as any)
-                .from('events')
+                .from('incidents')
                 .select('*')
                 .gte('created_at', startOfMonth.toISOString())
 
             const openEvents = events?.filter((e: any) => e.status !== 'closed') || []
-            const critical = openEvents.filter((e: any) => e.priority === 'critical').length
-            const major = openEvents.filter((e: any) => e.priority === 'major').length
+            const critical = openEvents.filter((e: any) => e.severity === 'critical').length
+            const major = openEvents.filter((e: any) => e.severity === 'high' || e.severity === 'medium').length
             const eventPenalty = (critical * 15) + (major * 5) + (openEvents.length * 1)
 
             // --- Infrastructure Health ---

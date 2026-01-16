@@ -58,7 +58,7 @@ export const supabaseHelpers = {
 
   // Incidents (Events Table)
   async getIncidents(status?: string) {
-    let query = supabase.from('events').select('*')
+    let query = supabase.from('incidents').select('*')
 
     if (status) {
       query = query.eq('status', status)

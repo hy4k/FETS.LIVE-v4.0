@@ -1,6 +1,12 @@
 import { Database } from './database.types';
 
 export type StaffProfile = Database['public']['Tables']['staff_profiles']['Row'] & {
+  id: string;
+  user_id: string;
+  full_name: string;
+  avatar_url?: string | null;
+  branch_assigned?: string | null;
+  role?: string;
   contact_number?: string;
   position?: string;
   joining_date?: string;

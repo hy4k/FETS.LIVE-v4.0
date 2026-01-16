@@ -281,7 +281,7 @@ export const useCreateSession = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (sessionData: TablesInsert<'sessions'>) => {
+    mutationFn: async (sessionData: TablesInsert<'calendar_sessions'>) => {
       try {
         return await sessionsService.create(sessionData)
       } catch (error) {
@@ -300,7 +300,7 @@ export const useUpdateSession = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: TablesUpdate<'sessions'> }) => {
+    mutationFn: async ({ id, updates }: { id: number; updates: TablesUpdate<'calendar_sessions'> }) => {
       try {
         return await sessionsService.update(id, updates)
       } catch (error) {
@@ -451,7 +451,7 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (postData: TablesInsert<'posts'> & { author_id: string; content: string }) => {
+    mutationFn: async (postData: TablesInsert<'social_posts'> & { author_id: string; content: string }) => {
       try {
         return await postsService.create(postData)
       } catch (error) {
@@ -470,7 +470,7 @@ export const useUpdatePost = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: TablesUpdate<'posts'> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: TablesUpdate<'social_posts'> }) => {
       try {
         return await postsService.update(id, updates)
       } catch (error) {
@@ -544,7 +544,7 @@ export const useSendMessage = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (message: TablesInsert<'chat_messages'>) => {
+    mutationFn: async (message: TablesInsert<'messages'>) => {
       try {
         return await chatService.sendMessage(message)
       } catch (error) {
@@ -553,7 +553,7 @@ export const useSendMessage = () => {
       }
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', variables.room_id] })
+      queryClient.invalidateQueries({ queryKey: ['chatMessages', variables.conversation_id] })
     }
   })
 }

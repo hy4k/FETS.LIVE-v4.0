@@ -71,10 +71,10 @@ class MockPerformanceObserver {
   constructor(callback: any) {
     this.callback = callback
   }
-  
-  observe() {}
-  disconnect() {}
-  
+
+  observe() { }
+  disconnect() { }
+
   callback: any
 }
 
@@ -84,9 +84,9 @@ Object.defineProperty(window, 'PerformanceObserver', {
 
 // Mock IntersectionObserver
 class MockIntersectionObserver {
-  observe() {}
-  disconnect() {}
-  unobserve() {}
+  observe() { }
+  disconnect() { }
+  unobserve() { }
 }
 
 Object.defineProperty(window, 'IntersectionObserver', {
@@ -159,17 +159,17 @@ describe('Enhanced App with Lazy Loading', () => {
 
   it('handles lazy component loading with Suspense', async () => {
     // Mock authenticated user
-    const mockUser = { 
-      id: '1', 
+    const mockUser = {
+      id: '1',
       email: 'test@example.com',
       app_metadata: {},
       user_metadata: {},
       aud: 'authenticated',
       created_at: new Date().toISOString()
     }
-    
+
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
-      data: { 
+      data: {
         session: {
           user: mockUser,
           access_token: 'mock-token',
@@ -241,17 +241,17 @@ describe('Enhanced App with Lazy Loading', () => {
   })
 
   it('supports route-based code splitting', async () => {
-    const mockUser = { 
-      id: '1', 
+    const mockUser = {
+      id: '1',
       email: 'test@example.com',
       app_metadata: {},
       user_metadata: {},
       aud: 'authenticated',
       created_at: new Date().toISOString()
     }
-    
+
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
-      data: { 
+      data: {
         session: {
           user: mockUser,
           access_token: 'mock-token',
@@ -289,21 +289,22 @@ describe('Performance Monitoring', () => {
 
   it('measures component load times', () => {
     const startTime = performance.now()
-    
+
     render(
       <TestWrapper>
         <div>Test Component</div>
       </TestWrapper>
     )
-    
+
     const endTime = performance.now()
     expect(endTime).toBeGreaterThanOrEqual(startTime)
   })
 
   it('handles memory usage monitoring', () => {
-    expect(window.performance.memory).toBeDefined()
-    expect(window.performance.memory.usedJSHeapSize).toBeGreaterThan(0)
-    expect(window.performance.memory.totalJSHeapSize).toBeGreaterThan(0)
+    const performanceAny = window.performance as any
+    expect(performanceAny.memory).toBeDefined()
+    expect(performanceAny.memory.usedJSHeapSize).toBeGreaterThan(0)
+    expect(performanceAny.memory.totalJSHeapSize).toBeGreaterThan(0)
   })
 })
 
@@ -317,7 +318,7 @@ describe('Real-time Features', () => {
       on: vi.fn(() => ({ subscribe: vi.fn() })),
       subscribe: vi.fn()
     }
-    
+
     vi.mocked(supabase.channel).mockReturnValue(mockChannel)
 
     render(
@@ -340,7 +341,7 @@ describe('Real-time Features', () => {
       }),
       subscribe: vi.fn()
     }
-    
+
     vi.mocked(supabase.channel).mockReturnValue(mockChannel)
 
     render(
@@ -360,7 +361,7 @@ describe('Real-time Features', () => {
 describe('Service Worker Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    
+
     // Mock service worker
     Object.defineProperty(navigator, 'serviceWorker', {
       value: {

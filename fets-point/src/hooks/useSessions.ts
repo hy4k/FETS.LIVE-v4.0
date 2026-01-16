@@ -8,7 +8,7 @@ import { SessionFilters } from '../types/filters'
  * @param {SessionFilters} filters - The filters to apply to the query.
  */
 const fetchSessions = async (filters: SessionFilters = {}) => {
-  let query: any = supabase.from('sessions').select('*')
+  let query: any = supabase.from('calendar_sessions').select('*')
 
   // Apply filters dynamically
   if (filters.date) {

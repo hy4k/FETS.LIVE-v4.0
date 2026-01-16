@@ -20,7 +20,7 @@ export const FetsProfile = () => {
     const [bio, setBio] = useState('');
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [loadingBio, setLoadingBio] = useState(true);
-    const [gameData, setGameData] = useState<any>(null);
+
 
     useEffect(() => {
         if (profile?.created_at) {
@@ -34,23 +34,12 @@ export const FetsProfile = () => {
 
         // Mock stats for visual richness (in real app, fetch from DB)
         setStats(prev => ({ ...prev, loginCount: 42, tasksCompleted: 128 }));
-
-        // Fetch Game Stats (Level & Cash)
-        if (profile?.id) {
-            const fetchGameData = async () => {
-                const { data } = await supabase.from('user_game_stats').select('*').eq('user_id', profile.id).single();
-                if (data) {
-                    setGameData(data);
-                }
-            };
-            fetchGameData();
-        }
     }, [profile]);
 
     const handleSaveBio = async () => {
         if (!profile?.id) return;
         try {
-            const { error } = await supabase.from('profiles').update({ bio }).eq('id', profile.id);
+            const { error } = await supabase.from('staff_profiles').update({ bio }).eq('id', profile.id);
             if (error) throw error;
             setIsEditingBio(false);
             toast.success('Dossier Updated');
@@ -101,22 +90,7 @@ export const FetsProfile = () => {
                         {profile?.role?.replace('_', ' ') || 'Staff Member'}
                     </p>
 
-                    <div className="w-full grid grid-cols-2 gap-2">
-                        <div className="bg-black/20 rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-1 text-amber-400 mb-1">
-                                <Zap size={14} fill="currentColor" />
-                                <p className="text-xl font-black">{gameData?.current_level || 1}</p>
-                            </div>
-                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Game Level</p>
-                        </div>
-                        <div className="bg-black/20 rounded-xl p-3 border border-white/5 flex flex-col items-center justify-center">
-                            <div className="flex items-center gap-1 text-emerald-400 mb-1">
-                                <Star size={14} fill="currentColor" />
-                                <p className="text-xl font-black">{gameData?.total_cash || 200}</p>
-                            </div>
-                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">FETS Cash</p>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* BIO CARD */}

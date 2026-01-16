@@ -29,7 +29,7 @@ import { ChecklistCreator } from './ChecklistCreator';
 import { ChecklistAnalysis } from './ChecklistAnalysis';
 import { ChecklistFormModal } from './ChecklistFormModal';
 import { StaffBranchSelector } from './StaffBranchSelector';
-import { ChecklistTemplate } from '../../types/checklist';
+import { ChecklistTemplate, ChecklistSubmissionWithDetails as ChecklistSubmission } from '../../types/checklist';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -46,24 +46,6 @@ import {
     endOfWeek
 } from 'date-fns';
 import { useBranch } from '../../hooks/useBranch';
-
-// Add interface for history items
-interface ChecklistSubmission {
-    id: string;
-    submitted_at: string;
-    status: string;
-    branch_id?: string;
-    created_at: string;
-    checklist_templates: {
-        title: string;
-        type: string;
-        questions?: any;
-    };
-    submitted_by_profile: {
-        full_name: string;
-    };
-    answers: any;
-}
 
 interface ChecklistManagerProps {
     currentUser: any;
@@ -129,7 +111,7 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     const fetchHistory = async () => {
         setHistoryLoading(true);
         try {
-            // Fetch submissions with template details
+            // Fetch submissions with template details and profile details in one go
             let query = supabase
                 .from('checklist_submissions')
                 .select(`
@@ -138,6 +120,9 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                         title,
                         type,
                         questions
+                    ),
+                    submitted_by_profile:staff_profiles!checklist_submissions_submitted_by_fkey(
+                        full_name
                     )
                 `);
 
@@ -151,28 +136,10 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
 
             if (error) throw error;
 
-            // Fetch profile names separately for each submission
-            const submissionsWithProfiles = await Promise.all(
-                (submissions || []).map(async (submission: any) => {
-                    let profileName = 'Unknown User';
-                    if (submission.submitted_by) {
-                        const { data: profile } = await supabase
-                            .from('staff_profiles')
-                            .select('full_name')
-                            .eq('user_id', submission.submitted_by)
-                            .single();
-                        if (profile?.full_name) {
-                            profileName = profile.full_name;
-                        }
-                    }
-                    return {
-                        ...submission,
-                        submitted_by_profile: { full_name: profileName }
-                    };
-                })
-            );
-
-            setHistory(submissionsWithProfiles as any);
+            setHistory((submissions || []).map((s: any) => ({
+                ...s,
+                submitted_by_profile: s.submitted_by_profile || { full_name: 'Unknown User' }
+            })) as any);
         } catch (error) {
             console.error('Error fetching history:', error);
             toast.error('Failed to load history');

@@ -28,10 +28,10 @@ interface AnalysisEvent {
     id: string;
     branch_location: string;
     category: string;
-    priority: 'critical' | 'major' | 'minor';
+    severity: 'critical' | 'high' | 'medium' | 'low';
     status: string;
     created_at: string;
-    closed_at?: string;
+    completed_at?: string;
     reporter_id?: string;
 }
 
@@ -63,8 +63,8 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
 
             // Fetch ALL events globally for comprehensive analysis
             const { data, error } = await (supabase as any)
-                .from('events')
-                .select('id, branch_location, category, priority, status, created_at, closed_at')
+                .from('incidents')
+                .select('id, branch_location, category, severity, status, created_at, completed_at')
                 .gte('created_at', startDate.toISOString())
                 .order('created_at', { ascending: false });
 
@@ -81,8 +81,8 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
     const metrics = useMemo(() => {
         const total = events.length;
         const open = events.filter(e => e.status !== 'closed').length;
-        const critical = events.filter(e => e.priority === 'critical' && e.status !== 'closed').length;
-        const major = events.filter(e => e.priority === 'major' && e.status !== 'closed').length;
+        const critical = events.filter(e => e.severity === 'critical' && e.status !== 'closed').length;
+        const major = events.filter(e => (e.severity === 'high' || e.severity === 'medium') && e.status !== 'closed').length;
         const closed = events.filter(e => e.status === 'closed').length;
 
         // Health Score Calculation (100 is perfect)
@@ -97,7 +97,7 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
             if (!branchStats[branch]) branchStats[branch] = { total: 0, critical: 0, open: 0 };
             branchStats[branch].total++;
             if (e.status !== 'closed') branchStats[branch].open++;
-            if (e.priority === 'critical') branchStats[branch].critical++;
+            if (e.severity === 'critical') branchStats[branch].critical++;
         });
 
         // Category Breakdown
@@ -111,9 +111,9 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
         let totalResolutionHours = 0;
         let closedCount = 0;
         events.forEach(e => {
-            if (e.status === 'closed' && e.closed_at) {
+            if (e.status === 'closed' && e.completed_at) {
                 const created = new Date(e.created_at).getTime();
-                const closed = new Date(e.closed_at).getTime();
+                const closed = new Date(e.completed_at).getTime();
                 const hours = (closed - created) / (1000 * 60 * 60);
                 if (hours > 0) {
                     totalResolutionHours += hours;

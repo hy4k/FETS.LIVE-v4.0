@@ -12,17 +12,10 @@ import { useAuth } from '../hooks/useAuth'
 import { format } from 'date-fns'
 import { toast } from 'react-hot-toast'
 import { AgentDossier } from './AgentDossier'
+import { StaffProfile } from '../types/shared'
 
 // --- Types ---
-export interface StaffProfile {
-    id: string
-    user_id: string
-    full_name: string
-    avatar_url: string | null
-    branch_assigned: string | null
-    is_online?: boolean
-    status?: string
-}
+
 
 interface Message {
     id: string

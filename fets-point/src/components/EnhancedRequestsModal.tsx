@@ -56,8 +56,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
         .from('leave_requests')
         .select(`
           *,
-          requestor:profiles!leave_requests_user_id_fkey(full_name),
-          target:profiles!leave_requests_swap_with_user_id_fkey(full_name)
+          requestor:staff_profiles!leave_requests_user_id_fkey(full_name),
+          target:staff_profiles!leave_requests_swap_with_user_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false })
 
@@ -274,8 +274,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
             <button
               onClick={() => setActiveTab('create')}
               className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'create'
-                  ? 'bg-white shadow-sm text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white shadow-sm text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Create Request
@@ -283,8 +283,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
             <button
               onClick={() => setActiveTab('my-requests')}
               className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'my-requests'
-                  ? 'bg-white shadow-sm text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white shadow-sm text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               My Requests
@@ -293,8 +293,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
               <button
                 onClick={() => setActiveTab('manage')}
                 className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'manage'
-                    ? 'bg-white shadow-sm text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white shadow-sm text-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Manage Requests
@@ -314,8 +314,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                   <button
                     onClick={() => setRequestType('leave')}
                     className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${requestType === 'leave'
-                        ? 'border-blue-500 bg-blue-50 text-blue-900'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-900'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                       }`}
                   >
                     <Calendar className={`h-5 w-5 mb-2 ${requestType === 'leave' ? 'text-blue-600' : 'text-gray-500'}`} />
@@ -326,8 +326,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                   <button
                     onClick={() => setRequestType('shift_swap')}
                     className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${requestType === 'shift_swap'
-                        ? 'border-blue-500 bg-blue-50 text-blue-900'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-900'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                       }`}
                   >
                     <Users className={`h-5 w-5 mb-2 ${requestType === 'shift_swap' ? 'text-blue-600' : 'text-gray-500'}`} />
@@ -418,8 +418,8 @@ export const EnhancedRequestsModal: React.FC<RequestsModalProps> = ({
                             {request.request_type === 'leave' ? 'Leave Request' : `Shift Swap with ${request.target_name}`}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                'bg-red-100 text-red-800'
+                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              'bg-red-100 text-red-800'
                             }`}>
                             {request.status}
                           </span>

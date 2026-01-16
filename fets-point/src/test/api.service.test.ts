@@ -12,7 +12,6 @@ import {
   staffService,
   postsService,
   chatService,
-  profilesService,
   ApiError
 } from '../services/api.service'
 import { supabase } from '../lib/supabase'
@@ -165,7 +164,7 @@ describe('Sessions Service', () => {
 
     const result = await sessionsService.getAll()
 
-    expect(supabase.from).toHaveBeenCalledWith('sessions')
+    expect(supabase.from).toHaveBeenCalledWith('calendar_sessions')
     expect(result).toEqual(mockData)
   })
 
@@ -277,9 +276,9 @@ describe('Chat Service', () => {
 
   it('should send a message', async () => {
     const message = {
-      room_id: 'room1',
-      author_id: 'user1',
-      text: 'Hello'
+      conversation_id: 'room1',
+      sender_id: 'user1',
+      content: 'Hello'
     }
 
     const mockQuery = {
@@ -356,41 +355,3 @@ describe('Roster Service', () => {
   })
 })
 
-describe('Profiles Service', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('should fetch all profiles', async () => {
-    const mockData = [
-      { id: '1', full_name: 'John Doe', email: 'john@example.com', role: 'staff' }
-    ]
-
-    const mockQuery = {
-      select: vi.fn().mockReturnThis(),
-      order: vi.fn().mockResolvedValue({ data: mockData, error: null })
-    }
-
-    vi.mocked(supabase.from).mockReturnValue(mockQuery as any)
-
-    const result = await profilesService.getAll()
-
-    expect(result).toEqual(mockData)
-  })
-
-  it('should update a profile', async () => {
-    const updates = { full_name: 'John Updated' }
-    const mockQuery = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: updates, error: null })
-    }
-
-    vi.mocked(supabase.from).mockReturnValue(mockQuery as any)
-
-    const result = await profilesService.update('1', updates)
-
-    expect(result).toEqual(updates)
-  })
-})

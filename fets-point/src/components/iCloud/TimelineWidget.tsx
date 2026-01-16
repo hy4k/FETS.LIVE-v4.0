@@ -49,7 +49,7 @@ export function TimelineWidget({ onNavigate }: TimelineWidgetProps) {
 
       // Fetch real session data from database
       let query = supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .select('*')
         .gte('date', startDate)
         .lte('date', endDateStr)

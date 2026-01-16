@@ -13,7 +13,7 @@ interface Session {
   client_name: string
   exam_name: string
   date: string
-  candidate_count: number
+  candidate_count?: number | null
   start_time: string
   end_time: string
 }
@@ -56,7 +56,7 @@ export function ExamScheduleWidget({ onNavigate }: ExamScheduleWidgetProps) {
       const endDateStr = formatDateForIST(endDate)
 
       let query = supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .select('*')
         .gte('date', startDate)
         .lte('date', endDateStr)

@@ -12,11 +12,11 @@ const fetchPosts = async () => {
     .from('social_posts')
     .select(`
       *,
-      author:staff_profiles!posts_author_id_fkey(full_name, avatar_url, role, department),
+      author:staff_profiles!social_posts_author_id_fkey(full_name, avatar_url, role, department),
       likes:social_post_likes(user_id),
       comments:social_post_comments(
         *,
-        author:staff_profiles!post_comments_author_id_fkey(full_name, avatar_url)
+        author:staff_profiles!social_post_comments_author_id_fkey(full_name, avatar_url)
       )
     `)
     .order('pinned', { ascending: false })
@@ -67,7 +67,7 @@ export const usePostMutations = () => {
   const invalidatePosts = () => queryClient.invalidateQueries({ queryKey: ['posts'] })
 
   const addPost = useMutation({
-    mutationFn: async (newPost: { content: string; author_id: string, author: any }) => {
+    mutationFn: async (newPost: { content: string; author_id: string, author?: any }) => {
       const { data, error } = await supabase.from('social_posts').insert({ content: newPost.content, author_id: newPost.author_id }).select().single()
       if (error) throw error
       return data
@@ -141,7 +141,7 @@ export const usePostMutations = () => {
   })
 
   const addComment = useMutation({
-    mutationFn: async (newComment: { post_id: string; author_id: string; content: string; author: any }) => {
+    mutationFn: async (newComment: { post_id: string; author_id: string; content: string; author?: any }) => {
       const { data, error } = await supabase.from('social_post_comments').insert({ post_id: newComment.post_id, author_id: newComment.author_id, content: newComment.content }).select().single()
       if (error) throw error
       return data
@@ -338,7 +338,7 @@ const fetchTasks = async (userId: string) => {
     .from('user_tasks')
     .select(`
       *,
-      assigned_by:profiles!assigned_by(full_name)
+      assigned_by:staff_profiles!user_tasks_assigned_by_fkey(full_name)
     `)
     .eq('assigned_to', userId)
     .order('created_at', { ascending: false })
@@ -490,88 +490,3 @@ export const useAllStaff = () => {
   })
 }
 
-// --- Kudos ---
-
-const fetchKudos = async () => {
-  const { data, error } = await supabase
-    .from('kudos')
-    .select(`
-      *,
-      giver:profiles!giver_id(full_name, avatar_url),
-      receiver:profiles!receiver_id(full_name, avatar_url)
-    `)
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(error.message)
-  return data || []
-}
-
-export const useKudos = () => {
-  const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const subscription = supabase
-      .channel('public:kudos')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'kudos' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['kudos'] })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(subscription)
-    }
-  }, [queryClient])
-
-  return useQuery({
-    queryKey: ['kudos'],
-    queryFn: fetchKudos,
-    staleTime: STALE_TIME,
-  })
-}
-
-export const useKudosMutations = () => {
-  const queryClient = useQueryClient()
-
-  const invalidateKudos = () => queryClient.invalidateQueries({ queryKey: ['kudos'] })
-
-  const addKudos = useMutation({
-    mutationFn: async (newKudos: { giver_id: string; receiver_id: string; message: string; giver: any; receiver: any }) => {
-      const { data, error } = await supabase.from('kudos').insert({ giver_id: newKudos.giver_id, receiver_id: newKudos.receiver_id, message: newKudos.message }).select().single()
-      if (error) throw error
-      return data
-    },
-    onMutate: async (newKudos) => {
-      await queryClient.cancelQueries({ queryKey: ['kudos'] })
-      const previousKudos = queryClient.getQueryData(['kudos'])
-
-      const optimisticKudos = {
-        ...newKudos,
-        id: `temp-${Date.now()}`,
-        created_at: new Date().toISOString(),
-      }
-
-      queryClient.setQueryData(['kudos'], (old: any) => [optimisticKudos, ...old])
-
-      return { previousKudos, optimisticKudos }
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.setQueryData(['kudos'], (old: any) =>
-        old.map((kudo: any) => (kudo.id === context.optimisticKudos.id ? data : kudo))
-      );
-      toast.success('Kudos given!')
-    },
-    onError: (err, newKudos, context) => {
-      queryClient.setQueryData(['kudos'], context.previousKudos)
-      toast.error(`Error: ${err.message}`)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['kudos'] })
-    },
-  })
-
-  return { addKudos: addKudos.mutateAsync }
-}

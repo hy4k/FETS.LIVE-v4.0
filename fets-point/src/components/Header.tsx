@@ -4,7 +4,7 @@ import {
   Bell, ChevronDown, MapPin, LayoutDashboard,
   Brain, ShieldAlert, MessageSquare, ClipboardList,
   CalendarDays, UserSearch, UserCheck, Menu, LogOut,
-  Server, Cpu, Shield, X, PackageSearch
+  Server, Cpu, Shield, X, PackageSearch, PenTool
 } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +20,7 @@ interface HeaderProps {
   setSidebarOpen?: (open: boolean) => void;
   setActiveTab?: (tab: string) => void;
   activeTab?: string;
+  onQuickCapture?: () => void;
 }
 
 /**
@@ -41,7 +42,7 @@ const AnimatedLabel = ({ label }: { label: string }) => {
   );
 };
 
-export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, setActiveTab, activeTab }: HeaderProps = {}) {
+export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, setActiveTab, activeTab, onQuickCapture }: HeaderProps = {}) {
   const { profile, signOut } = useAuth();
   const { activeBranch, setActiveBranch } = useBranch();
   const unreadCount = useUnreadCount();
@@ -180,51 +181,62 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
             ))}
           </div>
         </div>
+      </div>
 
-        <div>
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 pl-2">Operations & Intelligence</h3>
-          <div className="space-y-4">
-            {secondRowItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => { setActiveTab?.(item.id); setSidebarOpen?.(false); }}
-                className={`w-full flex items-center gap-5 p-5 rounded-2xl transition-all ${activeTab === item.id
-                  ? 'bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] text-amber-600'
-                  : 'bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-600'
-                  }`}
-              >
-                <div className={`p-3 rounded-xl ${activeTab === item.id ? 'bg-amber-100' : 'bg-white/50'}`}>
-                  <item.icon size={22} />
-                </div>
-                <span className="text-xs font-black uppercase tracking-[0.15em]">{item.label}</span>
-              </button>
-            ))}
+      <div>
+        {/* Quick Codex Button in Mobile */}
+        <button
+          onClick={() => { onQuickCapture?.(); setSidebarOpen?.(false); }}
+          className="w-full flex items-center gap-5 p-5 rounded-2xl transition-all bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-600 mb-8"
+        >
+          <div className="p-3 rounded-xl bg-amber-100/50">
+            <PenTool size={22} className="text-amber-700" />
           </div>
-        </div>
+          <span className="text-xs font-black uppercase tracking-[0.15em]">Quick Codex Entry</span>
+        </button>
 
-        {/* Action Buttons */}
-        <div className="pt-4 space-y-4">
-          {canSwitch && (
+        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4 pl-2">Operations & Intelligence</h3>
+        <div className="space-y-4">
+          {secondRowItems.map((item) => (
             <button
-              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-              className="w-full flex items-center justify-between p-5 bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-900/20 font-black uppercase tracking-widest text-xs"
+              key={item.id}
+              onClick={() => { setActiveTab?.(item.id); setSidebarOpen?.(false); }}
+              className={`w-full flex items-center gap-5 p-5 rounded-2xl transition-all ${activeTab === item.id
+                ? 'bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] text-amber-600'
+                : 'bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-600'
+                }`}
             >
-              <div className="flex items-center gap-3">
-                <MapPin size={18} />
-                <span>Switch Branch ({currentBranchName})</span>
+              <div className={`p-3 rounded-xl ${activeTab === item.id ? 'bg-amber-100' : 'bg-white/50'}`}>
+                <item.icon size={22} />
               </div>
-              <ChevronDown size={18} />
+              <span className="text-xs font-black uppercase tracking-[0.15em]">{item.label}</span>
             </button>
-          )}
-
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-3 p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 font-black uppercase tracking-widest text-xs"
-          >
-            <LogOut size={18} />
-            <span>Terminate Session</span>
-          </button>
+          ))}
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-4 space-y-4">
+        {canSwitch && (
+          <button
+            onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+            className="w-full flex items-center justify-between p-5 bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-900/20 font-black uppercase tracking-widest text-xs"
+          >
+            <div className="flex items-center gap-3">
+              <MapPin size={18} />
+              <span>Switch Branch ({currentBranchName})</span>
+            </div>
+            <ChevronDown size={18} />
+          </button>
+        )}
+
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-3 p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 font-black uppercase tracking-widest text-xs"
+        >
+          <LogOut size={18} />
+          <span>Terminate Session</span>
+        </button>
       </div>
 
       {/* Version Info */}
@@ -275,6 +287,18 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
           {/* RIGHT: COMMAND CONTROLS (Pills) */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
+
+            {/* Quick Codex Button */}
+            <button
+              onClick={onQuickCapture}
+              className="fets-pill-control relative group"
+              title="Quick Codex Entry"
+            >
+              <div className="relative">
+                <PenTool className="w-4 h-4 opacity-70 group-hover:text-amber-600 group-hover:opacity-100 transition-all" />
+              </div>
+              <span className="text-xs uppercase tracking-wider hidden sm:inline">Codex</span>
+            </button>
 
 
             {/* Notifications */}

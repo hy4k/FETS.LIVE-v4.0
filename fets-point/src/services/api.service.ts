@@ -129,7 +129,7 @@ export const incidentsService = {
   async getAll(filters?: { status?: string; branch_location?: string }) {
     try {
       let query = supabase
-        .from('events')
+        .from('incidents')
         .select('*')
 
       if (filters?.status) {
@@ -153,7 +153,7 @@ export const incidentsService = {
   async getById(id: string) {
     try {
       const { data, error } = await supabase
-        .from('events')
+        .from('incidents')
         .select('*')
         .eq('id', id)
         .single()
@@ -166,10 +166,10 @@ export const incidentsService = {
     }
   },
 
-  async create(incident: TablesInsert<'events'>) {
+  async create(incident: TablesInsert<'incidents'>) {
     try {
       const { data, error } = await supabase
-        .from('events')
+        .from('incidents')
         .insert(incident as any)
         .select()
         .single()
@@ -182,10 +182,10 @@ export const incidentsService = {
     }
   },
 
-  async update(id: string, updates: TablesUpdate<'events'>) {
+  async update(id: string, updates: TablesUpdate<'incidents'>) {
     try {
       const { data, error } = await supabase
-        .from('events')
+        .from('incidents')
         .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq('id', id)
         .select()
@@ -202,7 +202,7 @@ export const incidentsService = {
   async delete(id: string) {
     try {
       const { error } = await supabase
-        .from('events')
+        .from('incidents')
         .delete()
         .eq('id', id)
 
@@ -299,7 +299,7 @@ export const rosterService = {
 export const sessionsService = {
   async getAll(filters?: { date?: string }) {
     try {
-      let query = supabase.from('sessions').select('*')
+      let query = supabase.from('calendar_sessions').select('*')
 
       if (filters?.date) {
         query = query.eq('date', filters.date)
@@ -318,7 +318,7 @@ export const sessionsService = {
   async getById(id: number) {
     try {
       const { data, error } = await supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .select('*')
         .eq('id', id)
         .single()
@@ -331,10 +331,10 @@ export const sessionsService = {
     }
   },
 
-  async create(session: TablesInsert<'sessions'>) {
+  async create(session: TablesInsert<'calendar_sessions'>) {
     try {
       const { data, error } = await supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .insert(session as any)
         .select()
         .single()
@@ -347,10 +347,10 @@ export const sessionsService = {
     }
   },
 
-  async update(id: number, updates: TablesUpdate<'sessions'>) {
+  async update(id: number, updates: TablesUpdate<'calendar_sessions'>) {
     try {
       const { data, error } = await supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq('id', id)
         .select()
@@ -367,7 +367,7 @@ export const sessionsService = {
   async delete(id: number) {
     try {
       const { error } = await supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .delete()
         .eq('id', id)
 
@@ -479,10 +479,10 @@ export const postsService = {
         .from('social_posts')
         .select(`
           *,
-          staff_profiles(full_name),
+          author:staff_profiles!social_posts_author_id_fkey(full_name),
           post_media:social_post_media(*),
-          post_likes:social_post_likes(count),
-          post_comments:social_post_comments(count)
+          post_likes:social_post_likes(user_id),
+          post_comments:social_post_comments(content, created_at, author_id)
         `)
 
       if (filters?.centre) {
@@ -558,7 +558,7 @@ export const chatService = {
   async getMessages(roomId: string) {
     try {
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select(`
           *,
           staff_profiles(full_name)
@@ -574,10 +574,10 @@ export const chatService = {
     }
   },
 
-  async sendMessage(message: TablesInsert<'chat_messages'>) {
+  async sendMessage(message: TablesInsert<'messages'>) {
     try {
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .insert(message as any)
         .select()
         .single()
@@ -593,7 +593,7 @@ export const chatService = {
   async getRooms() {
     try {
       const { data, error } = await supabase
-        .from('chat_rooms' as any)
+        .from('conversations')
         .select('*')
         .order('name', { ascending: true })
 
@@ -734,7 +734,7 @@ export const vaultService = {
   async getItems(filters?: { category_id?: string; type?: string; searchQuery?: string }) {
     try {
       let query = supabase
-        .from('vault')
+        .from('fets_vault')
         .select('*')
         .eq('is_deleted', false)
         .order('priority', { ascending: false })
@@ -765,7 +765,7 @@ export const vaultService = {
   async getItemById(id: string) {
     try {
       const { data, error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .select('*')
         .eq('id', id)
         .eq('is_deleted', false)
@@ -782,7 +782,7 @@ export const vaultService = {
   async createItem(item: any) {
     try {
       const { data, error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .insert(item as any)
         .select()
         .single()
@@ -798,7 +798,7 @@ export const vaultService = {
   async updateItem(id: string, updates: any) {
     try {
       const { data, error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq('id', id)
         .select()
@@ -815,7 +815,7 @@ export const vaultService = {
   async deleteItem(id: string) {
     try {
       const { error } = await supabase
-        .from('vault')
+        .from('fets_vault')
         .update({ is_deleted: true, updated_at: new Date().toISOString() } as any)
         .eq('id', id)
 

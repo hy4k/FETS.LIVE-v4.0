@@ -33,13 +33,13 @@ export const useDashboardStats = () => {
       ] = await Promise.all([
         applyBranchFilter(supabase.from('candidates').select('*', { count: 'exact', head: true }), activeBranch),
         applyBranchFilter(supabase.from('candidates').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
-        applyBranchFilter(supabase.from('events').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
+        applyBranchFilter(supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
         applyBranchFilter((supabase as any).from('checklist_submissions').select('*', { count: 'exact', head: true }).eq('status', 'in_progress'), activeBranch, 'branch_id'),
         applyBranchFilter(supabase.from('staff_schedules').select('staff_profiles(full_name)').eq('schedule_date', today), activeBranch),
         applyBranchFilter(supabase.from('social_posts').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         // applyBranchFilter(supabase.from('chat_messages').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         applyBranchFilter(supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
-        applyBranchFilter(supabase.from('sessions').select('client_name, candidate_count').eq('date', today), activeBranch),
+        applyBranchFilter(supabase.from('calendar_sessions').select('client_name, candidate_count').eq('date', today), activeBranch),
       ])
 
       const todaysRoster = todaysRosterData && todaysRosterData.length > 0
@@ -55,7 +55,7 @@ export const useDashboardStats = () => {
         newPosts: newPosts ?? 0,
         newMessages: 0, // newMessages ?? 0,
         pendingIncidents: pendingIncidents ?? 0,
-        todaysExams: todaysExams || [],
+        todaysExams: (todaysExams || []) as any[],
       }
     },
     staleTime: STALE_TIME,
@@ -101,7 +101,7 @@ export const useUpcomingSchedule = () => {
       sevenDaysLater.setDate(today.getDate() + 7)
 
       const query = supabase
-        .from('sessions')
+        .from('calendar_sessions')
         .select('*')
         .gte('date', today.toISOString().split('T')[0])
         .lte('date', sevenDaysLater.toISOString().split('T')[0])

@@ -2,6 +2,7 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 
@@ -21,6 +22,8 @@ import { UpdatePassword } from './components/UpdatePassword';
 import { AiAssistant } from './components/AiAssistant';
 import { Fetchat } from './components/Fetchat';
 import { BranchIndicator } from './components/BranchIndicator';
+// Import Codex directly for global access
+import { DigitalNotebook } from './components/DigitalNotebook';
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
@@ -130,6 +133,16 @@ function AppContent() {
   const screenSize = useScreenSize()
   const [isRecovering, setIsRecovering] = useState(false)
 
+  // Codex (Quick Capture) State
+  const [codexOpen, setCodexOpen] = useState(false);
+  const [codexContext, setCodexContext] = useState<string | null>(null);
+
+  const handleQuickCapture = () => {
+    const contextName = activeTab ? activeTab.replace(/-/g, ' ').toUpperCase() : 'COMMAND CENTRE';
+    setCodexContext(`REF: ${contextName}`);
+    setCodexOpen(true);
+  };
+
   useEffect(() => {
     if (window.location.hash.includes('type=recovery')) {
       setIsRecovering(true)
@@ -233,35 +246,58 @@ function AppContent() {
   }
 
   return (
-    <div className={`golden-theme min-h-screen relative ${getBranchTheme(activeBranch)}`}>
-      <Header
-        isMobile={isMobile}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        setActiveTab={setActiveTab}
-        activeTab={activeTab}
-      />
+    <>
+      <div className={`golden-theme min-h-screen relative ${getBranchTheme(activeBranch)}`}>
+        <Header
+          isMobile={isMobile}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          setActiveTab={setActiveTab}
+          activeTab={activeTab}
+          onQuickCapture={handleQuickCapture}
+        />
 
-      <div className="pt-32 px-4 md:px-8 pb-8 transition-all duration-300">
-        <div className="max-w-[1920px] mx-auto">
-          {renderContent()}
+        <div className="pt-32 px-4 md:px-8 pb-8 transition-all duration-300">
+          <div className="max-w-[1920px] mx-auto">
+            {renderContent()}
+          </div>
+        </div>
+
+        {/* Floating AI Assistant - ALWAYS VISIBLE */}
+        <AiAssistant />
+        <GlobalChatLayer />
+        <BranchIndicator />
+
+        <ConnectionStatus />
+        {process.env.NODE_ENV === 'development' && <DatabaseSetup />}
+
+        <div className="max-w-[1920px] mx-auto mt-8 mb-4 flex justify-center opacity-30 pointer-events-none">
+          <span className={"font-['Rajdhani'] font-bold text-[10px] uppercase tracking-[0.5em] text-slate-800"}>
+            F.E.T.S | GLOBAL OPERATIONAL GRID v4.0.1 - BUILD 2026.01
+          </span>
         </div>
       </div>
 
-      {/* Floating AI Assistant - ALWAYS VISIBLE */}
-      <AiAssistant />
-      <GlobalChatLayer />
-      <BranchIndicator />
+      {/* Global Codex Overlay */}
+      <AnimatePresence>
+        {codexOpen && (
+          <motion.div
+            key="codex-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden"
+          >
+            {/* Close Area */}
+            <div className="absolute inset-0" onClick={() => setCodexOpen(false)} />
 
-      <ConnectionStatus />
-      {process.env.NODE_ENV === 'development' && <DatabaseSetup />}
-
-      <div className="max-w-[1920px] mx-auto mt-8 mb-4 flex justify-center opacity-30 pointer-events-none">
-        <span className={"font-['Rajdhani'] font-bold text-[10px] uppercase tracking-[0.5em] text-slate-800"}>
-          F.E.T.S | GLOBAL OPERATIONAL GRID v4.0.1 - BUILD 2026.01
-        </span>
-      </div>
-    </div>
+            <div className="relative w-full h-full pointer-events-auto">
+              <DigitalNotebook isOpen={true} onClose={() => setCodexOpen(false)} quickCaptureContext={codexContext} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

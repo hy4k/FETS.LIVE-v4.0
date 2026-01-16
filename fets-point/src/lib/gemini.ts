@@ -41,8 +41,8 @@ export async function askGemini(userPrompt: string) {
             events, sessions, incidents, candidates, staff,
             roster, vault, notices, posts, branch
         ] = await Promise.all([
-            safeFetch(supabase.from('events').select('*').order('created_at', { ascending: false }).limit(20), 'events'),
-            safeFetch(supabase.from('sessions').select('*').eq('date', today), 'sessions'),
+            safeFetch(supabase.from('incidents').select('*').order('created_at', { ascending: false }).limit(20), 'incidents'),
+            safeFetch(supabase.from('calendar_sessions').select('*').eq('date', today), 'calendar_sessions'),
             safeFetch(supabase.from('incidents').select('*').or(`status.neq.closed,updated_at.gte.${today}`).limit(20), 'incidents'),
             safeFetch(
                 supabase.from('candidates')

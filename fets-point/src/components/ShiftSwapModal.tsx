@@ -77,8 +77,8 @@ export const ShiftSwapModal: React.FC<ShiftSwapModalProps> = ({
           reason,
           status,
           created_at,
-          profiles!leave_requests_user_id_fkey(full_name),
-          target_profiles:profiles!leave_requests_swap_with_user_id_fkey(full_name)
+          profiles:staff_profiles!leave_requests_user_id_fkey(full_name),
+          target_profiles:staff_profiles!leave_requests_swap_with_user_id_fkey(full_name)
         `)
         .eq('request_type', 'shift_swap')
         .order('created_at', { ascending: false })
@@ -279,8 +279,8 @@ export const ShiftSwapModal: React.FC<ShiftSwapModalProps> = ({
             <button
               onClick={() => setActiveTab('create')}
               className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'create'
-                  ? 'bg-white shadow-sm text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white shadow-sm text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Create Request
@@ -288,8 +288,8 @@ export const ShiftSwapModal: React.FC<ShiftSwapModalProps> = ({
             <button
               onClick={() => setActiveTab('pending')}
               className={`flex-1 py-2 px-4 rounded-lg transition-colors ${activeTab === 'pending'
-                  ? 'bg-white shadow-sm text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white shadow-sm text-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Pending Requests
@@ -370,8 +370,8 @@ export const ShiftSwapModal: React.FC<ShiftSwapModalProps> = ({
                             {request.requestor_name} ↔ {request.target_name}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                'bg-red-100 text-red-800'
+                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              'bg-red-100 text-red-800'
                             }`}>
                             {request.status}
                           </span>

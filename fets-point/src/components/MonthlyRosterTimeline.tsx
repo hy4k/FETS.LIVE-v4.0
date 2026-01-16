@@ -184,6 +184,11 @@ export const MonthlyRosterTimeline: React.FC<Props> = ({ staffProfiles, schedule
                           {s ? (
                             <div className={`relative w-10 h-10 ${getShiftStyle(code)}`}>
                               <span className="leading-none text-base">{getCodeLabel(code)}</span>
+                              {(s.overtime_hours || 0) > 0 && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600/90 text-[8px] text-white flex items-center justify-center rounded-full border border-white shadow-sm font-bold z-10" title={`Overtime: ${s.overtime_hours} hrs`}>
+                                  OT
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-50/30 border border-transparent hover:border-gray-200 hover:bg-white transition-all duration-200 flex items-center justify-center group-hover/cell:scale-110">

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare, Newspaper, AlertTriangle, Users, Settings,
   Send, Bot, ChevronRight, Activity, Search,
-  Menu, Bell, Shield, Building2, Brain
+  Menu, Bell, Shield, Building2
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { toast } from 'react-hot-toast'
@@ -76,15 +76,24 @@ const ContentCard = ({ title, children, icon: Icon }: { title: string, children:
 
 // --- MAIN PAGE ---
 
-export function FetsIntelligence() {
+// --- MAIN PAGE ---
+interface FetsIntelligenceProps {
+  initialTab?: string;
+}
+
+export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps) {
   const { profile } = useAuth()
-  const [activeTab, setActiveTab] = useState<string>('chat')
+  const [activeTab, setActiveTab] = useState<string>(initialTab)
 
   // Chat State
   const [query, setQuery] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab)
+  }, [initialTab]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -106,7 +115,7 @@ export function FetsIntelligence() {
     setQuery('') // Clear input immediately
 
     try {
-      const response = await askGemini(userMsg.content)
+      const response = await askGemini(userMsg.content, profile)
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -131,31 +140,44 @@ export function FetsIntelligence() {
   const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'mithun@fets.in';
 
   return (
-    <div className="min-h-screen pt-24 pb-8 px-4 md:px-8 bg-slate-50 font-['Montserrat'] text-slate-800">
+    <div className="min-h-screen pt-24 pb-8 px-4 md:px-8 bg-[#EEF2F9] font-['Montserrat'] text-slate-800">
 
-      <div className="max-w-7xl mx-auto h-[85vh] flex gap-6">
+      <div className="max-w-[1600px] mx-auto h-[85vh] flex gap-8">
 
         {/* --- SIDEBAR --- */}
-        <aside className="w-64 flex flex-col shrink-0">
-          <div className="mb-8 pl-2">
-            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">
-              FETS<span className="text-amber-500">.INTEL</span>
-            </h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Central Command</p>
-          </div>
+        <aside className="w-72 flex flex-col shrink-0">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-10 pl-4"
+          >
+            <img 
+              src="/fets_intel_logo.png" 
+              alt="FETS INTELLIGENCE" 
+              className="h-10 w-auto object-contain mb-3 drop-shadow-md"
+            />
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-8 bg-amber-500 rounded-full"></div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Central Command v10.0</p>
+            </div>
+          </motion.div>
 
-          <nav className="flex-1 space-y-1">
-            <div className="mb-6">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 pl-2">Daily Ops</h3>
-              <SidebarItem icon={MessageSquare} label="AI Assistant" isActive={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
-              <SidebarItem icon={Newspaper} label="News & Updates" isActive={activeTab === 'news'} onClick={() => setActiveTab('news')} />
+          <nav className="flex-1 space-y-2">
+            <div className="mb-8">
+              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 pl-4">Neural Link</h3>
+              <SidebarItem icon={MessageSquare} label="AI Intelligence" isActive={activeTab === 'chat'} onClick={() => setActiveTab('chat')} />
+            </div>
+
+            <div className="mb-8">
+              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 pl-4">Operational Grid</h3>
+              <SidebarItem icon={Newspaper} label="Broadcasts" isActive={activeTab === 'news'} onClick={() => setActiveTab('news')} />
               <SidebarItem icon={AlertTriangle} label="Incident Log" isActive={activeTab === 'incidents'} onClick={() => setActiveTab('incidents')} />
             </div>
 
             {isSuperAdmin && (
               <div>
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 pl-2">Admin Tools</h3>
-                <SidebarItem icon={Settings} label="System Config" isActive={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
+                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 pl-4">System Core</h3>
+                <SidebarItem icon={Settings} label="Client Protocol" isActive={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
               </div>
             )}
           </nav>
@@ -167,40 +189,54 @@ export function FetsIntelligence() {
 
             {/* AI CHAT TAB */}
             {activeTab === 'chat' && (
-              <ContentCard title="FETS Intelligence AI" icon={Bot}>
-                <div className="flex flex-col h-full">
+              <ContentCard title="AI Neural Interface" icon={Bot}>
+                <div className="flex flex-col h-full bg-[#f8fafc]">
                   {/* Messages Area */}
-                  <div className="flex-1 p-6 space-y-6">
+                  <div className="flex-1 p-8 space-y-8">
                     {messages.length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
-                        <div className="bg-amber-100 p-6 rounded-full text-amber-500 mb-4">
-                          <Brain size={48} />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-600">How can I help you today?</h3>
-                        <p className="text-sm">Ask about rosters, exams, or incidents.</p>
+                      <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-80">
+                         <motion.div 
+                           initial={{ scale: 0.8, opacity: 0 }}
+                           animate={{ scale: 1, opacity: 1 }}
+                           className="bg-gradient-to-br from-amber-400 to-amber-600 p-8 rounded-[2rem] text-white shadow-[0_20px_40px_-10px_rgba(245,158,11,0.4)] mb-8 ring-4 ring-amber-100"
+                         >
+                           <Bot size={64} className="text-white drop-shadow-md" />
+                         </motion.div>
+                         <h3 className="text-3xl font-black text-slate-700 tracking-tight mb-2">FETS Intelligence Online</h3>
+                         <p className="text-sm font-medium text-slate-500 max-w-md text-center leading-relaxed">
+                           Systems nominal. Accessing secure ledger. <br/> Ready for operational queries involving rosters, exams, or incidents.
+                         </p>
                       </div>
                     )}
 
                     {messages.map((msg) => (
-                      <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={msg.id} 
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
                         <div className={`
-                          max-w-[80%] p-5 rounded-2xl shadow-sm leading-relaxed text-sm font-medium
+                          max-w-[75%] p-6 rounded-[1.5rem] shadow-sm relative group transition-all duration-300
                           ${msg.role === 'user'
-                            ? 'bg-amber-500 text-white rounded-tr-none'
-                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                            ? 'bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-tr-none shadow-xl shadow-slate-200'
+                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none shadow-[4px_4px_20px_rgba(0,0,0,0.03)]'
                           }
                         `}>
-                          {msg.content}
-                          <div className={`text-[10px] mt-2 font-bold uppercase ${msg.role === 'user' ? 'text-amber-100' : 'text-slate-300'}`}>
+                          <p className={`text-[15px] font-medium leading-relaxed ${msg.role === 'user' ? 'text-slate-100' : 'text-slate-600'}`}>
+                            {msg.content}
+                          </p>
+                          <div className={`text-[9px] mt-3 font-black uppercase tracking-widest opacity-60 flex items-center gap-2 ${msg.role === 'user' ? 'text-slate-400 justify-end' : 'text-amber-500'}`}>
+                            {msg.role === 'assistant' && <Activity size={10} />}
                             {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
 
                     {loading && (
                       <div className="flex justify-start">
-                        <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-100 flex gap-2 items-center">
+                        <div className="bg-white px-6 py-5 rounded-[1.5rem] rounded-tl-none border border-slate-100 flex gap-2 items-center shadow-sm">
                           <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" />
                           <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce delay-75" />
                           <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce delay-150" />
@@ -211,23 +247,31 @@ export function FetsIntelligence() {
                   </div>
 
                   {/* Input Area */}
-                  <div className="p-6 bg-white border-t border-slate-100">
-                    <form onSubmit={handleSend} className="relative flex gap-4">
-                      <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Type your message here..."
-                        className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl px-5 py-4 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
-                      />
+                  <div className="p-6 bg-white/80 backdrop-blur-md border-t border-slate-100/50">
+                    <form onSubmit={handleSend} className="relative flex gap-4 max-w-4xl mx-auto">
+                      <div className="relative flex-1 group">
+                         <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-300 to-amber-500 rounded-2xl opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
+                         <input
+                           type="text"
+                           value={query}
+                           onChange={(e) => setQuery(e.target.value)}
+                           placeholder="Transmit query to Neural Core..."
+                           disabled={loading}
+                           className="relative w-full bg-white border-none text-slate-800 placeholder-slate-400 rounded-xl px-6 py-4 font-semibold text-lg focus:outline-none focus:ring-0 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.02)]"
+                         />
+                      </div>
                       <button
                         type="submit"
                         disabled={!query.trim() || loading}
-                        className="bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-xl shadow-lg shadow-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-slate-900 hover:bg-black text-white px-6 rounded-xl shadow-lg shadow-slate-300 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[3.5rem]"
                       >
-                        <Send size={20} />
+                        <Send size={22} className={loading ? 'opacity-0' : ''} />
+                        {loading && <div className="absolute inset-0 flex items-center justify-center"><Activity className="animate-spin" size={20} /></div>}
                       </button>
                     </form>
+                    <p className="text-center text-[10px] uppercase font-bold tracking-widest text-slate-300 mt-4">
+                       Protected by Secure Neural Layer v10.0
+                    </p>
                   </div>
                 </div>
               </ContentCard>
@@ -235,8 +279,8 @@ export function FetsIntelligence() {
 
             {/* NEWS TAB */}
             {activeTab === 'news' && (
-              <ContentCard title="Latest News" icon={Newspaper}>
-                <div className="p-8">
+              <ContentCard title="Global Broadcasts" icon={Newspaper}>
+                <div className="p-10">
                   <NewsManager />
                 </div>
               </ContentCard>
@@ -244,8 +288,8 @@ export function FetsIntelligence() {
 
             {/* INCIDENTS TAB */}
             {activeTab === 'incidents' && (
-              <ContentCard title="Incident Logs" icon={AlertTriangle}>
-                <div className="p-8">
+              <ContentCard title="Incident Command" icon={AlertTriangle}>
+                <div className="p-10">
                   <IncidentManager />
                 </div>
               </ContentCard>
@@ -253,8 +297,8 @@ export function FetsIntelligence() {
 
             {/* SYSTEM CONFIG */}
             {activeTab === 'clients' && isSuperAdmin && (
-              <ContentCard title="Client Settings" icon={Settings}>
-                <div className="p-8">
+              <ContentCard title="Client Protocol Config" icon={Settings}>
+                <div className="p-10">
                   <ClientControl />
                 </div>
               </ContentCard>

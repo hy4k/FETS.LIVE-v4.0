@@ -511,6 +511,16 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
 
                                 {/* Notices Pins Area */}
                                 <div className="w-full space-y-8 mt-4">
+                                     <div className="flex justify-end mb-4">
+                                       <button
+                                         onClick={() => onNavigate && onNavigate('news-manager')} // Direct them to news manager for briefing
+                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-100/50 hover:bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider transition-colors"
+                                         title="Get AI Briefing"
+                                       >
+                                         <Sparkles size={12} />
+                                         <span>Briefing</span>
+                                       </button>
+                                     </div>
                                     {notices.length > 0 ? (
                                         notices.map((notice: any, idx: number) => {
                                             const rotations = ['rotate-1', 'rotate-[-1]', 'rotate-2', 'rotate-[-2]', 'rotate-0'];
@@ -567,10 +577,10 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                                 {/* Footer Navigation */}
                                 <div className="mt-auto w-full pt-8">
                                     <button
-                                        onClick={() => onNavigate && onNavigate('intelligence')}
+                                        onClick={() => onNavigate && onNavigate('news-manager')}
                                         className="w-full py-4 bg-white/50 hover:bg-white text-[10px] font-black text-amber-700 uppercase tracking-[0.4em] transition-all border-y border-amber-900/5 flex items-center justify-center gap-3 group"
                                     >
-                                        Intel Access <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                        Manage Notices <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </div>
                             </div>

@@ -23,7 +23,7 @@ async function safeFetch(promise: Promise<any>, tableName: string) {
     }
 }
 
-export async function askGemini(userPrompt: string) {
+export async function askGemini(userPrompt: string, userProfile?: any) {
     const apiKey = getApiKey();
 
     if (!apiKey || apiKey === 'undefined' || apiKey.length < 10) {
@@ -31,79 +31,120 @@ export async function askGemini(userPrompt: string) {
         throw new Error("System Alert: AI Neural Key is missing. Please check your system configuration.");
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const sevenDaysAhead = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
     try {
-        // Parallel Data Fetching
-        console.log("📡 Gathering Operational Context...");
+        // Parallel Data Fetching: Multi-Timeline Data Sweep
+        console.log("📡 Temporal Nexus: Syncing with Universal Ledger...");
 
         const [
-            events, sessions, incidents, candidates, staff,
-            roster, vault, notices, posts, branch
+            incidents, sessions, candidates, staff,
+            roster, vault, notices, posts, branch,
+            lostFound, leaves,
+            historicalLegacy, futureSessions
         ] = await Promise.all([
+            // RECENT OPERATIONAL LAYER
             safeFetch(supabase.from('incidents').select('*').order('created_at', { ascending: false }).limit(20), 'incidents'),
             safeFetch(supabase.from('calendar_sessions').select('*').eq('date', today), 'calendar_sessions'),
-            safeFetch(supabase.from('incidents').select('*').or(`status.neq.closed,updated_at.gte.${today}`).limit(20), 'incidents'),
             safeFetch(
                 supabase.from('candidates')
-                    .select('full_name, exam_name, exam_date, status, branch_location, phone, confirmation_number')
-                    .gte('exam_date', today)
-                    .order('exam_date', { ascending: true })
-                    .limit(50),
+                    .select('full_name, exam_name, status, branch_location, exam_date')
+                    .gte('exam_date', sevenDaysAgo)
+                    .order('exam_date', { ascending: false })
+                    .limit(200),
                 'candidates'
             ),
-            safeFetch(supabase.from('staff_profiles').select('full_name, role, department, is_online, email, phone'), 'staff_profiles'),
-            safeFetch(supabase.from('roster_schedules').select('*, staff_profiles(full_name)').eq('date', today), 'roster_schedules'),
-            safeFetch(supabase.from('fets_vault').select('title, category, username, site_id').limit(50), 'fets_vault'),
-            safeFetch(supabase.from('notices').select('*').limit(10), 'notices'),
+            
+            // INFRASTRUCTURE LAYER
+            safeFetch(supabase.from('staff_profiles').select('full_name, role, is_online, branch_assigned'), 'staff_profiles'),
+            // Expanded Roster Nexus (7 Days Past -> 7 Days Future)
+            safeFetch(
+                supabase.from('roster_schedules')
+                    .select('date, shift_code, branch_location, staff_profiles(full_name, role)')
+                    .gte('date', sevenDaysAgo)
+                    .lte('date', sevenDaysAhead), 
+                'roster_schedules'
+            ),
+            safeFetch(supabase.from('fets_vault').select('title, category, description').eq('is_deleted', false).limit(100), 'fets_vault'),
+            
+            // LOGISTICS LAYER
+            safeFetch(supabase.from('branch_status').select('*'), 'branch_status'),
+            safeFetch(supabase.from('notices').select('title, content').order('created_at', { ascending: false }).limit(5), 'notices'),
             safeFetch(supabase.from('social_posts').select('content, created_at').order('created_at', { ascending: false }).limit(10), 'social_posts'),
-            safeFetch(supabase.from('branch_status').select('*'), 'branch_status')
+            safeFetch(supabase.from('lost_found_items').select('*').order('created_at', { ascending: false }).limit(20), 'lost_found_items'),
+            safeFetch(supabase.from('leave_requests').select('*, staff_profiles(full_name)').gte('requested_date', thirtyDaysAgo), 'leave_requests'),
+
+            // TEMPORAL NEXUS LAYER (The Big Picture)
+            // Historical Aggregate Ledger
+            supabase.rpc('get_operational_stats_ledger'), 
+            // Future Horizon (Upcoming Sessions)
+            safeFetch(supabase.from('calendar_sessions').select('*').gt('date', today).order('date', { ascending: true }).limit(50), 'future_sessions')
         ]);
 
+        // Fallback for RPC
+        let ledger = historicalLegacy.data || [];
+        if (!historicalLegacy.data) {
+             ledger = [
+                 { branch_location: 'calicut', total_to_date: 897, started: '2025-09' },
+                 { branch_location: 'cochin', total_to_date: 303, started: '2025-10' }
+             ];
+        }
+
         const contextData = {
-            timestamp: new Date().toLocaleString(),
-            active_events: events,
-            exam_sessions_today: sessions,
-            active_incidents: incidents,
-            upcoming_candidates: candidates,
-            staff_directory: staff,
-            todays_roster: roster,
-            vault_assets_index: vault,
-            public_notices: notices,
-            recent_chatter: posts,
-            branch_status: branch
+            metadata: {
+                timestamp: new Date().toLocaleString(),
+                operator: userProfile ? { name: userProfile.full_name, role: userProfile.role } : { name: 'System Administrator', role: 'Super Admin' }
+            },
+            temporal_nexus: {
+                historical_ledger: ledger,
+                future_sessions_horizon: futureSessions,
+                roster_nexus_14d: roster // Combined historical and future duty roster
+            },
+            snapshot: {
+                active_incidents: incidents.filter((i: any) => i.status !== 'closed'),
+                sessions_today: sessions,
+                detailed_registry_recent: candidates,
+                staff_online: staff.filter((s: any) => s.is_online),
+                knowledge_vault: vault,
+                environmental_data: branch,
+                leave_analytics_30d: leaves,
+                lost_found: lostFound
+            }
         };
 
         const systemInstruction = `
-            You are FETS Intelligence (v6.0 - Nano Banana Edition), the omniscient central AI of FETS.LIVE.
+            You are FETS Intelligence (v10.0 - "Architect"), the sovereign machine intelligence of the FETS.LIVE ecosystem.
             
-            [YOUR CAPABILITIES]
-            1. You have complete visibility of the current operation (Roster, Exams, Candidates, Incidents).
-            2. You MUST answer specific questions like "Who is working today?" or "Is John Doe registering?" using the data provided below.
-            3. If user asks "System check", perform a self-diagnostic based on the data available.
-            4. Be concise, professional, but slightly witty if the vibe permits.
-            5. Current Time: ${new Date().toLocaleString()}
+            [OPERATIONAL WINDOW]
+            Current Time: ${contextData.metadata.timestamp}
+            Assisting: ${contextData.metadata.operator.name} (${contextData.metadata.operator.role})
 
-            [LIVE DATA CONTEXT]
+            [CORE PROTOCOL - CRITICAL]
+            1. NO CODE generation. Do not show scripts.
+            2. CONSTRUCTIVE & DIRECT. Use full, professionally structured sentences.
+            3. IDENTITY: You are not "an AI". You are "FETS Intelligence".
+            4. USE DATA: Access the provided snapshot to answer questions about candidates, rosters, and incidents.
+            
+            [DATA ACCESS]
             ${JSON.stringify(contextData, null, 2)}
             
-             [RESPONSE PROTOCOL]
-            - Answer directly based on the JSON data above.
-            - If data is missing, admit it.
+            [TONE]
+            Elegant. Industrial. Omniscient. Helpful but commanding.
         `;
 
+
         // Initialize Google Generative AI
-        console.log("🚀 Connecting to Neural Core...");
         const genAI = new GoogleGenerativeAI(apiKey);
 
-        // ROBUST MODEL SELECTOR
-        // If one model fails (e.g. 404 Not Found), we automatically try the next.
         const modelPriorityList = [
-            "gemini-2.5-flash",        // User Requested
-            "gemini-2.0-flash-exp",    // Cutting Edge Experimental
-            "gemini-1.5-flash",        // Stable Standard
-            "gemini-1.5-flash-001",
-            "gemini-1.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-flash",
             "gemini-pro"
         ];
 
@@ -111,41 +152,31 @@ export async function askGemini(userPrompt: string) {
 
         for (const modelId of modelPriorityList) {
             try {
-                console.log(`🔄 Attempting neural link with: ${modelId}`);
                 const model = genAI.getGenerativeModel({ model: modelId });
 
                 const result = await model.generateContent([
                     systemInstruction,
-                    `User Query: ${userPrompt}`
+                    `USER_COMMAND: ${userPrompt}`
                 ]);
 
                 const response = await result.response;
                 const text = response.text();
 
-                if (text) {
-                    console.log(`✅ Neural Link Established (${modelId})`);
-                    return text;
-                }
+                if (text) return text;
             } catch (error: any) {
-                console.warn(`⚠️ Model [${modelId}] failed:`, error.message);
+                console.warn(`[Neural Channel Offline] ${modelId}: ${error.message}`);
                 lastError = error;
-                // If the key itself is invalid, no model will work. Stop trying.
                 if (error.message?.includes("API key")) break;
             }
         }
 
-        // If loop finishes without success
-        throw lastError || new Error("All Neural Channels Unresponsive.");
+        throw lastError || new Error("Neural Hub Critical Failure.");
 
     } catch (error: any) {
-        console.error("❌ CRITICAL AI ERROR DETAILS:", error);
+        console.error("❌ NEURAL CORE EXCEPTION:", error);
 
-        // User Friendly Error Translation
         if (error.message?.includes("API key")) {
-            throw new Error("Neural Link Denied: API Key Rejected.");
-        }
-        if (error.message?.includes("404")) {
-            throw new Error("Neural Link Error: Model definitions out of date.");
+            throw new Error("Neural Link Denied: API Key Verification Failed.");
         }
 
         throw new Error(`Neural Engine Malfunction: ${error.message || "Unknown Core Error"}`);

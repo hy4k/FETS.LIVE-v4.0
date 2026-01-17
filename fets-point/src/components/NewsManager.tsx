@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { useNews, useNewsMutations } from '../hooks/useNewsManager'
-import { Plus, Edit, Trash2, Bell, X, Calendar, MapPin, AlertCircle, Layout } from 'lucide-react'
+import { Plus, Edit, Trash2, Bell, X, Calendar, MapPin, AlertCircle, Layout, Sparkles } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { format } from 'date-fns'
+import { useAuth } from '../hooks/useAuth'
 
 const NewsModal = ({ isOpen, onClose, newsItem, onSave }) => {
   const [formData, setFormData] = useState({
@@ -174,8 +175,36 @@ export function NewsManager() {
         toast.success('Notice posted successfully')
       }
     } catch (error) {
-      // Error handling matches the hook's toast
       console.error("Failed to save notice", error)
+    }
+  }
+
+  // --- AI INTEGRATION ---
+  const { profile } = useAuth()
+  const [aiAnalysis, setAiAnalysis] = useState<string>('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const handleAiAnalysis = async () => {
+    setIsAnalyzing(true)
+    const activeNotices = newsItems.filter(n => n.is_active).map(n => 
+      `- [${n.priority.toUpperCase()}] (${n.branch_location}): ${n.content}`
+    ).join('\n')
+
+    const prompt = `Analyze these active notices for a Quick Briefing. Highlight critical alerts first, then summarize global news. 
+    Keep it concise and professional.
+    
+    NOTICES:
+    ${activeNotices}`
+
+    try {
+      // Direct import to avoid circular dependencies if any, or standard import
+       const { askGemini } = await import('../lib/gemini'); 
+       const response = await askGemini(prompt, profile);
+       setAiAnalysis(response);
+    } catch (e) {
+      toast.error('AI Analysis failed');
+    } finally {
+      setIsAnalyzing(false);
     }
   }
 
@@ -190,14 +219,52 @@ export function NewsManager() {
             Manage global announcements and branch-specific alerts.
           </p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-bold shadow-lg hover:shadow-xl flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>New Notice</span>
-        </button>
+        <div className="flex gap-2">
+           <button
+             onClick={handleAiAnalysis}
+             disabled={isAnalyzing}
+             className="px-6 py-3 bg-amber-100 text-amber-700 rounded-xl hover:bg-amber-200 transition-all font-bold shadow-sm hover:shadow-md flex items-center gap-2"
+           >
+             <Sparkles className={`w-5 h-5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+             <span>{isAnalyzing ? 'Analyzing...' : 'AI Briefing'}</span>
+           </button>
+           <button
+             onClick={() => openModal()}
+             className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-bold shadow-lg hover:shadow-xl flex items-center gap-2"
+           >
+             <Plus className="w-5 h-5" />
+             <span>New Notice</span>
+           </button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {aiAnalysis && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-gradient-to-r from-amber-50 to-white p-6 rounded-3xl border border-amber-200 shadow-inner relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+               <Sparkles size={120} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                 <h3 className="text-sm font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                    <Sparkles size={14} /> FETS Intelligence Briefing
+                 </h3>
+                 <button onClick={() => setAiAnalysis('')} className="p-1 hover:bg-black/5 rounded-full"><X size={14} /></button>
+              </div>
+              <div className="prose prose-sm max-w-none text-gray-700 font-medium">
+                  {aiAnalysis.split('\n').map((line, i) => (
+                    <p key={i} className="mb-1">{line}</p>
+                  ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 gap-6">
         {isLoading ? (

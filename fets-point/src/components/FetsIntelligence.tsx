@@ -305,7 +305,9 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsInte
                           : 'bg-gradient-to-br from-slate-600 to-slate-700 text-white border border-slate-500/30 rounded-tl-sm shadow-xl'
                         }
                       `}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'assistant' ? 'font-semibold text-white' : ''}`}>
+                          {msg.content}
+                        </p>
                         <div className={`text-[10px] mt-3 font-bold uppercase tracking-widest flex items-center gap-2 ${msg.role === 'user' ? 'text-amber-200 justify-end' : 'text-amber-300'}`}>
                           {msg.role === 'assistant' && <Activity size={10} />}
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

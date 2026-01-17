@@ -79,9 +79,10 @@ const ContentCard = ({ title, children, icon: Icon }: { title: string, children:
 // --- MAIN PAGE ---
 interface FetsIntelligenceProps {
   initialTab?: string;
+  initialQuery?: string;
 }
 
-export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps) {
+export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsIntelligenceProps) {
   const { profile } = useAuth()
   const [activeTab, setActiveTab] = useState<string>(initialTab)
 
@@ -90,29 +91,40 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const hasProcessedInitialQuery = useRef(false)
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab)
   }, [initialTab]);
 
+  // Auto-submit query when initialQuery is provided from Command Centre
+  useEffect(() => {
+    if (initialQuery && !hasProcessedInitialQuery.current && profile) {
+      hasProcessedInitialQuery.current = true
+      setActiveTab('chat')
+      // Submit the query after a brief delay to ensure component is ready
+      setTimeout(() => {
+        submitQuery(initialQuery)
+      }, 300)
+    }
+  }, [initialQuery, profile])
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!query.trim()) return
+  const submitQuery = async (queryText: string) => {
+    if (!queryText.trim()) return
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: query,
+      content: queryText,
       timestamp: new Date()
     }
 
     setMessages(prev => [...prev, userMsg])
     setLoading(true)
-    setQuery('') // Clear input immediately
 
     try {
       const response = await askGemini(userMsg.content, profile)
@@ -135,6 +147,13 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!query.trim()) return
+    await submitQuery(query)
+    setQuery('') // Clear input after sending
   }
 
   const isSuperAdmin = profile?.role === 'super_admin' || profile?.email === 'mithun@fets.in';
@@ -223,8 +242,8 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
                     <Bot size={24} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-white uppercase tracking-tight">Neural Interface</h2>
-                    <p className="text-xs text-slate-400">Ask about exams, candidates, rosters, or incidents</p>
+                    <h2 className="text-lg font-black text-white uppercase tracking-tight">Ask Anything</h2>
+                    <p className="text-xs text-slate-400">Exams, candidates, rosters, incidents — I know it all</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -283,11 +302,11 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
                         max-w-[80%] p-5 rounded-2xl relative
                         ${msg.role === 'user'
                           ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-tr-sm'
-                          : 'bg-slate-700/50 text-slate-200 border border-slate-600/50 rounded-tl-sm'
+                          : 'bg-gradient-to-br from-slate-600 to-slate-700 text-white border border-slate-500/30 rounded-tl-sm shadow-xl'
                         }
                       `}>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                        <div className={`text-[10px] mt-3 font-bold uppercase tracking-widest flex items-center gap-2 ${msg.role === 'user' ? 'text-amber-200 justify-end' : 'text-amber-400'}`}>
+                        <div className={`text-[10px] mt-3 font-bold uppercase tracking-widest flex items-center gap-2 ${msg.role === 'user' ? 'text-amber-200 justify-end' : 'text-amber-300'}`}>
                           {msg.role === 'assistant' && <Activity size={10} />}
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>

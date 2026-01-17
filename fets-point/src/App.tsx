@@ -138,6 +138,9 @@ function AppContent() {
   const [forumOpen, setForumOpen] = useState(false);
   const [forumContext, setForumContext] = useState<string | null>(null);
 
+  // AI Query State (for passing queries from Command Centre to FETS Intelligence)
+  const [aiQuery, setAiQuery] = useState<string | undefined>(undefined);
+
   const handleQuickCapture = () => {
     const contextName = activeTab ? activeTab.replace(/-/g, ' ').toUpperCase() : 'COMMAND CENTRE';
     setForumContext(`REF: ${contextName}`);
@@ -212,14 +215,14 @@ function AppContent() {
 
   const renderContent = () => {
     const routeComponents: { [key: string]: { component: JSX.Element; name: string } } = {
-      'command-center': { component: <CommandCentre />, name: 'Command Centre' },
+      'command-center': { component: <CommandCentre onNavigate={setActiveTab} onAiQuery={(q: string) => { setAiQuery(q); setActiveTab('fets-intelligence'); }} />, name: 'Command Centre' },
       'dashboard': { component: <Dashboard onNavigate={setActiveTab} />, name: 'Dashboard' },
       'candidate-tracker': { component: <CandidateTracker />, name: 'Candidate Tracker' },
       'fets-roster': { component: <FetsRoster />, name: 'FETS Roster' },
       'fets-calendar': { component: <FetsCalendar />, name: 'FETS Calendar' },
       'my-desk': { component: <MyDesk />, name: 'My Desk' },
       'staff-management': { component: <StaffManagement />, name: 'Staff Management' },
-      'fets-intelligence': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
+      'fets-intelligence': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS Intelligence' },
       'incident-log': { component: <IncidentLogPage />, name: 'Incident Log' },
       'system-manager': { component: <SystemManager />, name: 'System Manager' },
       'news-manager': { component: <NewsManager />, name: 'News Manager' },

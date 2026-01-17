@@ -19,7 +19,7 @@ import { NotificationBanner } from './NotificationBanner'
 import { ChecklistTemplate } from '../types/checklist'
 import { StaffBranchSelector } from './checklist/StaffBranchSelector'
 
-export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: string) => void }) {
+export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: (tab: string) => void; onAiQuery?: (query: string) => void }) {
     const { profile } = useAuth()
     const { activeBranch } = useBranch()
 
@@ -317,21 +317,36 @@ export default function CommandCentre({ onNavigate }: { onNavigate?: (tab: strin
                                 <Sparkles size={24} className="animate-pulse" />
                             </div>
                             <input
+                                id="intel-search-input"
                                 type="text"
-                                placeholder="Ask FETS Intelligence AI about protocols, rosters, or incidents..."
+                                placeholder="Ask anything about exams, candidates, rosters, or incidents..."
                                 className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 font-medium px-4 py-4 text-lg"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        onNavigate && onNavigate('fets-intelligence');
+                                        const input = document.getElementById('intel-search-input') as HTMLInputElement;
+                                        const queryText = input?.value?.trim();
+                                        if (queryText && onAiQuery) {
+                                            onAiQuery(queryText);
+                                        } else if (onNavigate) {
+                                            onNavigate('fets-intelligence');
+                                        }
                                     }
                                 }}
                             />
                             <button
-                                onClick={() => onNavigate && onNavigate('fets-intelligence')}
+                                onClick={() => {
+                                    const input = document.getElementById('intel-search-input') as HTMLInputElement;
+                                    const queryText = input?.value?.trim();
+                                    if (queryText && onAiQuery) {
+                                        onAiQuery(queryText);
+                                    } else if (onNavigate) {
+                                        onNavigate('fets-intelligence');
+                                    }
+                                }}
                                 className={`${neuBtn} px-8 py-3 text-amber-600 hover:text-amber-700 hover:scale-[1.02] active:scale-[0.98] border-none flex items-center gap-2 mr-1`}
                             >
                                 <Search size={22} />
-                                <span className="uppercase font-bold tracking-widest text-xs hidden md:inline-block">Search Intel</span>
+                                <span className="uppercase font-bold tracking-widest text-xs hidden md:inline-block">Ask AI</span>
                             </button>
                         </div>
                     </div>

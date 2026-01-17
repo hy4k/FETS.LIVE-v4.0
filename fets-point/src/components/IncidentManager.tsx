@@ -21,7 +21,6 @@ interface Incident {
   assigned_to?: string
   user_id: string
   system_id?: string
-  event_date: string
   created_at: string
   updated_at: string
   closed_at?: string
@@ -155,7 +154,7 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
       const now = new Date()
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
       const upcomingThisWeek = data?.filter(e => {
-        const incidentDate = new Date(e.event_date)
+        const incidentDate = new Date(e.created_at)
         return incidentDate >= now && incidentDate <= weekFromNow && e.status !== 'closed'
       }).length || 0
 
@@ -565,8 +564,7 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
     title: '',
     description: '',
     category: 'other',
-    severity: 'minor' as 'critical' | 'major' | 'minor',
-    event_date: new Date().toISOString().split('T')[0]
+    severity: 'minor' as 'critical' | 'major' | 'minor'
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -587,8 +585,8 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
           category: formData.category,
           severity: formData.severity,
           status: 'open',
-          reporter_id: profile.user_id,
-          event_date: new Date(formData.event_date).toISOString(),
+          reporter: profile.full_name || profile.email || 'Unknown',
+          user_id: profile.user_id,
           branch_location: activeBranch === 'global' ? 'calicut' : activeBranch
         })
 
@@ -691,15 +689,11 @@ function NewIncidentModal({ onClose, onIncidentCreated }: {
 
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">
-                Date <span className="text-red-500">*</span>
+                Report Date
               </label>
-              <input
-                type="date"
-                required
-                value={formData.event_date}
-                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
-              />
+              <div className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] font-medium text-gray-500">
+                {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </div>
             </div>
           </div>
 
@@ -762,8 +756,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
     description: incident.description,
     category: incident.category,
     severity: incident.severity,
-    status: incident.status,
-    event_date: new Date(incident.event_date).toISOString().split('T')[0]
+    status: incident.status
   })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [updating, setUpdating] = useState(false)
@@ -793,7 +786,6 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
           category: editForm.category,
           severity: editForm.severity,
           status: editForm.status,
-          event_date: new Date(editForm.event_date).toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', incident.id)
@@ -958,7 +950,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-yellow-600 uppercase tracking-widest">{categoryConfig.name}</span>
                   <span className="text-gray-400">•</span>
-                  <span className="text-sm text-gray-500">{new Date(incident.event_date).toLocaleDateString()}</span>
+                  <span className="text-sm text-gray-500">{new Date(incident.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
@@ -1044,13 +1036,10 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Date</label>
-                    <input
-                      type="date"
-                      value={editForm.event_date}
-                      onChange={(e) => setEditForm({ ...editForm, event_date: e.target.value })}
-                      className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-medium text-gray-700"
-                    />
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Created Date</label>
+                    <div className="w-full px-4 py-3 neomorphic-card bg-[#e0e5ec] font-medium text-gray-500">
+                      {new Date(incident.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1064,7 +1053,7 @@ function IncidentDetailModal({ incident, onClose, onIncidentUpdated }: {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div className="neomorphic-card p-4">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Reported Date</h4>
-                    <p className="text-gray-800 font-bold">{new Date(incident.event_date).toLocaleDateString()}</p>
+                    <p className="text-gray-800 font-bold">{new Date(incident.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="neomorphic-card p-4">
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Created At</h4>

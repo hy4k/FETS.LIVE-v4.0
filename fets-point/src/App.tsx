@@ -22,7 +22,7 @@ import { UpdatePassword } from './components/UpdatePassword';
 import { AiAssistant } from './components/AiAssistant';
 import { Fetchat } from './components/Fetchat';
 import { BranchIndicator } from './components/BranchIndicator';
-// Import Codex directly for global access
+// Import Slate directly for global access
 import { DigitalNotebook } from './components/DigitalNotebook';
 
 import { supabase } from './lib/supabase';
@@ -44,6 +44,7 @@ const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistM
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
+const IncidentLogPage = lazy(() => import('./components/IncidentLogPage').then(module => ({ default: module.IncidentLogPage })))
 
 // Create QueryClient instance with optimized settings
 const queryClient = new QueryClient({
@@ -133,14 +134,14 @@ function AppContent() {
   const screenSize = useScreenSize()
   const [isRecovering, setIsRecovering] = useState(false)
 
-  // Codex (Quick Capture) State
-  const [codexOpen, setCodexOpen] = useState(false);
-  const [codexContext, setCodexContext] = useState<string | null>(null);
+  // Slate (Quick Capture) State
+  const [forumOpen, setForumOpen] = useState(false);
+  const [forumContext, setForumContext] = useState<string | null>(null);
 
   const handleQuickCapture = () => {
     const contextName = activeTab ? activeTab.replace(/-/g, ' ').toUpperCase() : 'COMMAND CENTRE';
-    setCodexContext(`REF: ${contextName}`);
-    setCodexOpen(true);
+    setForumContext(`REF: ${contextName}`);
+    setForumOpen(true);
   };
 
   useEffect(() => {
@@ -219,6 +220,7 @@ function AppContent() {
       'my-desk': { component: <MyDesk />, name: 'My Desk' },
       'staff-management': { component: <StaffManagement />, name: 'Staff Management' },
       'fets-intelligence': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
+      'incident-log': { component: <IncidentLogPage />, name: 'Incident Log' },
       'system-manager': { component: <SystemManager />, name: 'System Manager' },
       'news-manager': { component: <NewsManager />, name: 'News Manager' },
       'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
@@ -278,21 +280,22 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Global Codex Overlay */}
+      {/* Global Slate Overlay */}
       <AnimatePresence>
-        {codexOpen && (
+        {forumOpen && (
           <motion.div
-            key="codex-overlay"
+            key="forum-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center overflow-hidden"
           >
             {/* Close Area */}
-            <div className="absolute inset-0" onClick={() => setCodexOpen(false)} />
+            <div className="absolute inset-0" onClick={() => setForumOpen(false)} />
 
             <div className="relative w-full h-full pointer-events-auto">
-              <DigitalNotebook isOpen={true} onClose={() => setCodexOpen(false)} quickCaptureContext={codexContext} />
+              {/* Pass isOpen={false} to show the front cover first */}
+              <DigitalNotebook isOpen={false} onClose={() => setForumOpen(false)} quickCaptureContext={forumContext} />
             </div>
           </motion.div>
         )}

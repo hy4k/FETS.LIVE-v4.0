@@ -171,7 +171,6 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
             <div className="mb-8">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 pl-4">Operational Grid</h3>
               <SidebarItem icon={Newspaper} label="Broadcasts" isActive={activeTab === 'news'} onClick={() => setActiveTab('news')} />
-              <SidebarItem icon={AlertTriangle} label="Incident Log" isActive={activeTab === 'incidents'} onClick={() => setActiveTab('incidents')} />
             </div>
 
             {isSuperAdmin && (
@@ -286,14 +285,7 @@ export function FetsIntelligence({ initialTab = 'chat' }: FetsIntelligenceProps)
               </ContentCard>
             )}
 
-            {/* INCIDENTS TAB */}
-            {activeTab === 'incidents' && (
-              <ContentCard title="Incident Command" icon={AlertTriangle}>
-                <div className="p-10">
-                  <IncidentManager />
-                </div>
-              </ContentCard>
-            )}
+            {/* Incidents Tab Removed - Now a separate page */}
 
             {/* SYSTEM CONFIG */}
             {activeTab === 'clients' && isSuperAdmin && (

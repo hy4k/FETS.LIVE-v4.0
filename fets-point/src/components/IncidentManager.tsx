@@ -104,14 +104,20 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (activeBranch !== 'global') {
+      if (activeBranch && activeBranch !== 'global') {
         query = query.eq('branch_location', activeBranch)
       }
 
       const { data, error } = await query
       if (error) {
+        // Handle missing table gracefully
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('Incidents table does not exist yet. Please run the migration script.')
+          setIncidents([])
+          setLoading(false)
+          return
+        }
         console.error('Error loading incidents:', error)
-        toast.error('Failed to load incidents')
         setLoading(false)
         return
       }
@@ -119,7 +125,6 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
       setIncidents((data || []) as Incident[])
     } catch (error: any) {
       console.error('Error loading incidents:', error)
-      toast.error('Failed to load incidents')
     } finally {
       setLoading(false)
     }
@@ -131,14 +136,18 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
         .from('incidents')
         .select('status, severity, category, created_at, closed_at')
 
-      if (activeBranch !== 'global') {
+      if (activeBranch && activeBranch !== 'global') {
         query = query.eq('branch_location', activeBranch)
       }
 
       const { data, error } = await query
       if (error) {
+        // Handle missing table gracefully
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('Incidents table does not exist yet.')
+          return
+        }
         console.error('Error loading stats:', error)
-        toast.error('Failed to load statistics')
         return
       }
 
@@ -169,7 +178,6 @@ export default function IncidentManager({ embedded = false }: IncidentManagerPro
       })
     } catch (error: any) {
       console.error('Error loading stats:', error)
-      toast.error('Failed to load statistics')
     }
   }, [activeBranch])
 

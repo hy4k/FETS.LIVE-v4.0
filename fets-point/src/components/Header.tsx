@@ -4,7 +4,7 @@ import {
   Bell, ChevronDown, MapPin, LayoutDashboard,
   Brain, ShieldAlert, MessageSquare, ClipboardList,
   CalendarDays, UserSearch, UserCheck, Menu, LogOut,
-  Server, Cpu, Shield, X, PackageSearch, PenTool, AlertCircle
+  Server, Cpu, Shield, X, PackageSearch, PenTool, AlertCircle, BookOpen
 } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -96,6 +96,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
   });
 
   const secondRowItems = [
+    { id: 'slate', label: 'SLATE', icon: BookOpen },
     { id: 'incident-log', label: 'INCIDENT LOG', icon: AlertCircle },
     { id: 'checklist-management', label: 'CHECKLIST', icon: ClipboardList },
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },

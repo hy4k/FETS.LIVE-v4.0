@@ -44,6 +44,7 @@ const NewsManager = lazy(() => import('./components/NewsManager').then(module =>
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 const IncidentLogPage = lazy(() => import('./components/IncidentLogPage').then(module => ({ default: module.IncidentLogPage })))
+const Slate = lazy(() => import('./components/Slate').then(module => ({ default: module.Slate })))
 
 // Create QueryClient instance with optimized settings
 const queryClient = new QueryClient({
@@ -228,7 +229,8 @@ function AppContent() {
       'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'settings': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
-      'user-management': { component: <UserManagement />, name: 'User Management' }
+      'user-management': { component: <UserManagement />, name: 'User Management' },
+      'slate': { component: <Slate />, name: 'Slate' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center']

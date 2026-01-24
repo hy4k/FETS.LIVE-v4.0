@@ -506,7 +506,7 @@ export function MyDeskNew() {
 
   return (
     <div
-      className="min-h-screen p-4 lg:p-6 relative overflow-hidden"
+      className="min-h-screen pt-32 p-4 lg:p-6 relative overflow-hidden"
       style={{
         fontFamily: "'Montserrat', sans-serif",
         background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)'

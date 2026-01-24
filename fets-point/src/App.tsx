@@ -32,7 +32,7 @@ import { useIsMobile, useScreenSize } from './hooks/use-mobile';
 const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard').then(module => ({ default: module.ICloudDashboard })))
 const CommandCentre = lazy(() => import('./components/CommandCentreFinal'))
 const CandidateTracker = lazy(() => import('./components/CandidateTrackerPremium').then(module => ({ default: module.CandidateTrackerPremium })))
-const MyDesk = lazy(() => import('./components/MyDesk').then(module => ({ default: module.MyDesk })))
+const MyDesk = lazy(() => import('./components/MyDeskNew').then(module => ({ default: module.MyDeskNew })))
 const StaffManagement = lazy(() => import('./components/StaffManagement').then(module => ({ default: module.StaffManagement })))
 const FetsVault = lazy(() => import('./components/FetsVault').then(module => ({ default: module.FetsVault })))
 const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then(module => ({ default: module.FetsIntelligence })))

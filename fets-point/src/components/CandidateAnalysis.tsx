@@ -1,31 +1,51 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-    BarChart3,
-    Calendar,
     Users,
     MapPin,
-    Clock,
     TrendingUp,
-    ShieldAlert,
-    CheckCircle2,
-    Search,
     RefreshCw,
-    BrainCircuit,
     Activity,
     Briefcase,
     UserCircle,
     Globe,
-    FileText
+    FileSpreadsheet,
+    ChevronLeft,
+    ChevronRight,
+    Download,
+    AlertTriangle,
+    CheckCircle,
+    BookOpen,
+    Target,
+    X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
-import { format, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { useBranch } from '../hooks/useBranch';
 import { useAuth } from '../hooks/useAuth';
+import { formatDateForIST } from '../utils/dateUtils';
 
 interface CandidateAnalysisProps {
     onClose?: () => void;
+}
+
+interface CalendarSession {
+    id: number;
+    date: string;
+    client_name: string;
+    exam_name: string;
+    candidate_count: number;
+    branch_location?: string;
+}
+
+interface DiscrepancyInfo {
+    clientName: string;
+    examName: string;
+    calendarCount: number;
+    registerCount: number;
+    difference: number;
+    status: 'match' | 'shortage' | 'excess';
 }
 
 export const CandidateAnalysis: React.FC<CandidateAnalysisProps> = ({ onClose }) => {
@@ -33,387 +53,828 @@ export const CandidateAnalysis: React.FC<CandidateAnalysisProps> = ({ onClose })
     const { activeBranch } = useBranch();
     const [loading, setLoading] = useState(true);
     const [candidates, setCandidates] = useState<any[]>([]);
-    const [dateFilter, setDateFilter] = useState<string>('');
-    const [viewMode, setViewMode] = useState<'overview' | 'staff' | 'client'>('overview');
+    const [calendarSessions, setCalendarSessions] = useState<CalendarSession[]>([]);
+    const [selectedView, setSelectedView] = useState<'overview' | 'staff' | 'discrepancy'>('overview');
+    const [currentMonth, setCurrentMonth] = useState(new Date());
 
-    // Security: Only super_admins can view analysis
-    if (profile?.role !== 'super_admin') {
-        return (
-            <div className="flex flex-col items-center justify-center p-20 text-center">
-                <ShieldAlert size={64} className="text-rose-500 mb-6 opacity-20" />
-                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Access Restricted</h3>
-                <p className="text-slate-500 font-medium max-w-md">Intelligence Analysis is restricted to Super Administrator accounts only.</p>
-                <button
-                    onClick={onClose}
-                    className="mt-8 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px]"
-                >
-                    Return to Registry
-                </button>
-            </div>
-        );
-    }
+    const isGlobalView = activeBranch === 'global' || !activeBranch;
+
+    // Elegant Teal/Cyan Neumorphic Theme
+    const neumorphicBase = "bg-gradient-to-br from-[#0a2a2a] to-[#051a1a]";
+    const neumorphicCard = "bg-gradient-to-br from-[#0f3535] to-[#082424] shadow-[8px_8px_24px_rgba(0,0,0,0.5),-4px_-4px_16px_rgba(50,150,150,0.02)] rounded-2xl border border-teal-500/10";
+    const neumorphicCardLight = "bg-gradient-to-br from-[#134040] to-[#0a2a2a] shadow-[6px_6px_20px_rgba(0,0,0,0.4),-3px_-3px_12px_rgba(50,150,150,0.02)] rounded-xl border border-teal-500/10";
+    const neumorphicBtn = "px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[4px_4px_12px_rgba(0,0,0,0.4),-2px_-2px_8px_rgba(50,150,150,0.02)] bg-gradient-to-br from-[#134040] to-[#0a2a2a] text-gray-300 flex items-center gap-2 hover:text-teal-400 border border-teal-500/10";
+    const neumorphicBtnActive = "px-5 py-2.5 rounded-xl font-bold transition-all shadow-[inset_4px_4px_12px_rgba(0,0,0,0.5),inset_-2px_-2px_8px_rgba(50,150,150,0.02)] bg-gradient-to-br from-[#0a2a2a] to-[#051a1a] text-teal-400 flex items-center gap-2 border border-teal-500/20";
+    const neumorphicInset = "shadow-[inset_4px_4px_12px_rgba(0,0,0,0.5),inset_-2px_-2px_8px_rgba(50,150,150,0.02)] bg-gradient-to-br from-[#082424] to-[#051a1a] rounded-xl border border-teal-500/10";
+
+    // Client color mapping for teal theme
+    const clientColors: { [key: string]: { bg: string; text: string; border: string } } = {
+        'PROMETRIC': { bg: 'from-rose-600/20 to-rose-800/20', text: 'text-rose-400', border: 'border-rose-500/30' },
+        'PSI': { bg: 'from-emerald-600/20 to-emerald-800/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+        'PEARSON': { bg: 'from-sky-600/20 to-sky-800/20', text: 'text-sky-400', border: 'border-sky-500/30' },
+        'ITTS': { bg: 'from-amber-600/20 to-amber-800/20', text: 'text-amber-400', border: 'border-amber-500/30' },
+        'OTHER': { bg: 'from-slate-600/20 to-slate-800/20', text: 'text-slate-400', border: 'border-slate-500/30' }
+    };
 
     useEffect(() => {
-        fetchCandidates();
-    }, [dateFilter, activeBranch]);
+        fetchData();
+    }, [currentMonth, activeBranch]);
 
-    const fetchCandidates = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
-            let query = supabase.from('candidates').select('*');
+            const monthStart = startOfMonth(currentMonth);
+            const monthEnd = endOfMonth(currentMonth);
 
-            if (dateFilter) {
-                const start = startOfDay(new Date(dateFilter)).toISOString();
-                query = query.gte('created_at', start);
+            // Fetch ALL candidates (from beginning to now) for the selected branch
+            let candidateQuery = supabase.from('candidates').select('*');
+            
+            if (!isGlobalView) {
+                candidateQuery = candidateQuery.eq('branch_location', activeBranch);
             }
 
-            if (activeBranch && activeBranch !== 'global') {
-                query = query.eq('branch_location', activeBranch);
-            }
-
-            const { data, error } = await query.order('created_at', { ascending: false });
-
-            if (error) throw error;
+            const { data: candidateData, error: candidateError } = await candidateQuery.order('created_at', { ascending: false });
+            if (candidateError) throw candidateError;
 
             // Fetch staff profiles for name mapping
-            const { data: profiles } = await supabase
-                .from('staff_profiles')
-                .select('user_id, full_name');
-
+            const { data: profiles } = await supabase.from('staff_profiles').select('user_id, full_name');
             const profileMap = (profiles || []).reduce((acc: any, p) => {
                 acc[p.user_id] = p.full_name;
                 return acc;
             }, {});
 
-            const enrichedData = (data || []).map((c: any) => ({
+            const enrichedCandidates = (candidateData || []).map((c: any) => ({
                 ...c,
                 staff_name: profileMap[c.user_id] || 'System/Legacy'
             }));
 
-            setCandidates(enrichedData);
+            setCandidates(enrichedCandidates);
+
+            // Fetch calendar sessions for the selected month (for comparison)
+            let calendarQuery = supabase
+                .from('calendar_sessions')
+                .select('*')
+                .gte('date', formatDateForIST(monthStart))
+                .lte('date', formatDateForIST(monthEnd));
+
+            if (!isGlobalView) {
+                calendarQuery = calendarQuery.eq('branch_location', activeBranch);
+            }
+
+            const { data: calendarData, error: calendarError } = await calendarQuery;
+            if (calendarError) console.warn('Calendar fetch error:', calendarError);
+
+            setCalendarSessions((calendarData as CalendarSession[]) || []);
+
         } catch (error) {
             console.error('Error fetching analysis data:', error);
-            toast.error('Failed to load candidate analysis');
+            toast.error('Failed to load analysis data');
         } finally {
             setLoading(false);
         }
     };
 
+    const normalizeClientName = (name: string): string => {
+        const upper = (name || '').toUpperCase();
+        if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON';
+        if (upper.includes('PSI')) return 'PSI';
+        if (upper.includes('PROMETRIC')) return 'PROMETRIC';
+        if (upper.includes('ITTS')) return 'ITTS';
+        return 'OTHER';
+    };
+
+    const getClientColor = (client: string) => {
+        return clientColors[normalizeClientName(client)] || clientColors['OTHER'];
+    };
+
+    const extractLocation = (address: string): string => {
+        if (!address) return 'Not Specified';
+        const parts = address.split(',');
+        // Try to get city (usually second to last or last part)
+        if (parts.length >= 2) {
+            return parts[parts.length - 2]?.trim() || parts[parts.length - 1]?.trim() || 'Unknown';
+        }
+        return parts[0]?.trim() || 'Unknown';
+    };
+
+    // Filter candidates by current month for comparison
+    const monthCandidates = useMemo(() => {
+        const monthStart = startOfMonth(currentMonth);
+        const monthEnd = endOfMonth(currentMonth);
+        return candidates.filter(c => {
+            const examDate = c.exam_date ? new Date(c.exam_date) : null;
+            if (!examDate) return false;
+            return examDate >= monthStart && examDate <= monthEnd;
+        });
+    }, [candidates, currentMonth]);
+
+    // Calculate comprehensive metrics
     const metrics = useMemo(() => {
         const clientStats: Record<string, number> = {};
+        const examStats: Record<string, { count: number; client: string }> = {};
+        const locationStats: Record<string, number> = {};
         const staffStats: Record<string, number> = {};
-        const addressStats: Record<string, number> = {};
-        const statusStats: Record<string, number> = { registered: 0, completed: 0, no_show: 0 };
+        const monthlyStats: Record<string, { candidates: number; month: string }> = {};
 
+        // Process ALL candidates for totals
         candidates.forEach(c => {
-            // Client Volume
-            const client = c.client_name || 'Other';
+            // Client stats
+            const client = normalizeClientName(c.client_name);
             clientStats[client] = (clientStats[client] || 0) + 1;
 
-            // Staff Contribution
-            const staff = c.staff_name;
+            // Exam stats
+            const exam = c.exam_name || 'Unknown Exam';
+            if (!examStats[exam]) {
+                examStats[exam] = { count: 0, client: c.client_name || 'Unknown' };
+            }
+            examStats[exam].count += 1;
+
+            // Location/Address stats (extract city/district)
+            const address = c.address || '';
+            const location = extractLocation(address);
+            locationStats[location] = (locationStats[location] || 0) + 1;
+
+            // Staff contribution
+            const staff = c.staff_name || 'Unknown';
             staffStats[staff] = (staffStats[staff] || 0) + 1;
 
-            // Address/Place Mapping
-            const place = c.address ? (c.address.split(',').pop()?.trim() || 'Unknown') : 'Not Set';
-            addressStats[place] = (addressStats[place] || 0) + 1;
-
-            // Status Breakdown
-            if (c.status && statusStats[c.status] !== undefined) {
-                statusStats[c.status]++;
-            } else {
-                statusStats.registered++;
+            // Monthly breakdown
+            if (c.exam_date) {
+                const monthKey = format(new Date(c.exam_date), 'yyyy-MM');
+                const monthLabel = format(new Date(c.exam_date), 'MMM yyyy');
+                if (!monthlyStats[monthKey]) {
+                    monthlyStats[monthKey] = { candidates: 0, month: monthLabel };
+                }
+                monthlyStats[monthKey].candidates += 1;
             }
         });
 
-        const topClients = Object.entries(clientStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const topStaff = Object.entries(staffStats).sort((a, b) => b[1] - a[1]);
-        const topPlaces = Object.entries(addressStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        return {
+            clientStats,
+            examStats,
+            locationStats,
+            staffStats,
+            monthlyStats,
+            totalCandidates: candidates.length,
+            monthCandidates: monthCandidates.length
+        };
+    }, [candidates, monthCandidates]);
 
-        return { clientStats, staffStats, addressStats, statusStats, topClients, topStaff, topPlaces, total: candidates.length };
-    }, [candidates]);
+    // Calculate discrepancies between Calendar and Register
+    const discrepancies = useMemo((): DiscrepancyInfo[] => {
+        const calendarMap: Record<string, { client: string; exam: string; count: number }> = {};
 
-    const neumorphicCard = "bg-[#e0e5ec] shadow-[9px_9px_16px_#bebebe,-9px_-9px_16px_#ffffff] rounded-3xl p-8 border border-white/20";
-    const neumorphicInset = "bg-[#e0e5ec] shadow-[inset_6px_6px_10px_#bebebe,inset_-6px_-6px_10px_#ffffff] rounded-2xl p-6";
+        // Group calendar sessions by client + exam
+        calendarSessions.forEach(session => {
+            const key = `${normalizeClientName(session.client_name)}_${session.exam_name || 'General'}`;
+            if (!calendarMap[key]) {
+                calendarMap[key] = {
+                    client: normalizeClientName(session.client_name),
+                    exam: session.exam_name || 'General',
+                    count: 0
+                };
+            }
+            calendarMap[key].count += session.candidate_count;
+        });
+
+        // Group register candidates by client + exam for the same month
+        const registerMap: Record<string, number> = {};
+        monthCandidates.forEach(c => {
+            const key = `${normalizeClientName(c.client_name)}_${c.exam_name || 'General'}`;
+            registerMap[key] = (registerMap[key] || 0) + 1;
+        });
+
+        // Build discrepancy list
+        const result: DiscrepancyInfo[] = [];
+        const allKeys = new Set([...Object.keys(calendarMap), ...Object.keys(registerMap)]);
+
+        allKeys.forEach(key => {
+            const calendarEntry = calendarMap[key];
+            const registerCount = registerMap[key] || 0;
+            const calendarCount = calendarEntry?.count || 0;
+            const difference = registerCount - calendarCount;
+
+            if (calendarEntry || registerCount > 0) {
+                result.push({
+                    clientName: calendarEntry?.client || key.split('_')[0],
+                    examName: calendarEntry?.exam || key.split('_')[1] || 'General',
+                    calendarCount,
+                    registerCount,
+                    difference,
+                    status: difference === 0 ? 'match' : difference > 0 ? 'excess' : 'shortage'
+                });
+            }
+        });
+
+        return result.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+    }, [calendarSessions, monthCandidates]);
+
+
+
+    const navigateMonth = (direction: 'prev' | 'next') => {
+        const newDate = new Date(currentMonth);
+        if (direction === 'prev') {
+            newDate.setMonth(newDate.getMonth() - 1);
+        } else {
+            newDate.setMonth(newDate.getMonth() + 1);
+        }
+        setCurrentMonth(newDate);
+    };
+
+    const exportReport = () => {
+        const monthName = format(currentMonth, 'MMMM yyyy');
+        const centerName = isGlobalView ? 'ALL CENTERS' : activeBranch.toUpperCase();
+
+        let report = `
+╔══════════════════════════════════════════════════════════════════╗
+║              FETS REGISTER ANALYSIS REPORT                        ║
+║                    ${centerName.padEnd(20)}                        ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Generated: ${new Date().toLocaleString('en-IN')}
+Analysis Period: From Beginning to ${format(new Date(), 'dd MMM yyyy')}
+Comparison Month: ${monthName}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                        EXECUTIVE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Candidates (All Time): ${metrics.totalCandidates}
+Candidates This Month:       ${metrics.monthCandidates}
+Discrepancies Found:         ${discrepancies.filter(d => d.status !== 'match').length}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                     CLIENT-WISE BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        Object.entries(metrics.clientStats)
+            .sort(([, a], [, b]) => b - a)
+            .forEach(([client, count]) => {
+                report += `
+  ${client.padEnd(20)}: ${count.toString().padStart(5)} Candidates`;
+            });
+
+        report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                      EXAM-WISE BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        Object.entries(metrics.examStats)
+            .sort(([, a], [, b]) => b.count - a.count)
+            .slice(0, 15)
+            .forEach(([exam, data]) => {
+                report += `
+  ${exam.substring(0, 30).padEnd(30)}: ${data.count.toString().padStart(5)} (${data.client})`;
+            });
+
+        report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                    LOCATION-WISE BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        Object.entries(metrics.locationStats)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 20)
+            .forEach(([location, count]) => {
+                report += `
+  ${location.substring(0, 25).padEnd(25)}: ${count.toString().padStart(5)} Candidates`;
+            });
+
+        if (discrepancies.filter(d => d.status !== 'match').length > 0) {
+            report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+          ⚠️ CALENDAR vs REGISTER DISCREPANCIES (${monthName})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+            discrepancies
+                .filter(d => d.status !== 'match')
+                .forEach(d => {
+                    const status = d.status === 'shortage' ? '❌ SHORTAGE' : '⚠️ EXCESS';
+                    report += `
+  ${d.clientName} - ${d.examName}
+    Calendar: ${d.calendarCount} | Register: ${d.registerCount} | Diff: ${d.difference > 0 ? '+' : ''}${d.difference} ${status}`;
+                });
+        }
+
+        report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                         END OF REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        navigator.clipboard.writeText(report);
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FETS_Register_Analysis_${isGlobalView ? 'Global' : activeBranch}_${format(currentMonth, 'MMM_yyyy')}.txt`;
+        a.click();
+        toast.success('Report exported & copied to clipboard!');
+    };
+
+    const exportCSV = () => {
+        const headers = ['Client', 'Exam', 'Total Candidates', 'Location Distribution'];
+        const rows: string[][] = [];
+
+        Object.entries(metrics.examStats)
+            .sort(([, a], [, b]) => b.count - a.count)
+            .forEach(([exam, data]) => {
+                rows.push([
+                    normalizeClientName(data.client),
+                    exam,
+                    data.count.toString(),
+                    ''
+                ]);
+            });
+
+        rows.push([]);
+        rows.push(['TOTAL', '', metrics.totalCandidates.toString(), '']);
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FETS_Register_${isGlobalView ? 'Global' : activeBranch}_Analysis.csv`;
+        a.click();
+        toast.success('CSV exported!');
+    };
 
     return (
-        <div className="min-h-[80vh] font-sans">
-            {/* Analysis Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-6 mb-12">
-                <div className="flex gap-2 p-1.5 bg-gray-200/50 rounded-[2rem] shadow-inner">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`min-h-[80vh] ${neumorphicBase} rounded-3xl p-8 overflow-hidden`}
+            style={{ fontFamily: "'Montserrat', sans-serif" }}
+        >
+            {/* Ambient Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[150px] -mr-48 -mt-48" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[120px] -ml-32 -mb-32" />
+            </div>
+
+            <div className="relative z-10">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
+                    <div className="flex items-center gap-6">
+                        <button
+                            onClick={onClose}
+                            className="p-4 rounded-2xl bg-gradient-to-br from-[#134040] to-[#0a2a2a] shadow-[6px_6px_16px_rgba(0,0,0,0.5),-3px_-3px_10px_rgba(50,150,150,0.02)] text-gray-400 hover:text-rose-400 transition-colors active:scale-95 border border-teal-500/10"
+                        >
+                            <X size={24} />
+                        </button>
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">
+                                    Register <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">Analytics</span>
+                                </h1>
+                                {/* Center Badge */}
+                                <div className={`px-4 py-2 rounded-xl font-bold text-sm uppercase tracking-widest ${
+                                    isGlobalView 
+                                        ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30' 
+                                        : 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 text-teal-400 border border-teal-500/30'
+                                }`}>
+                                    <div className="flex items-center gap-2">
+                                        {isGlobalView ? <Globe size={16} /> : <MapPin size={16} />}
+                                        <span>{isGlobalView ? 'All Centers' : activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-gray-400 font-medium">
+                                Complete analysis from beginning • Comparison month: {format(currentMonth, 'MMMM yyyy')}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center gap-4">
+                        <div className={`${neumorphicInset} px-3 py-2 flex items-center gap-3`}>
+                            <button
+                                onClick={() => navigateMonth('prev')}
+                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <span className="text-white font-bold min-w-[140px] text-center text-sm">
+                                {format(currentMonth, 'MMMM yyyy')}
+                            </span>
+                            <button
+                                onClick={() => navigateMonth('next')}
+                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+
+                        <button onClick={fetchData} className={`${neumorphicBtn}`}>
+                            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                        </button>
+                        <button onClick={exportCSV} className={neumorphicBtn}>
+                            <FileSpreadsheet size={18} />
+                            CSV
+                        </button>
+                        <button onClick={exportReport} className={neumorphicBtnActive}>
+                            <Download size={18} />
+                            Export
+                        </button>
+                    </div>
+                </div>
+
+                {/* View Tabs */}
+                <div className={`${neumorphicCard} p-2 flex gap-2 mb-8 w-fit`}>
                     {[
-                        { id: 'overview', label: 'Market Overview', icon: Globe },
-                        { id: 'staff', label: 'Staff Contribution', icon: Users },
-                        { id: 'client', label: 'Partner Metrics', icon: Briefcase }
+                        { key: 'overview', label: 'Overview', icon: Activity },
+                        { key: 'staff', label: 'Staff Contribution', icon: Users },
+                        { key: 'discrepancy', label: 'Calendar Match', icon: Target }
                     ].map(tab => (
                         <button
-                            key={tab.id}
-                            onClick={() => setViewMode(tab.id as any)}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === tab.id
-                                ? 'bg-white text-amber-600 shadow-md transform scale-105'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
+                            key={tab.key}
+                            onClick={() => setSelectedView(tab.key as typeof selectedView)}
+                            className={`px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
+                                selectedView === tab.key
+                                    ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 text-teal-400 shadow-[inset_2px_2px_8px_rgba(0,0,0,0.4)]'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
                         >
-                            <tab.icon size={14} />
+                            <tab.icon size={16} />
                             {tab.label}
+                            {tab.key === 'discrepancy' && discrepancies.filter(d => d.status !== 'match').length > 0 && (
+                                <span className="px-2 py-0.5 bg-rose-500/30 text-rose-400 rounded-full text-xs font-bold">
+                                    {discrepancies.filter(d => d.status !== 'match').length}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] px-6 py-2 rounded-2xl flex items-center gap-4">
-                        <Calendar size={16} className="text-amber-500" />
-                        <input
-                            type="date"
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                            className="bg-transparent outline-none font-bold text-gray-600 uppercase text-[10px]"
-                        />
-                        <button onClick={() => setDateFilter('')} className="text-[9px] font-black text-amber-600 uppercase border-l border-gray-300 pl-4 ml-2">Clear</button>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-32">
+                        <div className="relative">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-700"></div>
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-teal-500 border-t-transparent absolute inset-0"></div>
+                        </div>
+                        <p className="text-gray-400 font-bold mt-6 animate-pulse">Analyzing Register Data...</p>
                     </div>
-                    <button onClick={fetchCandidates} className="p-3.5 rounded-2xl bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] text-gray-500 hover:text-amber-600 active:scale-95 transition-all">
-                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Analysis Content */}
-            <AnimatePresence mode="wait">
-                {viewMode === 'overview' && (
-                    <motion.div
-                        key="overview"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="space-y-12"
-                    >
-                        {/* KPI Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                            {[
-                                { label: 'Total Volume', value: metrics.total, sub: 'All Providers', color: 'text-blue-600', icon: Activity },
-                                { label: 'Conversion', value: metrics.total > 0 ? Math.round((metrics.statusStats.completed / (metrics.total || 1)) * 100) + '%' : '0%', sub: 'Attendance Rate', color: 'text-emerald-600', icon: CheckCircle2 },
-                                { label: 'Loss Ratio', value: metrics.total > 0 ? Math.round((metrics.statusStats.no_show / (metrics.total || 1)) * 100) + '%' : '0%', sub: 'Absenteeism', color: 'text-rose-500', icon: ShieldAlert },
-                                { label: 'Market Reach', value: Object.keys(metrics.addressStats).length, sub: 'Unique Locations', color: 'text-amber-600', icon: MapPin }
-                            ].map((kpi, i) => (
-                                <div key={i} className={neumorphicCard}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className={`p-3 rounded-xl bg-white/40 shadow-sm ${kpi.color}`}>
-                                            <kpi.icon size={20} />
+                ) : (
+                    <AnimatePresence mode="wait">
+                        {selectedView === 'overview' && (
+                            <motion.div
+                                key="overview"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                {/* KPI Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 text-teal-500 group-hover:opacity-20 transition-opacity">
+                                            <Users size={80} />
                                         </div>
-                                        <div className="text-right">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{kpi.label}</span>
+                                        <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Total Candidates</h3>
+                                        <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+                                            {metrics.totalCandidates}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2 font-medium">All Time Records</p>
+                                    </div>
+
+                                    <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 text-cyan-500 group-hover:opacity-20 transition-opacity">
+                                            <Briefcase size={80} />
+                                        </div>
+                                        <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">This Month</h3>
+                                        <div className="text-5xl font-black text-cyan-400">
+                                            {metrics.monthCandidates}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2 font-medium">{format(currentMonth, 'MMMM yyyy')}</p>
+                                    </div>
+
+                                    <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 text-emerald-500 group-hover:opacity-20 transition-opacity">
+                                            <BookOpen size={80} />
+                                        </div>
+                                        <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Unique Exams</h3>
+                                        <div className="text-5xl font-black text-emerald-400">
+                                            {Object.keys(metrics.examStats).length}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2 font-medium">Exam Types</p>
+                                    </div>
+
+                                    <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500 group-hover:opacity-20 transition-opacity">
+                                            <MapPin size={80} />
+                                        </div>
+                                        <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Locations</h3>
+                                        <div className="text-5xl font-black text-amber-400">
+                                            {Object.keys(metrics.locationStats).length}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2 font-medium">Unique Places</p>
+                                    </div>
+                                </div>
+
+                                {/* Client, Exam, Location Analysis */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* Client Breakdown */}
+                                    <div className={`${neumorphicCard} p-8`}>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-gradient-to-br from-teal-500/20 to-teal-600/20 rounded-lg text-teal-400">
+                                                <Briefcase size={24} />
+                                            </div>
+                                            <h3 className="text-xl font-black text-white">By Client</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {Object.entries(metrics.clientStats)
+                                                .sort(([, a], [, b]) => b - a)
+                                                .map(([client, count]) => {
+                                                    const color = getClientColor(client);
+                                                    return (
+                                                        <div key={client} className={`${neumorphicCardLight} p-4`}>
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className={`font-bold text-sm ${color.text}`}>{client}</span>
+                                                                <span className="text-xl font-black text-white">{count}</span>
+                                                            </div>
+                                                            <div className="h-2 w-full bg-[#051a1a] rounded-full overflow-hidden">
+                                                                <motion.div
+                                                                    initial={{ width: 0 }}
+                                                                    animate={{ width: `${(count / metrics.totalCandidates) * 100}%` }}
+                                                                    transition={{ duration: 0.8 }}
+                                                                    className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                         </div>
                                     </div>
-                                    <div className="flex items-baseline gap-2">
-                                        <h2 className={`text-4xl font-black ${kpi.color}`}>{kpi.value}</h2>
+
+                                    {/* Exam Breakdown */}
+                                    <div className={`${neumorphicCard} p-8`}>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 rounded-lg text-cyan-400">
+                                                <BookOpen size={24} />
+                                            </div>
+                                            <h3 className="text-xl font-black text-white">By Exam</h3>
+                                        </div>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {Object.entries(metrics.examStats)
+                                                .sort(([, a], [, b]) => b.count - a.count)
+                                                .slice(0, 10)
+                                                .map(([exam, data], idx) => (
+                                                    <div key={exam} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-bold text-white truncate">{exam}</p>
+                                                            <p className="text-xs text-gray-500">{data.client}</p>
+                                                        </div>
+                                                        <span className="text-lg font-black text-teal-400 ml-4">{data.count}</span>
+                                                    </div>
+                                                ))}
+                                        </div>
                                     </div>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mt-1">{kpi.sub}</p>
-                                </div>
-                            ))}
-                        </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                            {/* Demand Distribution (Clients) */}
-                            <div className={neumorphicCard}>
-                                <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight mb-8 flex items-center gap-3">
-                                    <Briefcase className="text-amber-500" /> Top Partner Demand
-                                </h3>
-                                <div className="space-y-6">
-                                    {metrics.topClients.map(([name, count], i) => (
-                                        <div key={i} className="space-y-2">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-xs font-black text-gray-500 uppercase tracking-widest">{name}</span>
-                                                <span className="text-sm font-black text-gray-700">{count} <span className="text-[10px] text-gray-400">PAX</span></span>
+                                    {/* Location Breakdown */}
+                                    <div className={`${neumorphicCard} p-8`}>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-lg text-amber-400">
+                                                <MapPin size={24} />
                                             </div>
-                                            <div className="h-3 bg-gray-200/50 rounded-full overflow-hidden shadow-inner">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${(count / (metrics.total || 1)) * 100}%` }}
-                                                    className={`h-full bg-gradient-to-r ${i === 0 ? 'from-amber-400 to-amber-600' : 'from-slate-600 to-slate-800'}`}
-                                                />
-                                            </div>
+                                            <h3 className="text-xl font-black text-white">By Location</h3>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Geographical Analysis */}
-                            <div className={neumorphicCard}>
-                                <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight mb-8 flex items-center gap-3">
-                                    <MapPin className="text-amber-500" /> Place of Origin Stats
-                                </h3>
-                                <div className="space-y-4">
-                                    {metrics.topPlaces.map(([place, count], i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/30 border border-white/50 group hover:shadow-md transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 shadow-sm">{i + 1}</div>
-                                                <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{place}</span>
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-lg font-black text-gray-700">{count}</span>
-                                                <span className="text-[8px] font-black text-amber-600 uppercase">Candidates</span>
-                                            </div>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {Object.entries(metrics.locationStats)
+                                                .sort(([, a], [, b]) => b - a)
+                                                .slice(0, 10)
+                                                .map(([location, count], idx) => (
+                                                    <div key={location} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center text-xs font-bold text-amber-400">
+                                                                {idx + 1}
+                                                            </span>
+                                                            <span className="text-sm font-bold text-white">{location}</span>
+                                                        </div>
+                                                        <span className="text-lg font-black text-amber-400">{count}</span>
+                                                    </div>
+                                                ))}
                                         </div>
-                                    ))}
-                                    {metrics.topPlaces.length === 0 && (
-                                        <div className="py-12 text-center text-gray-400 italic font-medium">No address data available for origin analysis.</div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Summary Narrative */}
-                        <div className={`${neumorphicCard} bg-slate-900 border-none relative overflow-hidden`}>
-                            <div className="absolute top-0 right-0 p-8 opacity-10 text-white">
-                                <BrainCircuit size={120} />
-                            </div>
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-4 flex items-center gap-3">
-                                    <Activity className="text-amber-500" /> Strategic Summary
-                                </h3>
-                                <p className="text-slate-300 font-medium leading-relaxed max-w-4xl">
-                                    Operational data shows a total volume of <span className="text-amber-500 font-bold">{metrics.total} candidates</span> processed
-                                    {dateFilter ? ` since ${format(new Date(dateFilter), 'PPP')}` : ' in this cycle'}.
-                                    <span className="text-white font-bold ml-1">{metrics.topClients[0]?.[0] || 'Unknown'}</span> remains the primary volume driver
-                                    contributing <span className="text-amber-400">{Math.round((metrics.topClients[0]?.[1] || 0) / (metrics.total || 1) * 100)}%</span> of total registrations.
-                                    Origin analysis highlights <span className="text-white font-bold">{metrics.topPlaces[0]?.[0] || 'N/A'}</span> as the highest potential growth market.
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {viewMode === 'staff' && (
-                    <motion.div
-                        key="staff"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="grid grid-cols-1 lg:grid-cols-3 gap-12"
-                    >
-                        <div className="lg:col-span-2 space-y-8">
-                            <div className={neumorphicCard}>
-                                <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight mb-8">Data Entry Performance</h3>
-                                <div className="space-y-3">
-                                    {metrics.topStaff.map(([name, count], i) => (
-                                        <div key={i} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-white/40 shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] transition-all group">
-                                            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center relative">
-                                                <UserCircle size={24} className="text-slate-400 group-hover:text-amber-500 transition-colors" />
-                                                <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-[#e0e5ec]">{i + 1}</div>
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-black text-gray-700 uppercase text-xs tracking-wider">{name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">FETS Data Agent</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-2xl font-black text-gray-700">{count}</p>
-                                                <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter">Entries Uploaded</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {metrics.topStaff.length === 0 && (
-                                        <div className="py-12 text-center text-gray-400 italic font-medium">No staff entry logs detected in this period.</div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-12">
-                            <div className={`${neumorphicCard} bg-gradient-to-br from-amber-500 to-amber-600 border-none`}>
-                                <h3 className="text-lg font-black text-white uppercase mb-6 flex items-center gap-2"><TrendingUp size={18} /> Top Contributor</h3>
-                                {metrics.topStaff.length > 0 ? (
-                                    <div className="text-center py-6">
-                                        <div className="w-24 h-24 rounded-full bg-white/20 mx-auto mb-4 flex items-center justify-center border-4 border-white/30">
-                                            <Users size={48} className="text-white" />
-                                        </div>
-                                        <h4 className="text-2xl font-black text-white uppercase truncate">{metrics.topStaff[0][0]}</h4>
-                                        <p className="text-white/70 font-bold uppercase text-[10px] tracking-widest mt-2">{metrics.topStaff[0][1]} Total Entries</p>
                                     </div>
-                                ) : (
-                                    <p className="text-white/60 text-center py-10 font-bold uppercase text-xs">No Data</p>
-                                )}
-                            </div>
-
-                            <div className={neumorphicCard}>
-                                <h4 className="font-black text-gray-700 uppercase text-xs mb-4 flex items-center gap-2"><Activity size={14} className="text-amber-500" /> Recent Entries</h4>
-                                <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {candidates.slice(0, 8).map((c, i) => (
-                                        <div key={i} className="pb-3 border-b border-gray-200 last:border-0">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <p className="text-[10px] font-black text-gray-700 uppercase truncate max-w-[120px]">{c.full_name}</p>
-                                                <span className="text-[8px] font-black text-amber-600 uppercase">{format(new Date(c.created_at), 'HH:mm')}</span>
-                                            </div>
-                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">By: {c.staff_name}</p>
-                                        </div>
-                                    ))}
                                 </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
 
-                {viewMode === 'client' && (
-                    <motion.div
-                        key="client"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="space-y-8"
-                    >
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                            <div className={neumorphicCard}>
-                                <h3 className="text-xl font-black text-gray-700 uppercase mb-8">Provider Volume Matrix</h3>
-                                <div className="space-y-6">
-                                    {Object.entries(metrics.clientStats).map(([client, count], i) => (
-                                        <div key={i} className="flex items-center justify-between p-5 rounded-3xl bg-white/40 border border-white/60 shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`p-3 rounded-2xl bg-slate-900 text-white shadow-lg`}>
-                                                    <FileText size={20} />
+                                {/* Monthly Trend */}
+                                <div className={`${neumorphicCard} p-8`}>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg text-purple-400">
+                                            <TrendingUp size={24} />
+                                        </div>
+                                        <h3 className="text-xl font-black text-white">Monthly Trend</h3>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                        {Object.entries(metrics.monthlyStats)
+                                            .sort(([a], [b]) => a.localeCompare(b))
+                                            .slice(-6)
+                                            .map(([key, data]) => (
+                                                <div key={key} className={`${neumorphicCardLight} p-4 text-center`}>
+                                                    <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">{data.month}</p>
+                                                    <p className="text-2xl font-black text-teal-400">{data.candidates}</p>
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-black text-gray-700 uppercase text-sm">{client}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="text-[8px] font-black text-amber-600 uppercase">Share: {Math.round((count / (metrics.total || 1)) * 100)}%</span>
+                                            ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {selectedView === 'staff' && (
+                            <motion.div
+                                key="staff"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                <div className={`${neumorphicCard} p-8`}>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2 bg-gradient-to-br from-teal-500/20 to-teal-600/20 rounded-lg text-teal-400">
+                                            <Users size={24} />
+                                        </div>
+                                        <h3 className="text-xl font-black text-white">Staff Data Entry Performance</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {Object.entries(metrics.staffStats)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .map(([name, count], idx) => (
+                                                <div key={name} className={`${neumorphicCardLight} p-5 flex items-center gap-6`}>
+                                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center relative">
+                                                        <UserCircle size={28} className="text-teal-400" />
+                                                        {idx < 3 && (
+                                                            <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#0a2a2a] ${
+                                                                idx === 0 ? 'bg-amber-500 text-black' : idx === 1 ? 'bg-gray-300 text-black' : 'bg-amber-700 text-white'
+                                                            }`}>
+                                                                {idx + 1}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="font-black text-white uppercase text-sm tracking-wider">{name}</p>
+                                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">FETS Data Agent</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-3xl font-black text-teal-400">{count}</p>
+                                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-tighter">Entries</p>
+                                                    </div>
+                                                    <div className="w-32 h-3 bg-[#051a1a] rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${(count / metrics.totalCandidates) * 100}%` }}
+                                                            transition={{ duration: 0.8, delay: idx * 0.1 }}
+                                                            className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"
+                                                        />
                                                     </div>
                                                 </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {selectedView === 'discrepancy' && (
+                            <motion.div
+                                key="discrepancy"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className={`${neumorphicCard} p-6`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <CheckCircle size={24} className="text-emerald-400" />
+                                            <span className="text-gray-400 font-bold uppercase text-xs">Matched</span>
+                                        </div>
+                                        <p className="text-4xl font-black text-emerald-400">
+                                            {discrepancies.filter(d => d.status === 'match').length}
+                                        </p>
+                                    </div>
+                                    <div className={`${neumorphicCard} p-6`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <AlertTriangle size={24} className="text-rose-400" />
+                                            <span className="text-gray-400 font-bold uppercase text-xs">Shortage</span>
+                                        </div>
+                                        <p className="text-4xl font-black text-rose-400">
+                                            {discrepancies.filter(d => d.status === 'shortage').length}
+                                        </p>
+                                    </div>
+                                    <div className={`${neumorphicCard} p-6`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <TrendingUp size={24} className="text-amber-400" />
+                                            <span className="text-gray-400 font-bold uppercase text-xs">Excess</span>
+                                        </div>
+                                        <p className="text-4xl font-black text-amber-400">
+                                            {discrepancies.filter(d => d.status === 'excess').length}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Discrepancy Table */}
+                                <div className={`${neumorphicCard} p-8`}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-lg text-rose-400">
+                                                <Target size={24} />
                                             </div>
-                                            <div className="text-right">
-                                                <span className="text-2xl font-black text-gray-800">{count}</span>
-                                                <span className="block text-[8px] font-black text-gray-400 uppercase">Total PAX</span>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white">Calendar vs Register Comparison</h3>
+                                                <p className="text-xs text-gray-500">Comparing {format(currentMonth, 'MMMM yyyy')} data</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                    </div>
 
-                            <div className={`${neumorphicCard} flex flex-col items-center justify-center text-center p-12`}>
-                                <div className="p-8 rounded-full bg-[#e0e5ec] shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] mb-8">
-                                    <Briefcase size={64} className="text-amber-500 opacity-80" />
+                                    {discrepancies.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-16">
+                                            <CheckCircle size={48} className="text-emerald-400 mb-4" />
+                                            <p className="text-lg font-bold text-white">No data to compare</p>
+                                            <p className="text-gray-500 text-sm">No calendar sessions or register entries found for this month</p>
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="border-b border-white/10">
+                                                        <th className="text-left py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Client</th>
+                                                        <th className="text-left py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Exam</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Calendar</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Register</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Difference</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {discrepancies.map((d, idx) => {
+                                                        const color = getClientColor(d.clientName);
+                                                        return (
+                                                            <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                                <td className="py-4 px-4">
+                                                                    <span className={`font-bold ${color.text}`}>{d.clientName}</span>
+                                                                </td>
+                                                                <td className="py-4 px-4 text-gray-300 text-sm">{d.examName}</td>
+                                                                <td className="text-center py-4 px-4 text-gray-400 font-medium">{d.calendarCount}</td>
+                                                                <td className="text-center py-4 px-4 text-gray-400 font-medium">{d.registerCount}</td>
+                                                                <td className="text-center py-4 px-4">
+                                                                    <span className={`font-black ${
+                                                                        d.difference === 0 ? 'text-emerald-400' :
+                                                                        d.difference > 0 ? 'text-amber-400' : 'text-rose-400'
+                                                                    }`}>
+                                                                        {d.difference > 0 ? '+' : ''}{d.difference}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="text-center py-4 px-4">
+                                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                                                        d.status === 'match' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                        d.status === 'excess' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                                                                    }`}>
+                                                                        {d.status}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
-                                <h3 className="text-2xl font-black text-gray-700 uppercase mb-4 tracking-tighter">Strategic Partnerships</h3>
-                                <p className="text-gray-500 font-medium max-w-sm mb-8">Your operational bandwidth is currently distributed across <span className="text-amber-600 font-bold">{Object.keys(metrics.clientStats).length} unique partners</span>. Focus on high-conversion providers to optimize resource allocation.</p>
-                                <div className="grid grid-cols-2 gap-4 w-full">
-                                    <div className={neumorphicInset}>
-                                        <span className="block text-[10px] font-black text-gray-400 uppercase mb-1">Top Tier</span>
-                                        <span className="font-black text-gray-700 uppercase text-xs truncate">{metrics.topClients[0]?.[0] || 'N/A'}</span>
+
+                                {/* Alert for mismatches */}
+                                {discrepancies.filter(d => d.status === 'shortage').length > 0 && (
+                                    <div className={`${neumorphicCard} p-6 border-l-4 border-rose-500`}>
+                                        <div className="flex items-center gap-4">
+                                            <AlertTriangle size={24} className="text-rose-400" />
+                                            <div>
+                                                <h4 className="font-bold text-rose-400">Action Required</h4>
+                                                <p className="text-gray-400 text-sm">
+                                                    {discrepancies.filter(d => d.status === 'shortage').length} exam(s) show fewer registered candidates than scheduled in the calendar. 
+                                                    Please verify the register entries are complete.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className={neumorphicInset}>
-                                        <span className="block text-[10px] font-black text-gray-400 uppercase mb-1">Growth Opportunity</span>
-                                        <span className="font-black text-gray-700 uppercase text-xs truncate">{metrics.topClients[metrics.topClients.length - 1]?.[0] || 'N/A'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 )}
-            </AnimatePresence>
-
-            <div className="mt-16 flex justify-center">
-                <button
-                    onClick={onClose}
-                    className="px-12 py-3.5 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all hover:bg-slate-800"
-                >
-                    Return to Registry
-                </button>
             </div>
-        </div>
+        </motion.div>
     );
 };

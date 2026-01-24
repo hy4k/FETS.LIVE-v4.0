@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 
 export function AiAssistant() {
     const { profile } = useAuth()
-    const [isOpen, setIsOpen] = useState(true)
+    const [isOpen, setIsOpen] = useState(false)
     const [query, setQuery] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     // Store chat history in state. Start with a greeting.

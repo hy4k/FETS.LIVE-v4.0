@@ -81,8 +81,10 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     const neumorphicBtnActive = "px-6 py-2.5 rounded-xl font-bold transition-all shadow-[inset_4px_4px_8px_rgba(163,177,198,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] bg-[#e0e5ec] text-amber-600 flex items-center gap-2 transform scale-105";
     const neumorphicIconBtn = "p-3 rounded-full transition-all active:scale-95 shadow-[5px_5px_10px_rgba(163,177,198,0.6),-5px_-5px_10px_rgba(255,255,255,0.5)] bg-[#e0e5ec] hover:text-blue-600";
 
-    // Authorization Check - OPEN TO ALL as requested
-    const canAccessAnalysis = true;
+    // Authorization Check - Super Admin Only for template management
+    const isSuperAdmin = currentUser?.role === 'super_admin';
+    const canManageTemplates = isSuperAdmin;
+    const canAccessAnalysis = true; // Still open to all for now as per previous logic, but templates are restricted
 
     useEffect(() => {
         if (view === 'history') {
@@ -348,16 +350,18 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                             </div>
                         )}
 
-                        <button
-                            onClick={() => {
-                                setEditingTemplate(null);
-                                setView('create');
-                            }}
-                            className="px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[6px_6px_10px_rgba(163,177,198,0.6),-6px_-6px_10px_rgba(255,255,255,0.5)] bg-amber-500 text-white flex items-center gap-2 hover:bg-amber-600 whitespace-nowrap"
-                        >
-                            <Plus size={18} />
-                            <span>New Template</span>
-                        </button>
+                        {canManageTemplates && (
+                            <button
+                                onClick={() => {
+                                    setEditingTemplate(null);
+                                    setView('create');
+                                }}
+                                className="px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[6px_6px_10px_rgba(163,177,198,0.6),-6px_-6px_10px_rgba(255,255,255,0.5)] bg-amber-500 text-white flex items-center gap-2 hover:bg-amber-600 whitespace-nowrap"
+                            >
+                                <Plus size={18} />
+                                <span>New Template</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -432,6 +436,7 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                                                             key={template.id}
                                                             template={template}
                                                             index={idx}
+                                                            isSuperAdmin={isSuperAdmin}
                                                             onEdit={handleEditTemplate}
                                                             onToggle={toggleStatus}
                                                             onDelete={deleteTemplate}

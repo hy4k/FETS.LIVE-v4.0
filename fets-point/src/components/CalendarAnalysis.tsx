@@ -1,488 +1,1023 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    TrendingUp,
+    X,
+    Download,
+    FileSpreadsheet,
+    Calendar,
+    Users,
+    Clock,
     AlertTriangle,
     CheckCircle,
-    Activity,
-    MapPin,
-    Calendar,
-    Download,
-    X,
-    BarChart3,
+    TrendingUp,
+    Building,
+    ChevronLeft,
+    ChevronRight,
+    Layers,
+    Timer,
     Zap,
+    Target,
+    FileText,
     Globe,
-    HelpCircle,
-    Save
+    MapPin
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
+import { formatDateForIST } from '../utils/dateUtils';
+import { getBranchCapacity } from '../utils/sessionUtils';
 
 interface CalendarAnalysisProps {
     onClose: () => void;
     activeBranch: string;
 }
 
-interface AnalysisEvent {
-    id: string;
-    branch_location: string;
-    category: string;
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    status: string;
-    created_at: string;
-    completed_at?: string;
-    reporter_id?: string;
+interface CalendarSession {
+    id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    client_name: string;
+    candidate_count: number;
+    exam_name: string;
+    branch_location?: string;
+}
+
+interface ClientAnalysis {
+    clientName: string;
+    totalCandidates: number;
+    sessionCount: number;
+    branches: {
+        [branch: string]: {
+            candidates: number;
+            sessions: number;
+        };
+    };
+    weeklyBreakdown: {
+        weekNumber: number;
+        weekStart: string;
+        weekEnd: string;
+        candidates: number;
+    }[];
+}
+
+interface OverlapInfo {
+    date: string;
+    sessions: CalendarSession[];
+    overlapHours: number;
+    totalCandidates: number;
+    capacity: number;
+    excessCandidates: number;
+    suggestions: string[];
 }
 
 export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, activeBranch }) => {
-    const { user } = useAuth(); // Import user for save functionality
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [events, setEvents] = useState<AnalysisEvent[]>([]);
-    const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter'>('month');
+    const [sessions, setSessions] = useState<CalendarSession[]>([]);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedView, setSelectedView] = useState<'overview' | 'clients' | 'overlaps'>('overview');
 
-    // Neumorphic Styles (Shared Consistency)
-    const neumorphicCard = "bg-[#e0e5ec] shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)] rounded-2xl border border-white/20";
-    const neumorphicBtn = "px-6 py-2.5 rounded-xl font-bold transition-all active:scale-95 active:shadow-[inset_4px_4px_8px_rgba(163,177,198,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] shadow-[6px_6px_10px_rgba(163,177,198,0.6),-6px_-6px_10px_rgba(255,255,255,0.5)] bg-[#e0e5ec] text-gray-600 flex items-center gap-2 hover:text-blue-600";
-    const neumorphicBtnActive = "px-6 py-2.5 rounded-xl font-bold transition-all shadow-[inset_4px_4px_8px_rgba(163,177,198,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] bg-[#e0e5ec] text-amber-600 flex items-center gap-2 transform scale-105";
-    const neumorphicInset = "shadow-[inset_5px_5px_10px_rgba(163,177,198,0.6),inset_-5px_-5px_10px_rgba(255,255,255,0.5)] bg-[#e0e5ec] rounded-xl";
+    // Elegant Neumorphic Styles with Rich Colors
+    const neumorphicBase = "bg-gradient-to-br from-[#1a1f2e] to-[#0d1117]";
+    const neumorphicCard = "bg-gradient-to-br from-[#1e2537] to-[#151b28] shadow-[8px_8px_24px_rgba(0,0,0,0.4),-4px_-4px_16px_rgba(255,255,255,0.03)] rounded-2xl border border-white/5";
+    const neumorphicCardLight = "bg-gradient-to-br from-[#252d42] to-[#1a2030] shadow-[6px_6px_20px_rgba(0,0,0,0.35),-3px_-3px_12px_rgba(255,255,255,0.02)] rounded-xl border border-white/5";
+    const neumorphicBtn = "px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-[4px_4px_12px_rgba(0,0,0,0.3),-2px_-2px_8px_rgba(255,255,255,0.02)] bg-gradient-to-br from-[#252d42] to-[#1a2030] text-gray-300 flex items-center gap-2 hover:text-amber-400 border border-white/5";
+    const neumorphicBtnActive = "px-5 py-2.5 rounded-xl font-bold transition-all shadow-[inset_4px_4px_12px_rgba(0,0,0,0.4),inset_-2px_-2px_8px_rgba(255,255,255,0.02)] bg-gradient-to-br from-[#1a2030] to-[#151b28] text-amber-400 flex items-center gap-2 border border-amber-500/20";
+    const neumorphicInset = "shadow-[inset_4px_4px_12px_rgba(0,0,0,0.4),inset_-2px_-2px_8px_rgba(255,255,255,0.02)] bg-gradient-to-br from-[#151b28] to-[#0d1117] rounded-xl border border-white/5";
+
+    // Client color mapping
+    const clientColors: { [key: string]: { bg: string; text: string; border: string } } = {
+        'PEARSON': { bg: 'from-blue-600/20 to-blue-800/20', text: 'text-blue-400', border: 'border-blue-500/30' },
+        'PSI': { bg: 'from-emerald-600/20 to-emerald-800/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+        'PROMETRIC': { bg: 'from-rose-600/20 to-rose-800/20', text: 'text-rose-400', border: 'border-rose-500/30' },
+        'ITTS': { bg: 'from-amber-600/20 to-amber-800/20', text: 'text-amber-400', border: 'border-amber-500/30' },
+        'OTHER': { bg: 'from-slate-600/20 to-slate-800/20', text: 'text-slate-400', border: 'border-slate-500/30' }
+    };
 
     useEffect(() => {
-        fetchAnalysisData();
-    }, [dateRange]);
+        fetchSessionData();
+    }, [currentMonth, activeBranch]);
 
-    const fetchAnalysisData = async () => {
+    const isGlobalView = activeBranch === 'global' || !activeBranch;
+
+    const fetchSessionData = async () => {
         setLoading(true);
         try {
-            // Calculate date filter
-            const now = new Date();
-            const startDate = new Date();
-            if (dateRange === 'week') startDate.setDate(now.getDate() - 7);
-            if (dateRange === 'month') startDate.setMonth(now.getMonth() - 1);
-            if (dateRange === 'quarter') startDate.setMonth(now.getMonth() - 3);
+            const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-            // Fetch ALL events globally for comprehensive analysis
-            const { data, error } = await (supabase as any)
-                .from('incidents')
-                .select('id, branch_location, category, severity, status, created_at, completed_at')
-                .gte('created_at', startDate.toISOString())
-                .order('created_at', { ascending: false });
+            let query = supabase
+                .from('calendar_sessions')
+                .select('*')
+                .gte('date', formatDateForIST(startOfMonth))
+                .lte('date', formatDateForIST(endOfMonth))
+                .order('date', { ascending: true })
+                .order('start_time', { ascending: true });
+
+            // Filter by branch if a specific center is selected (not global view)
+            if (!isGlobalView) {
+                query = query.eq('branch_location', activeBranch);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
-            setEvents((data as any) || []);
+            
+            // For legacy data without branch_location, default to calicut
+            let filteredData = (data as CalendarSession[]) || [];
+            
+            // If specific branch selected but no branch_location column exists, 
+            // handle fallback for legacy Calicut data
+            if (!isGlobalView && activeBranch === 'calicut' && filteredData.length === 0) {
+                // Retry without branch filter for legacy data
+                const fallbackQuery = supabase
+                    .from('calendar_sessions')
+                    .select('*')
+                    .gte('date', formatDateForIST(startOfMonth))
+                    .lte('date', formatDateForIST(endOfMonth))
+                    .order('date', { ascending: true })
+                    .order('start_time', { ascending: true });
+                
+                const { data: fallbackData } = await fallbackQuery;
+                if (fallbackData) {
+                    // Only include sessions without branch_location (legacy) or calicut
+                    filteredData = (fallbackData as CalendarSession[]).filter(
+                        s => !s.branch_location || s.branch_location === 'calicut'
+                    );
+                }
+            }
+            
+            setSessions(filteredData);
         } catch (error) {
-            console.error('Error fetching analysis data:', error);
-            toast.error('Failed to load operational data');
+            console.error('Error fetching session data:', error);
+            toast.error('Failed to load session data');
         } finally {
             setLoading(false);
         }
     };
 
-    const metrics = useMemo(() => {
-        const total = events.length;
-        const open = events.filter(e => e.status !== 'closed').length;
-        const critical = events.filter(e => e.severity === 'critical' && e.status !== 'closed').length;
-        const major = events.filter(e => (e.severity === 'high' || e.severity === 'medium') && e.status !== 'closed').length;
-        const closed = events.filter(e => e.status === 'closed').length;
+    const normalizeClientName = (name: string): string => {
+        const upper = name.toUpperCase();
+        if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON';
+        if (upper.includes('PSI')) return 'PSI';
+        if (upper.includes('PROMETRIC')) return 'PROMETRIC';
+        if (upper.includes('ITTS')) return 'ITTS';
+        return 'OTHER';
+    };
 
-        // Health Score Calculation (100 is perfect)
-        // Deduct points for open issues: Critical = 15, Major = 5, Minor = 1
-        const penalty = (critical * 15) + (major * 5) + ((open - critical - major) * 1);
-        const healthScore = Math.max(0, 100 - penalty);
+    const getClientColor = (client: string) => {
+        return clientColors[normalizeClientName(client)] || clientColors['OTHER'];
+    };
 
-        // Branch Breakdown
-        const branchStats: Record<string, { total: number, critical: number, open: number }> = {};
-        events.forEach(e => {
-            const branch = e.branch_location || 'Unknown';
-            if (!branchStats[branch]) branchStats[branch] = { total: 0, critical: 0, open: 0 };
-            branchStats[branch].total++;
-            if (e.status !== 'closed') branchStats[branch].open++;
-            if (e.severity === 'critical') branchStats[branch].critical++;
-        });
+    // Helper functions - must be defined before useMemo hooks
+    const timeToMinutes = (time: string): number => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    };
 
-        // Category Breakdown
-        const categoryStats: Record<string, number> = {};
-        events.forEach(e => {
-            const cat = e.category || 'Other';
-            categoryStats[cat] = (categoryStats[cat] || 0) + 1;
-        });
+    const minutesToTime = (minutes: number): string => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    };
 
-        // Velocity (Avg resolution time for closed events in hours)
-        let totalResolutionHours = 0;
-        let closedCount = 0;
-        events.forEach(e => {
-            if (e.status === 'closed' && e.completed_at) {
-                const created = new Date(e.created_at).getTime();
-                const closed = new Date(e.completed_at).getTime();
-                const hours = (closed - created) / (1000 * 60 * 60);
-                if (hours > 0) {
-                    totalResolutionHours += hours;
-                    closedCount++;
-                }
-            }
-        });
-        const avgVelocity = closedCount > 0 ? (totalResolutionHours / closedCount).toFixed(1) : 'N/A';
+    const getWeekNumber = (date: Date): number => {
+        const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        const dayOfMonth = date.getDate();
+        const firstDayWeekday = firstDayOfMonth.getDay();
+        return Math.ceil((dayOfMonth + firstDayWeekday) / 7);
+    };
 
-        // Auto-generated Insights
-        const insights = [];
-        if (healthScore < 50) insights.push("CRITICAL: Global operational health is dangerously low.");
-        if (critical > 0) insights.push(`URGENT: ${critical} Critical incidents require immediate intervention.`);
-
-        const topBranch = Object.entries(branchStats)
-            .sort(([, a], [, b]) => b.open - a.open)[0];
-        if (topBranch) insights.push(`Focus Area: ${topBranch[0]} has the highest open incident load (${topBranch[1].open}).`);
-
-        const topCategory = Object.entries(categoryStats).sort(([, a], [, b]) => b - a)[0];
-        if (topCategory) insights.push(`Trend: '${topCategory[0]}' is the most recurring issue type.`);
+    const getWeekRange = (date: Date): { start: string; end: string } => {
+        const day = date.getDay();
+        const start = new Date(date);
+        start.setDate(date.getDate() - day);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
 
         return {
-            total,
-            open,
-            critical,
-            healthScore,
-            branchStats,
-            categoryStats,
-            avgVelocity,
-            insights
+            start: start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+            end: end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
         };
-    }, [events]);
+    };
 
-    const saveReportToDB = async () => {
-        if (!user) {
-            toast.error('You must be logged in to save reports');
-            return;
-        }
+    // Calculate client-wise analysis with center breakdown
+    const clientAnalysis = useMemo((): ClientAnalysis[] => {
+        const clientMap: { [key: string]: ClientAnalysis } = {};
 
-        const toastId = toast.loading('Saving operational snapshot...');
+        sessions.forEach(session => {
+            const normalizedClient = normalizeClientName(session.client_name);
+            const branch = session.branch_location || 'calicut';
 
-        try {
-            const { error } = await (supabase as any)
-                .from('operational_reports')
-                .insert({
-                    created_by: user.id,
-                    period: dateRange,
-                    health_score: metrics.healthScore,
-                    resolution_velocity: parseFloat(metrics.avgVelocity),
-                    critical_issues: metrics.critical,
-                    metrics: metrics,
-                    insights: metrics.insights,
-                    report_text: generateReportString() // Refactored generation to separate function
+            if (!clientMap[normalizedClient]) {
+                clientMap[normalizedClient] = {
+                    clientName: normalizedClient,
+                    totalCandidates: 0,
+                    sessionCount: 0,
+                    branches: {},
+                    weeklyBreakdown: []
+                };
+            }
+
+            clientMap[normalizedClient].totalCandidates += session.candidate_count;
+            clientMap[normalizedClient].sessionCount += 1;
+
+            if (!clientMap[normalizedClient].branches[branch]) {
+                clientMap[normalizedClient].branches[branch] = { candidates: 0, sessions: 0 };
+            }
+            clientMap[normalizedClient].branches[branch].candidates += session.candidate_count;
+            clientMap[normalizedClient].branches[branch].sessions += 1;
+        });
+
+        // Calculate weekly breakdown for each client
+        Object.keys(clientMap).forEach(clientKey => {
+            const clientSessions = sessions.filter(s => normalizeClientName(s.client_name) === clientKey);
+            const weeklyMap: { [key: number]: { candidates: number; weekStart: string; weekEnd: string } } = {};
+
+            clientSessions.forEach(session => {
+                const date = new Date(session.date);
+                const weekNumber = getWeekNumber(date);
+                const { start, end } = getWeekRange(date);
+
+                if (!weeklyMap[weekNumber]) {
+                    weeklyMap[weekNumber] = { candidates: 0, weekStart: start, weekEnd: end };
+                }
+                weeklyMap[weekNumber].candidates += session.candidate_count;
+            });
+
+            clientMap[clientKey].weeklyBreakdown = Object.entries(weeklyMap)
+                .map(([week, data]) => ({
+                    weekNumber: parseInt(week),
+                    weekStart: data.weekStart,
+                    weekEnd: data.weekEnd,
+                    candidates: data.candidates
+                }))
+                .sort((a, b) => a.weekNumber - b.weekNumber);
+        });
+
+        return Object.values(clientMap).sort((a, b) => b.totalCandidates - a.totalCandidates);
+    }, [sessions]);
+
+    // Calculate overlap analysis
+    const overlapAnalysis = useMemo((): OverlapInfo[] => {
+        const dateMap: { [date: string]: CalendarSession[] } = {};
+
+        sessions.forEach(session => {
+            if (!dateMap[session.date]) {
+                dateMap[session.date] = [];
+            }
+            dateMap[session.date].push(session);
+        });
+
+        const overlaps: OverlapInfo[] = [];
+
+        Object.entries(dateMap).forEach(([date, daySessions]) => {
+            if (daySessions.length < 2) return;
+
+            // Sort by start time
+            daySessions.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+            // Calculate overlaps
+            let hasOverlap = false;
+            let overlapHours = 0;
+            const overlapPeriods: { start: string; end: string; sessions: CalendarSession[] }[] = [];
+
+            for (let i = 0; i < daySessions.length; i++) {
+                for (let j = i + 1; j < daySessions.length; j++) {
+                    const session1 = daySessions[i];
+                    const session2 = daySessions[j];
+
+                    // Check if times overlap
+                    const start1 = timeToMinutes(session1.start_time);
+                    const end1 = timeToMinutes(session1.end_time);
+                    const start2 = timeToMinutes(session2.start_time);
+                    const end2 = timeToMinutes(session2.end_time);
+
+                    if (start2 < end1 && end2 > start1) {
+                        hasOverlap = true;
+                        const overlapStart = Math.max(start1, start2);
+                        const overlapEnd = Math.min(end1, end2);
+                        overlapHours += (overlapEnd - overlapStart) / 60;
+                        overlapPeriods.push({
+                            start: minutesToTime(overlapStart),
+                            end: minutesToTime(overlapEnd),
+                            sessions: [session1, session2]
+                        });
+                    }
+                }
+            }
+
+            if (hasOverlap) {
+                const totalCandidates = daySessions.reduce((sum, s) => sum + s.candidate_count, 0);
+                const capacity = getBranchCapacity(activeBranch || 'calicut');
+                const excessCandidates = Math.max(0, totalCandidates - capacity);
+
+                const suggestions: string[] = [];
+
+                if (excessCandidates > 0) {
+                    suggestions.push(`Consider early check-in for first exam (${overlapPeriods[0]?.sessions[0]?.exam_name || 'first session'}) to clear ${Math.ceil(excessCandidates / 2)} candidates before overlap window.`);
+                }
+
+                // Check if extending beyond 5 PM would help
+                const lastEndTime = Math.max(...daySessions.map(s => timeToMinutes(s.end_time)));
+                if (lastEndTime <= timeToMinutes('17:00') && excessCandidates > 0) {
+                    suggestions.push(`Extend operating hours beyond 5 PM to accommodate ${excessCandidates} excess candidates.`);
+                }
+
+                // Check if staggering could help
+                if (overlapHours >= 1) {
+                    suggestions.push(`Stagger exam start times by ${Math.ceil(overlapHours)}+ hour(s) to reduce concurrent load.`);
+                }
+
+                overlaps.push({
+                    date,
+                    sessions: daySessions,
+                    overlapHours: Math.round(overlapHours * 10) / 10,
+                    totalCandidates,
+                    capacity,
+                    excessCandidates,
+                    suggestions
+                });
+            }
+        });
+
+        return overlaps.sort((a, b) => b.excessCandidates - a.excessCandidates);
+    }, [sessions, activeBranch]);
+
+    // Calculate totals
+    const totals = useMemo(() => {
+        const byBranch: { [branch: string]: { candidates: number; sessions: number } } = {};
+        let totalCandidates = 0;
+        let totalSessions = sessions.length;
+
+        sessions.forEach(session => {
+            const branch = session.branch_location || 'calicut';
+            if (!byBranch[branch]) {
+                byBranch[branch] = { candidates: 0, sessions: 0 };
+            }
+            byBranch[branch].candidates += session.candidate_count;
+            byBranch[branch].sessions += 1;
+            totalCandidates += session.candidate_count;
+        });
+
+        // Weekly totals
+        const weeklyTotals: { week: number; candidates: number; sessions: number }[] = [];
+        const weekMap: { [week: number]: { candidates: number; sessions: number } } = {};
+
+        sessions.forEach(session => {
+            const date = new Date(session.date);
+            const week = getWeekNumber(date);
+            if (!weekMap[week]) {
+                weekMap[week] = { candidates: 0, sessions: 0 };
+            }
+            weekMap[week].candidates += session.candidate_count;
+            weekMap[week].sessions += 1;
+        });
+
+        Object.entries(weekMap).forEach(([week, data]) => {
+            weeklyTotals.push({ week: parseInt(week), ...data });
+        });
+
+        return {
+            totalCandidates,
+            totalSessions,
+            byBranch,
+            weeklyTotals: weeklyTotals.sort((a, b) => a.week - b.week)
+        };
+    }, [sessions]);
+
+    // Export functions
+    const exportAsCSV = () => {
+        const headers = ['Client', 'Branch', 'Total Candidates', 'Sessions', 'Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
+        const rows: string[][] = [];
+
+        clientAnalysis.forEach(client => {
+            Object.entries(client.branches).forEach(([branch, data]) => {
+                const weekData = [1, 2, 3, 4, 5].map(w => {
+                    const week = client.weeklyBreakdown.find(wb => wb.weekNumber === w);
+                    return week ? week.candidates.toString() : '0';
                 });
 
-            if (error) throw error;
-            toast.success('Snapshot saved to Vault', { id: toastId });
-        } catch (error) {
-            console.error('Error saving report:', error);
-            toast.error('Failed to save snapshot', { id: toastId });
+                rows.push([
+                    client.clientName,
+                    branch.toUpperCase(),
+                    data.candidates.toString(),
+                    data.sessions.toString(),
+                    ...weekData
+                ]);
+            });
+        });
+
+        // Add totals row
+        rows.push([]);
+        rows.push(['TOTALS', '', totals.totalCandidates.toString(), totals.totalSessions.toString(), ...totals.weeklyTotals.map(w => w.candidates.toString())]);
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `FETS_Invoice_${isGlobalView ? 'Global' : activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)}_${currentMonth.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }).replace(' ', '_')}.csv`;
+        a.click();
+        toast.success('CSV exported for invoice generation!');
+    };
+
+    const exportDetailedReport = () => {
+        const monthName = currentMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+        const centerName = isGlobalView ? 'ALL CENTERS (GLOBAL)' : activeBranch.toUpperCase();
+
+        let report = `
+╔══════════════════════════════════════════════════════════════════╗
+║                    FETS EXAMINATION INVOICE REPORT                ║
+║                         ${monthName.toUpperCase().padStart(20)}                        ║
+║                    CENTER: ${centerName.padStart(20)}                        ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Generated: ${new Date().toLocaleString('en-IN')}
+Center:    ${isGlobalView ? 'All Centers (Combined)' : activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                        EXECUTIVE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Candidates:     ${totals.totalCandidates}
+Total Sessions:       ${totals.totalSessions}
+Overlap Alerts:       ${overlapAnalysis.length}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                     CLIENT-WISE BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        clientAnalysis.forEach(client => {
+            report += `
+┌─────────────────────────────────────────────────────────────────┐
+│  ${client.clientName.padEnd(20)} Total: ${client.totalCandidates} Candidates (${client.sessionCount} Sessions)
+├─────────────────────────────────────────────────────────────────┤
+│  BY CENTER:
+`;
+            Object.entries(client.branches).forEach(([branch, data]) => {
+                report += `│    ${branch.toUpperCase().padEnd(15)} │ ${data.candidates.toString().padStart(4)} Candidates │ ${data.sessions} Sessions
+`;
+            });
+
+            report += `├─────────────────────────────────────────────────────────────────┤
+│  WEEKLY BREAKDOWN:
+`;
+            client.weeklyBreakdown.forEach(week => {
+                report += `│    Week ${week.weekNumber} (${week.weekStart} - ${week.weekEnd}): ${week.candidates} Candidates
+`;
+            });
+
+            report += `└─────────────────────────────────────────────────────────────────┘
+`;
+        });
+
+        report += `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                     CENTER-WISE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        Object.entries(totals.byBranch).forEach(([branch, data]) => {
+            report += `
+  ${branch.toUpperCase().padEnd(12)}: ${data.candidates.toString().padStart(5)} Candidates | ${data.sessions} Sessions`;
+        });
+
+        report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                      WEEKLY TOTALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+        totals.weeklyTotals.forEach(week => {
+            report += `
+  Week ${week.week}: ${week.candidates.toString().padStart(5)} Candidates | ${week.sessions} Sessions`;
+        });
+
+        if (overlapAnalysis.length > 0) {
+            report += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+                     ⚠️ OVERLAP ALERTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+            overlapAnalysis.forEach(overlap => {
+                const dateStr = new Date(overlap.date).toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
+                report += `
+  ${dateStr}:
+    • Overlap Duration: ${overlap.overlapHours} hours
+    • Total Candidates: ${overlap.totalCandidates} (Capacity: ${overlap.capacity})
+    • Excess Load: ${overlap.excessCandidates} candidates
+    • Recommendations:
+${overlap.suggestions.map(s => `      → ${s}`).join('\n')}
+`;
+            });
         }
-    };
 
-    const generateReportString = () => {
-        return `
-FETS OPERATIONAL INTELLIGENCE REPORT
-Generated: ${new Date().toLocaleString()}
-Period: ${dateRange.toUpperCase()}
-----------------------------------------
+        report += `
 
-EXECUTIVE SUMMARY
------------------
-Stability Index: ${metrics.healthScore}/100
-Total Volume: ${metrics.total}
-Critical Incidents: ${metrics.critical} (Active)
-Resolution Velocity: ${metrics.avgVelocity} hours
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                         END OF REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
 
-STRATEGIC INSIGHTS
-------------------
-${metrics.insights.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
-
-CENTRE HEATMAP (Top 5)
-----------------------
-${Object.entries(metrics.branchStats)
-                .sort(([, a], [, b]) => b.total - a.total)
-                .slice(0, 5)
-                .map(([branch, stats]) => `${branch.toUpperCase().padEnd(20)} | Total: ${stats.total} | Open: ${stats.open} | Critical: ${stats.critical}`)
-                .join('\n')}
-
-CATEGORY DYNAMICS
------------------
-${Object.entries(metrics.categoryStats)
-                .sort(([, a], [, b]) => b - a)
-                .map(([cat, count]) => `${cat}: ${count} events`)
-                .join('\n')}
-`.trim();
-    };
-
-    const generateReport = () => {
-        const report = generateReportString();
         navigator.clipboard.writeText(report);
         const blob = new Blob([report], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `FETS_Ops_Report_${new Date().toISOString().split('T')[0]}.txt`;
+        a.download = `FETS_Report_${isGlobalView ? 'Global' : activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)}_${currentMonth.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }).replace(' ', '_')}.txt`;
         a.click();
-        toast.success('Report generated & copied to clipboard');
+        toast.success('Detailed report exported & copied to clipboard!');
+    };
+
+    const navigateMonth = (direction: 'prev' | 'next') => {
+        const newDate = new Date(currentMonth);
+        if (direction === 'prev') {
+            newDate.setMonth(newDate.getMonth() - 1);
+        } else {
+            newDate.setMonth(newDate.getMonth() + 1);
+        }
+        setCurrentMonth(newDate);
     };
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-0 z-50 bg-[#e0e5ec] overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 z-50 ${neumorphicBase} overflow-hidden`}
             style={{ fontFamily: "'Montserrat', sans-serif" }}
         >
-            <div className="max-w-[1600px] mx-auto px-6 py-12">
+            {/* Ambient Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[150px] -mr-64 -mt-64" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -ml-48 -mb-48" />
+                <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-purple-500/3 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+            </div>
+
+            <div className="relative h-full flex flex-col max-w-[1800px] mx-auto px-8 py-8">
 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
                     <div className="flex items-center gap-6">
                         <button
                             onClick={onClose}
-                            className="p-4 rounded-full bg-[#e0e5ec] shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)] text-gray-500 hover:text-red-500 transition-colors active:scale-95"
+                            className="p-4 rounded-2xl bg-gradient-to-br from-[#252d42] to-[#1a2030] shadow-[6px_6px_16px_rgba(0,0,0,0.4),-3px_-3px_10px_rgba(255,255,255,0.02)] text-gray-400 hover:text-rose-400 transition-colors active:scale-95 border border-white/5"
                         >
                             <X size={24} />
                         </button>
                         <div>
-                            <h1 className="text-4xl md:text-5xl font-black text-gray-700 mb-2 uppercase tracking-tight">
-                                Operational <span className="text-blue-500">Intelligence</span>
-                            </h1>
-                            <p className="text-gray-500 font-medium text-lg">Global Event Analysis & Business Insights</p>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight">
+                                    Invoice <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Analytics</span>
+                                </h1>
+                                {/* Center Badge */}
+                                <div className={`px-4 py-2 rounded-xl font-bold text-sm uppercase tracking-widest ${
+                                    isGlobalView 
+                                        ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/20 text-purple-400 border border-purple-500/30' 
+                                        : 'bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30'
+                                }`}>
+                                    <div className="flex items-center gap-2">
+                                        {isGlobalView ? <Globe size={16} /> : <MapPin size={16} />}
+                                        <span>{isGlobalView ? 'All Centers' : activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-gray-400 font-medium text-lg">
+                                {isGlobalView 
+                                    ? 'Combined analysis from all centers for invoice generation'
+                                    : `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} center analysis for invoice generation`
+                                }
+                            </p>
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className={`${neumorphicInset} px-4 py-2 flex items-center gap-4`}>
+                    {/* Month Navigation & Export */}
+                    <div className="flex items-center gap-4">
+                        <div className={`${neumorphicInset} px-3 py-2 flex items-center gap-3`}>
                             <button
-                                onClick={() => setDateRange('week')}
-                                className={`text-sm font-bold ${dateRange === 'week' ? 'text-blue-600' : 'text-gray-400'}`}
+                                onClick={() => navigateMonth('prev')}
+                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
                             >
-                                7D
+                                <ChevronLeft size={18} />
                             </button>
-                            <div className="w-px h-4 bg-gray-300"></div>
+                            <span className="text-white font-bold min-w-[140px] text-center">
+                                {currentMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                            </span>
                             <button
-                                onClick={() => setDateRange('month')}
-                                className={`text-sm font-bold ${dateRange === 'month' ? 'text-blue-600' : 'text-gray-400'}`}
+                                onClick={() => navigateMonth('next')}
+                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
                             >
-                                30D
-                            </button>
-                            <div className="w-px h-4 bg-gray-300"></div>
-                            <button
-                                onClick={() => setDateRange('quarter')}
-                                className={`text-sm font-bold ${dateRange === 'quarter' ? 'text-blue-600' : 'text-gray-400'}`}
-                            >
-                                90D
+                                <ChevronRight size={18} />
                             </button>
                         </div>
-                        <button
-                            onClick={saveReportToDB}
-                            className={`${neumorphicBtn} hover:text-green-600`}
-                            title="Save Snapshot to Database"
-                        >
-                            <Save size={18} />
-                            Save
+
+                        <button onClick={exportAsCSV} className={neumorphicBtn}>
+                            <FileSpreadsheet size={18} />
+                            CSV
                         </button>
-                        <button
-                            onClick={generateReport}
-                            className={neumorphicBtnActive}
-                        >
+                        <button onClick={exportDetailedReport} className={neumorphicBtnActive}>
                             <Download size={18} />
-                            Export
+                            Full Report
                         </button>
                     </div>
                 </div>
 
+                {/* View Tabs */}
+                <div className={`${neumorphicCard} p-2 flex gap-2 mb-8 w-fit`}>
+                    {[
+                        { key: 'overview', label: 'Overview', icon: TrendingUp },
+                        { key: 'clients', label: 'Client Details', icon: Users },
+                        { key: 'overlaps', label: 'Overlap Analysis', icon: Layers }
+                    ].map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setSelectedView(tab.key as typeof selectedView)}
+                            className={`px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
+                                selectedView === tab.key
+                                    ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-400 shadow-[inset_2px_2px_8px_rgba(0,0,0,0.3)]'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                        >
+                            <tab.icon size={16} />
+                            {tab.label}
+                            {tab.key === 'overlaps' && overlapAnalysis.length > 0 && (
+                                <span className="px-2 py-0.5 bg-rose-500/30 text-rose-400 rounded-full text-xs font-bold">
+                                    {overlapAnalysis.length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32">
-                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-6"></div>
-                        <p className="text-gray-500 font-bold animate-pulse">Analyzing Operational Data...</p>
+                    <div className="flex flex-col items-center justify-center py-32 flex-1">
+                        <div className="relative">
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-700"></div>
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-500 border-t-transparent absolute inset-0"></div>
+                        </div>
+                        <p className="text-gray-400 font-bold mt-6 animate-pulse">Analyzing Session Data...</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-
-                        {/* KPI Cards */}
-                        <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-4 gap-8 mb-4">
-                            {/* Stability Index */}
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className={`${neumorphicCard} p-8 flex flex-col items-center justify-center relative overflow-hidden group`}
-                            >
-                                <div className="absolute top-2 right-2">
-                                    <div className="group-hover:opacity-100 opacity-0 transition-opacity bg-black/80 text-white text-[10px] p-2 rounded w-48 absolute right-0 z-10 pointer-events-none">
-                                        Overall operational health score out of 100. Lower score indicates high volume of critical/major open issues.
-                                    </div>
-                                    <HelpCircle size={14} className="text-gray-400" />
-                                </div>
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Activity size={100} />
-                                </div>
-                                <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Stability Index</h3>
-                                <div className={`text-6xl font-black ${metrics.healthScore > 80 ? 'text-green-500' :
-                                    metrics.healthScore > 50 ? 'text-amber-500' : 'text-red-500'
-                                    }`}>
-                                    {Math.round(metrics.healthScore)}
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 font-medium">Target: 85+</p>
-                            </motion.div>
-
-                            {/* Velocity */}
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.1 }}
-                                className={`${neumorphicCard} p-8 flex flex-col items-center justify-center relative group`}
-                            >
-                                <div className="absolute top-2 right-2">
-                                    <div className="group-hover:opacity-100 opacity-0 transition-opacity bg-black/80 text-white text-[10px] p-2 rounded w-48 absolute right-0 z-10 pointer-events-none">
-                                        Average time taken to resolve an issue from creation to closure.
-                                    </div>
-                                    <HelpCircle size={14} className="text-gray-400" />
-                                </div>
-                                <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Resolution Velocity</h3>
-                                <div className="text-5xl font-black text-gray-700">
-                                    {metrics.avgVelocity}<span className="text-2xl text-gray-400 ml-1">hr</span>
-                                </div>
-                                <p className="text-xs text-green-500 mt-2 font-bold flex items-center gap-1">
-                                    <Zap size={10} /> Avg Handling Time
-                                </p>
-                            </motion.div>
-
-                            {/* Critical Incidents */}
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className={`${neumorphicCard} p-8 flex flex-col items-center justify-center relative group`}
-                            >
-                                <div className="absolute top-2 right-2">
-                                    <div className="group-hover:opacity-100 opacity-0 transition-opacity bg-black/80 text-white text-[10px] p-2 rounded w-48 absolute right-0 z-10 pointer-events-none">
-                                        Number of active 'Critical' or 'Major' priority events that are currently unresolved.
-                                    </div>
-                                    <HelpCircle size={14} className="text-gray-400" />
-                                </div>
-                                <h3 className="text-red-400 font-bold uppercase tracking-widest text-xs mb-2">Critical Incidents</h3>
-                                <div className="text-5xl font-black text-red-500">
-                                    {metrics.critical}
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 font-medium">Requires Immediate Action</p>
-                            </motion.div>
-
-                            {/* Total Volume */}
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.3 }}
-                                className={`${neumorphicCard} p-8 flex flex-col items-center justify-center`}
-                            >
-                                <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Total Volume</h3>
-                                <div className="text-5xl font-black text-blue-500">
-                                    {metrics.total}
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 font-medium">Events in period</p>
-                            </motion.div>
-                        </div>
-
-                        {/* Strategic Insights & Heatmap */}
-                        <div className="md:col-span-8 space-y-8">
-                            {/* Strategic AI Insights */}
-                            <div className={`${neumorphicCard} p-8`}>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
-                                        <TrendingUp size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-black text-gray-700">Strategic Intelligence</h3>
-                                </div>
-                                <div className="space-y-4">
-                                    {metrics.insights.length > 0 ? metrics.insights.map((insight, idx) => (
-                                        <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-white/50 border border-white/50 hover:bg-white transition-colors">
-                                            <div className="mt-1">
-                                                {insight.includes('CRITICAL') || insight.includes('URGENT') ?
-                                                    <AlertTriangle size={20} className="text-red-500" /> :
-                                                    <CheckCircle size={20} className="text-blue-500" />
-                                                }
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-4">
+                        <AnimatePresence mode="wait">
+                            {selectedView === 'overview' && (
+                                <motion.div
+                                    key="overview"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="space-y-8"
+                                >
+                                    {/* KPI Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500 group-hover:opacity-20 transition-opacity">
+                                                <Users size={80} />
                                             </div>
-                                            <p className="text-gray-700 font-semibold text-sm leading-relaxed">{insight}</p>
+                                            <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Total Candidates</h3>
+                                            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
+                                                {totals.totalCandidates}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 font-medium">For Invoice Generation</p>
                                         </div>
-                                    )) : (
-                                        <p className="text-gray-500 italic">No critical anomalies detected. Operations appearing stable.</p>
+
+                                        <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10 text-blue-500 group-hover:opacity-20 transition-opacity">
+                                                <Calendar size={80} />
+                                            </div>
+                                            <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Total Sessions</h3>
+                                            <div className="text-5xl font-black text-blue-400">
+                                                {totals.totalSessions}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 font-medium">Exam Schedules</p>
+                                        </div>
+
+                                        <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10 text-emerald-500 group-hover:opacity-20 transition-opacity">
+                                                <Building size={80} />
+                                            </div>
+                                            <h3 className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Active Centers</h3>
+                                            <div className="text-5xl font-black text-emerald-400">
+                                                {Object.keys(totals.byBranch).length}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 font-medium">Across Locations</p>
+                                        </div>
+
+                                        <div className={`${neumorphicCard} p-6 relative overflow-hidden group`}>
+                                            <div className="absolute top-0 right-0 p-4 opacity-10 text-rose-500 group-hover:opacity-20 transition-opacity">
+                                                <AlertTriangle size={80} />
+                                            </div>
+                                            <h3 className="text-rose-400 font-bold uppercase tracking-widest text-xs mb-2">Overlap Alerts</h3>
+                                            <div className="text-5xl font-black text-rose-400">
+                                                {overlapAnalysis.length}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 font-medium">Capacity Conflicts</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Branch & Weekly Summary */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        {/* Center-wise Summary */}
+                                        <div className={`${neumorphicCard} p-8`}>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg text-blue-400">
+                                                    <Globe size={24} />
+                                                </div>
+                                                <h3 className="text-xl font-black text-white">Center-wise Summary</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {Object.entries(totals.byBranch).map(([branch, data]) => (
+                                                    <div key={branch} className={`${neumorphicCardLight} p-5 flex items-center justify-between`}>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
+                                                                <MapPin size={20} className="text-blue-400" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-bold text-white uppercase">{branch}</h4>
+                                                                <p className="text-xs text-gray-500">{data.sessions} Sessions</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-2xl font-black text-amber-400">{data.candidates}</div>
+                                                            <p className="text-xs text-gray-500">Candidates</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Weekly Summary */}
+                                        <div className={`${neumorphicCard} p-8`}>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg text-purple-400">
+                                                    <Calendar size={24} />
+                                                </div>
+                                                <h3 className="text-xl font-black text-white">Weekly Breakdown</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {totals.weeklyTotals.map(week => (
+                                                    <div key={week.week} className={`${neumorphicCardLight} p-5`}>
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <span className="font-bold text-white">Week {week.week}</span>
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-sm text-gray-400">{week.sessions} sessions</span>
+                                                                <span className="text-xl font-black text-amber-400">{week.candidates}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="h-2 w-full bg-[#0d1117] rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${(week.candidates / totals.totalCandidates) * 100}%` }}
+                                                                transition={{ duration: 0.8, delay: week.week * 0.1 }}
+                                                                className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Client Summary Table */}
+                                    <div className={`${neumorphicCard} p-8`}>
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-lg text-emerald-400">
+                                                    <Target size={24} />
+                                                </div>
+                                                <h3 className="text-xl font-black text-white">Client Summary (For Invoice)</h3>
+                                            </div>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="border-b border-white/10">
+                                                        <th className="text-left py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Client</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Total Candidates</th>
+                                                        <th className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">Sessions</th>
+                                                        {['Calicut', 'Cochin', 'Kannur'].map(branch => (
+                                                            <th key={branch} className="text-center py-4 px-4 font-bold text-gray-500 text-xs uppercase tracking-wider">{branch}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {clientAnalysis.map(client => {
+                                                        const color = getClientColor(client.clientName);
+                                                        return (
+                                                            <tr key={client.clientName} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                                <td className="py-4 px-4">
+                                                                    <span className={`font-bold ${color.text}`}>{client.clientName}</span>
+                                                                </td>
+                                                                <td className="text-center py-4 px-4">
+                                                                    <span className="text-2xl font-black text-white">{client.totalCandidates}</span>
+                                                                </td>
+                                                                <td className="text-center py-4 px-4 text-gray-400 font-medium">{client.sessionCount}</td>
+                                                                {['calicut', 'cochin', 'kannur'].map(branch => (
+                                                                    <td key={branch} className="text-center py-4 px-4 text-gray-400">
+                                                                        {client.branches[branch]?.candidates || '-'}
+                                                                    </td>
+                                                                ))}
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                    <tr className="border-t-2 border-amber-500/30 bg-amber-500/5">
+                                                        <td className="py-4 px-4 font-black text-amber-400">GRAND TOTAL</td>
+                                                        <td className="text-center py-4 px-4">
+                                                            <span className="text-3xl font-black text-amber-400">{totals.totalCandidates}</span>
+                                                        </td>
+                                                        <td className="text-center py-4 px-4 text-amber-400 font-bold">{totals.totalSessions}</td>
+                                                        {['calicut', 'cochin', 'kannur'].map(branch => (
+                                                            <td key={branch} className="text-center py-4 px-4 text-amber-400 font-bold">
+                                                                {totals.byBranch[branch]?.candidates || '-'}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {selectedView === 'clients' && (
+                                <motion.div
+                                    key="clients"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                                >
+                                    {clientAnalysis.map(client => {
+                                        const color = getClientColor(client.clientName);
+                                        return (
+                                            <div key={client.clientName} className={`${neumorphicCard} p-8 border-l-4 ${color.border}`}>
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div>
+                                                        <h3 className={`text-2xl font-black ${color.text}`}>{client.clientName}</h3>
+                                                        <p className="text-gray-500 text-sm">{client.sessionCount} Total Sessions</p>
+                                                    </div>
+                                                    <div className={`px-6 py-3 bg-gradient-to-br ${color.bg} rounded-2xl`}>
+                                                        <span className="text-3xl font-black text-white">{client.totalCandidates}</span>
+                                                        <span className="text-xs text-gray-400 ml-2">Candidates</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Branch Breakdown */}
+                                                <div className="mb-6">
+                                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Center Breakdown</h4>
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        {Object.entries(client.branches).map(([branch, data]) => (
+                                                            <div key={branch} className={`${neumorphicCardLight} p-4 text-center`}>
+                                                                <p className="text-xs text-gray-500 uppercase mb-1">{branch}</p>
+                                                                <p className="text-xl font-black text-white">{data.candidates}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Weekly Breakdown */}
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Weekly Distribution</h4>
+                                                    <div className="space-y-2">
+                                                        {client.weeklyBreakdown.map(week => (
+                                                            <div key={week.weekNumber} className="flex items-center gap-4">
+                                                                <span className="text-xs text-gray-400 w-24">Week {week.weekNumber}</span>
+                                                                <div className="flex-1 h-3 bg-[#0d1117] rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${(week.candidates / client.totalCandidates) * 100}%` }}
+                                                                        transition={{ duration: 0.6 }}
+                                                                        className={`h-full bg-gradient-to-r ${color.bg.replace('/20', '')} rounded-full`}
+                                                                        style={{ background: `linear-gradient(to right, ${color.text.replace('text-', '').replace('-400', '')}, ${color.text.replace('text-', '').replace('-400', '-600')})` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-sm font-bold text-white w-12 text-right">{week.candidates}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </motion.div>
+                            )}
+
+                            {selectedView === 'overlaps' && (
+                                <motion.div
+                                    key="overlaps"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="space-y-8"
+                                >
+                                    {overlapAnalysis.length === 0 ? (
+                                        <div className={`${neumorphicCard} p-16 flex flex-col items-center justify-center`}>
+                                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 flex items-center justify-center mb-6">
+                                                <CheckCircle size={48} className="text-emerald-400" />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-white mb-2">No Overlap Conflicts</h3>
+                                            <p className="text-gray-500 text-center max-w-md">
+                                                All scheduled sessions are within capacity limits with no time conflicts detected.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className={`${neumorphicCard} p-6`}>
+                                                <div className="flex items-center gap-4 text-rose-400">
+                                                    <AlertTriangle size={24} />
+                                                    <div>
+                                                        <h3 className="font-bold text-lg">Capacity Conflicts Detected</h3>
+                                                        <p className="text-gray-400 text-sm">Review the following dates for scheduling adjustments</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {overlapAnalysis.map((overlap, idx) => (
+                                                <div key={idx} className={`${neumorphicCard} p-8 border-l-4 border-rose-500/50`}>
+                                                    <div className="flex items-start justify-between mb-6">
+                                                        <div>
+                                                            <h3 className="text-xl font-black text-white">
+                                                                {new Date(overlap.date).toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                                                            </h3>
+                                                            <div className="flex items-center gap-4 mt-2">
+                                                                <span className="px-3 py-1 bg-rose-500/20 text-rose-400 rounded-full text-xs font-bold">
+                                                                    {overlap.overlapHours}h overlap
+                                                                </span>
+                                                                <span className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-xs font-bold">
+                                                                    {overlap.totalCandidates} / {overlap.capacity} capacity
+                                                                </span>
+                                                                {overlap.excessCandidates > 0 && (
+                                                                    <span className="px-3 py-1 bg-red-500/30 text-red-400 rounded-full text-xs font-bold">
+                                                                        +{overlap.excessCandidates} excess
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Sessions Timeline */}
+                                                    <div className="mb-6">
+                                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Session Timeline</h4>
+                                                        <div className="space-y-3">
+                                                            {overlap.sessions.map((session, sIdx) => {
+                                                                const color = getClientColor(session.client_name);
+                                                                return (
+                                                                    <div key={sIdx} className={`${neumorphicCardLight} p-4 flex items-center justify-between`}>
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className={`w-1 h-12 rounded-full ${color.border.replace('border-', 'bg-')}`} />
+                                                                            <div>
+                                                                                <p className={`font-bold ${color.text}`}>{session.client_name}</p>
+                                                                                <p className="text-xs text-gray-500">{session.exam_name}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-6">
+                                                                            <div className="text-center">
+                                                                                <p className="text-xs text-gray-500">Time</p>
+                                                                                <p className="text-sm font-bold text-white">{session.start_time} - {session.end_time}</p>
+                                                                            </div>
+                                                                            <div className="text-center">
+                                                                                <p className="text-xs text-gray-500">Candidates</p>
+                                                                                <p className="text-lg font-black text-amber-400">{session.candidate_count}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Recommendations */}
+                                                    <div>
+                                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                            <Zap size={14} className="text-amber-400" />
+                                                            Recommendations
+                                                        </h4>
+                                                        <div className="space-y-3">
+                                                            {overlap.suggestions.map((suggestion, sIdx) => (
+                                                                <div key={sIdx} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                                                                    <Timer size={16} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                                                                    <p className="text-sm text-gray-300">{suggestion}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
                                     )}
-                                </div>
-                            </div>
-
-                            {/* Centre Heatmap */}
-                            <div className={`${neumorphicCard} p-8`}>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                                        <Globe size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-black text-gray-700">Centre Heatmap (Where to Concentrate)</h3>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {Object.entries(metrics.branchStats)
-                                        .sort(([, a], [, b]) => b.open - a.open) // Sort by highest open issues
-                                        .map(([branch, stats], idx) => (
-                                            <div key={branch} className={`${neumorphicInset} p-5 relative overflow-hidden group`}>
-                                                <div className={`absolute top-0 right-0 w-2 h-full ${stats.open > 5 ? 'bg-red-500' : stats.open > 2 ? 'bg-amber-500' : 'bg-green-500'
-                                                    }`}></div>
-                                                <h4 className="font-bold text-gray-700 uppercase mb-2">{branch}</h4>
-                                                <div className="space-y-1">
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-500">Active Issues:</span>
-                                                        <span className="font-bold text-gray-800">{stats.open}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-500">Critical:</span>
-                                                        <span className="font-bold text-red-500">{stats.critical}</span>
-                                                    </div>
-                                                    <div className="w-full bg-gray-300 h-1.5 rounded-full mt-3 overflow-hidden">
-                                                        <div
-                                                            className={`h-full ${stats.open > 5 ? 'bg-red-500' : 'bg-blue-500'}`}
-                                                            style={{ width: `${Math.min(100, (stats.open / metrics.open) * 100)}%` }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Category Trends Sidebar */}
-                        <div className="md:col-span-4">
-                            <div className={`${neumorphicCard} p-8 h-full`}>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                                        <BarChart3 size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-black text-gray-700">Issue Dynamics</h3>
-                                </div>
-                                <div className="space-y-6">
-                                    {Object.entries(metrics.categoryStats)
-                                        .sort(([, a], [, b]) => b - a)
-                                        .map(([cat, count], idx) => (
-                                            <div key={cat} className="relative">
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm font-bold text-gray-600 capitalize">{cat.replace('_', ' ')}</span>
-                                                    <span className="text-sm font-bold text-gray-400">{count}</span>
-                                                </div>
-                                                <div className="w-full bg-[#e0e5ec] shadow-[inset_2px_2px_5px_rgba(163,177,198,0.6),inset_-2px_-2px_5px_rgba(255,255,255,0.5)] rounded-full h-3">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${(count / metrics.total) * 100}%` }}
-                                                        transition={{ duration: 1, delay: idx * 0.1 }}
-                                                        className={`h-full rounded-full shadow-lg ${idx === 0 ? 'bg-red-500' : idx === 1 ? 'bg-orange-500' : 'bg-blue-500'
-                                                            }`}
-                                                    ></motion.div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
             </div>

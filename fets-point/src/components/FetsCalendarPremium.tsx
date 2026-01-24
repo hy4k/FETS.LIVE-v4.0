@@ -8,6 +8,7 @@ import { useBranchFilter } from '../hooks/useBranchFilter'
 import { formatDateForIST, getCurrentISTDateString, isToday as isTodayIST, formatDateForDisplay } from '../utils/dateUtils'
 import { validateSessionCapacity, getCapacityStatusColor, formatCapacityDisplay, getBranchCapacity } from '../utils/sessionUtils'
 import { useCalendarSessions, useSessionMutations } from '../hooks/useCalendarSessions'
+import { useClients, useClientExams } from '../hooks/useClients'
 import { toast } from 'react-hot-toast'
 
 interface Session {
@@ -90,6 +91,10 @@ export function FetsCalendarPremium() {
 
   const sessionBranch = locationFilter === 'all' ? 'global' : locationFilter
   const { data: sessions = [], isLoading: loading, isError, error } = useCalendarSessions(currentDate, sessionBranch as any, applyFilter, isGlobalView) // Cast to any to avoid type issues if strictly typed
+  
+  // Fetch clients and exams from database
+  const { data: dbClients = [] } = useClients()
+  const { data: dbExams = [] } = useClientExams()
 
   const { addSession, updateSession, deleteSession, isMutating } = useSessionMutations()
   const [showModal, setShowModal] = useState(false)
@@ -844,26 +849,51 @@ export function FetsCalendarPremium() {
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Client Name</label>
                     <select
                       value={formData.client_name}
-                      onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, client_name: e.target.value, exam_name: '' })}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     >
                       <option value="">Select Client</option>
-                      {Object.keys(CLIENT_COLORS).map(client => (
-                        <option key={client} value={client}>{client}</option>
-                      ))}
+                      {dbClients.length > 0 ? (
+                        dbClients.map(client => (
+                          <option key={client.id} value={client.name}>{client.name}</option>
+                        ))
+                      ) : (
+                        Object.keys(CLIENT_COLORS).map(client => (
+                          <option key={client} value={client}>{client}</option>
+                        ))
+                      )}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Exam Name</label>
-                    <input
-                      type="text"
-                      value={formData.exam_name}
-                      onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
-                      placeholder="e.g., CMA US Exam"
-                      required
-                    />
+                    {(() => {
+                      const selectedClient = dbClients.find(c => c.name === formData.client_name)
+                      const clientExams = selectedClient ? dbExams.filter(e => e.client_id === selectedClient.id) : []
+                      
+                      return clientExams.length > 0 ? (
+                        <select
+                          value={formData.exam_name}
+                          onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+                          required
+                        >
+                          <option value="">Select Exam</option>
+                          {clientExams.map(exam => (
+                            <option key={exam.id} value={exam.name}>{exam.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={formData.exam_name}
+                          onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+                          placeholder="e.g., CMA US Exam"
+                          required
+                        />
+                      )
+                    })()}
                   </div>
                 </div>
 

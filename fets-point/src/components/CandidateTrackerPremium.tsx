@@ -16,6 +16,7 @@ import {
   useUpdateCandidate,
   useDeleteCandidate
 } from '../hooks/useQueries'
+import { useClients, useClientExams } from '../hooks/useClients'
 import { toast } from 'react-hot-toast'
 import * as XLSX from 'xlsx'
 import { format, subMonths } from 'date-fns'
@@ -158,6 +159,10 @@ export function CandidateTrackerPremium() {
   }), [locationFilter])
 
   const { data: rawCandidates, isLoading, refetch } = useCandidates(filters)
+  
+  // Fetch clients and exams from database
+  const { data: dbClients = [] } = useClients()
+  const { data: dbExams = [] } = useClientExams()
 
   // Mutations
   const createMutation = useCreateCandidate()
@@ -343,14 +348,14 @@ export function CandidateTrackerPremium() {
             className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'register' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
           >
             <List size={14} />
-            Registry Journal
+            Register
           </button>
           <button
             onClick={() => setActiveTab('analysis')}
             className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'analysis' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
           >
             <Activity size={14} />
-            Intelligence Analysis
+            Analysis
           </button>
         </div>
 
@@ -648,32 +653,58 @@ export function CandidateTrackerPremium() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
-                      Exam Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. TOEFL iBT"
-                      value={formData.examName}
-                      onChange={(e) => setFormData({ ...formData, examName: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
                       Client Name
                     </label>
                     <select
                       value={formData.clientName}
-                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value, examName: '' })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     >
-                      <option value="">Type or select client...</option>
-                      <option value="PROMETRIC">PROMETRIC</option>
-                      <option value="PSI">PSI</option>
-                      <option value="ITTS">ITTS</option>
-                      <option value="PEARSON VUE">PEARSON VUE</option>
+                      <option value="">Select client...</option>
+                      {dbClients.length > 0 ? (
+                        dbClients.map(client => (
+                          <option key={client.id} value={client.name}>{client.name}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="PROMETRIC">PROMETRIC</option>
+                          <option value="PSI">PSI</option>
+                          <option value="ITTS">ITTS</option>
+                          <option value="PEARSON VUE">PEARSON VUE</option>
+                        </>
+                      )}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                      Exam Name
+                    </label>
+                    {(() => {
+                      const selectedClient = dbClients.find(c => c.name === formData.clientName)
+                      const clientExams = selectedClient ? dbExams.filter(e => e.client_id === selectedClient.id) : []
+                      
+                      return clientExams.length > 0 ? (
+                        <select
+                          value={formData.examName}
+                          onChange={(e) => setFormData({ ...formData, examName: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        >
+                          <option value="">Select exam...</option>
+                          {clientExams.map(exam => (
+                            <option key={exam.id} value={exam.name}>{exam.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="e.g. TOEFL iBT"
+                          value={formData.examName}
+                          onChange={(e) => setFormData({ ...formData, examName: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        />
+                      )
+                    })()}
                   </div>
 
                   <div>

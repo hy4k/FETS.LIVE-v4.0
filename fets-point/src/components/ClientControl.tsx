@@ -3,20 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Building2, Plus, Trash2, Edit3,
     MapPin, GraduationCap, Save, X,
-    Search, ChevronRight, Hash, Terminal
+    Search, ChevronRight, Hash, Palette
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 
-interface Client {
+export interface Client {
     id: string
     name: string
     color: string
-    softwares?: string[]
     logo_url?: string
 }
 
-interface Exam {
+export interface ClientExam {
     id: string
     client_id: string
     name: string
@@ -25,21 +24,51 @@ interface Exam {
 
 const BRANCHES = ['calicut', 'cochin', 'kannur']
 
+const CLIENT_COLORS = [
+    { name: 'Blue', value: 'blue' },
+    { name: 'Green', value: 'green' },
+    { name: 'Amber', value: 'amber' },
+    { name: 'Rose', value: 'rose' },
+    { name: 'Purple', value: 'purple' },
+    { name: 'Indigo', value: 'indigo' },
+    { name: 'Teal', value: 'teal' },
+    { name: 'Orange', value: 'orange' },
+]
+
+// Premium Classic Theme - Matching Management Page
+const THEME = {
+    bgPrimary: '#0f1419',
+    bgSecondary: '#1a2332',
+    bgTertiary: '#243044',
+    bgCard: '#1e2a3a',
+    bgHover: '#2a3a4d',
+    gold: '#d4a853',
+    goldLight: '#e8c47a',
+    goldDark: '#b8923f',
+    goldMuted: 'rgba(212, 168, 83, 0.15)',
+    textPrimary: '#f8fafc',
+    textSecondary: '#94a3b8',
+    textMuted: '#64748b',
+    border: 'rgba(255, 255, 255, 0.08)',
+    shadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
+    shadowGold: '0 0 30px rgba(212, 168, 83, 0.2)',
+}
+
 export function ClientControl() {
     const [clients, setClients] = useState<Client[]>([])
-    const [exams, setExams] = useState<Exam[]>([])
+    const [exams, setExams] = useState<ClientExam[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
 
     const [showAddClient, setShowAddClient] = useState(false)
     const [newClientName, setNewClientName] = useState('')
+    const [newClientColor, setNewClientColor] = useState('amber')
 
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
     const [showAddExam, setShowAddExam] = useState(false)
     const [newExam, setNewExam] = useState({ name: '', locations: [] as string[] })
 
-    const [newSoftware, setNewSoftware] = useState('')
-    const [isSavingSoftware, setIsSavingSoftware] = useState(false)
+    const [editingClient, setEditingClient] = useState<Client | null>(null)
 
     useEffect(() => {
         fetchData()
@@ -50,15 +79,13 @@ export function ClientControl() {
         try {
             const { data: clientsData } = await supabase.from('clients').select('*').order('name')
             const { data: examsData } = await supabase.from('client_exams').select('*').order('name')
-
             setClients(clientsData || [])
             setExams(examsData || [])
-
             if (clientsData && clientsData.length > 0 && !selectedClientId) {
                 setSelectedClientId(clientsData[0].id)
             }
         } catch (error) {
-            toast.error('Failed to sync master data')
+            toast.error('Failed to sync client data')
         } finally {
             setLoading(false)
         }
@@ -67,388 +94,488 @@ export function ClientControl() {
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newClientName.trim()) return
-
         try {
-            const { data, error } = await supabase
-                .from('clients')
-                .insert([{ name: newClientName, color: 'indigo' }])
-                .select()
-
+            const { error } = await supabase.from('clients').insert([{ name: newClientName.toUpperCase(), color: newClientColor }])
             if (error) throw error
-
-            toast.success('Client registered successfully')
+            toast.success('Client added')
             setNewClientName('')
             setShowAddClient(false)
             fetchData()
         } catch (error) {
-            toast.error('Failed to register client')
+            toast.error('Failed to add client')
+        }
+    }
+
+    const handleUpdateClient = async () => {
+        if (!editingClient) return
+        try {
+            const { error } = await supabase.from('clients').update({ name: editingClient.name.toUpperCase(), color: editingClient.color }).eq('id', editingClient.id)
+            if (error) throw error
+            toast.success('Client updated')
+            setEditingClient(null)
+            fetchData()
+        } catch (error) {
+            toast.error('Failed to update')
         }
     }
 
     const handleDeleteClient = async (id: string) => {
-        if (!confirm('Are you sure? This will remove all associated exams.')) return
-
+        if (!confirm('Delete this client and all exams?')) return
         try {
-            const { error } = await supabase.from('clients').delete().eq('id', id)
-            if (error) throw error
-            toast.success('Client records purged')
+            await supabase.from('client_exams').delete().eq('client_id', id)
+            await supabase.from('clients').delete().eq('id', id)
+            toast.success('Client removed')
+            if (selectedClientId === id) setSelectedClientId(null)
             fetchData()
         } catch (error) {
-            toast.error('Purge failed')
+            toast.error('Failed to remove')
         }
     }
 
     const handleAddExam = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!selectedClientId || !newExam.name.trim()) return
-
         try {
-            const { error } = await supabase
-                .from('client_exams')
-                .insert([{
-                    client_id: selectedClientId,
-                    name: newExam.name,
-                    locations: newExam.locations
-                }])
-
+            const { error } = await supabase.from('client_exams').insert([{ client_id: selectedClientId, name: newExam.name.toUpperCase(), locations: newExam.locations }])
             if (error) throw error
-            toast.success('Exam protocol added')
+            toast.success('Exam added')
             setNewExam({ name: '', locations: [] })
             setShowAddExam(false)
             fetchData()
         } catch (error) {
-            toast.error('Failed to add protocol')
+            toast.error('Failed to add exam')
         }
     }
 
-    const handleAddSoftware = async () => {
-        if (!selectedClientId || !newSoftware.trim()) return
-        setIsSavingSoftware(true)
+    const handleDeleteExam = async (examId: string) => {
+        if (!confirm('Delete this exam?')) return
         try {
-            const client = clients.find(c => c.id === selectedClientId)
-            if (!client) return
-
-            const updatedSoftwares = [...(client.softwares || []), newSoftware.trim()]
-            const { error } = await supabase
-                .from('clients')
-                .update({ softwares: updatedSoftwares })
-                .eq('id', selectedClientId)
-
-            if (error) throw error
-            toast.success('Software registered')
-            setNewSoftware('')
+            await supabase.from('client_exams').delete().eq('id', examId)
+            toast.success('Exam removed')
             fetchData()
         } catch (error) {
-            toast.error('Failed to add software')
-        } finally {
-            setIsSavingSoftware(false)
-        }
-    }
-
-    const handleDeleteSoftware = async (swName: string) => {
-        if (!selectedClientId) return
-        try {
-            const client = clients.find(c => c.id === selectedClientId)
-            if (!client) return
-
-            const updatedSoftwares = (client.softwares || []).filter(s => s !== swName)
-            const { error } = await supabase
-                .from('clients')
-                .update({ softwares: updatedSoftwares })
-                .eq('id', selectedClientId)
-
-            if (error) throw error
-            toast.success('Software removed')
-            fetchData()
-        } catch (error) {
-            toast.error('Failed to remove software')
+            toast.error('Failed to remove')
         }
     }
 
     const toggleLocation = (loc: string) => {
         setNewExam(prev => ({
             ...prev,
-            locations: prev.locations.includes(loc)
-                ? prev.locations.filter(l => l !== loc)
-                : [...prev.locations, loc]
+            locations: prev.locations.includes(loc) ? prev.locations.filter(l => l !== loc) : [...prev.locations, loc]
         }))
     }
 
-    const filteredClients = clients.filter(c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const getColorStyle = (color: string) => {
+        const colors: Record<string, { bg: string, text: string }> = {
+            blue: { bg: 'rgba(59, 130, 246, 0.2)', text: '#60a5fa' },
+            green: { bg: 'rgba(34, 197, 94, 0.2)', text: '#4ade80' },
+            amber: { bg: 'rgba(245, 158, 11, 0.2)', text: '#fbbf24' },
+            rose: { bg: 'rgba(244, 63, 94, 0.2)', text: '#fb7185' },
+            purple: { bg: 'rgba(168, 85, 247, 0.2)', text: '#c084fc' },
+            indigo: { bg: 'rgba(99, 102, 241, 0.2)', text: '#818cf8' },
+            teal: { bg: 'rgba(20, 184, 166, 0.2)', text: '#2dd4bf' },
+            orange: { bg: 'rgba(249, 115, 22, 0.2)', text: '#fb923c' },
+        }
+        return colors[color] || colors.amber
+    }
 
+    const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    const activeClient = clients.find(c => c.id === selectedClientId)
     const activeClientExams = exams.filter(e => e.client_id === selectedClientId)
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-10 w-10 border-2" style={{ borderColor: THEME.bgTertiary, borderTopColor: THEME.gold }} />
+            </div>
+        )
+    }
+
     return (
-        <div className="h-full flex flex-col gap-6 text-slate-800">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-black tracking-tight uppercase">Client Control</h2>
-                    <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-1">Master Database Management</p>
-                </div>
-                <div className="flex items-center gap-4">
+        <div className="flex gap-6 h-full" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {/* Left Sidebar - Client List */}
+            <aside 
+                className="w-80 flex flex-col rounded-2xl overflow-hidden shrink-0"
+                style={{ background: THEME.bgSecondary, border: `1px solid ${THEME.border}` }}
+            >
+                {/* Header */}
+                <div className="p-5 border-b" style={{ borderColor: THEME.border }}>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif", color: THEME.textPrimary }}>
+                            Clients
+                        </h2>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowAddClient(true)}
+                            className="w-9 h-9 rounded-lg flex items-center justify-center"
+                            style={{ background: THEME.gold, color: THEME.bgPrimary }}
+                        >
+                            <Plus size={18} />
+                        </motion.button>
+                    </div>
+                    
+                    {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: THEME.textMuted }} />
                         <input
                             type="text"
                             placeholder="Search clients..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm font-medium focus:outline-none"
+                            style={{ background: THEME.bgTertiary, color: THEME.textPrimary, border: `1px solid ${THEME.border}` }}
                         />
                     </div>
-                    <button
-                        onClick={() => setShowAddClient(true)}
-                        className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all"
-                    >
-                        <Plus size={18} />
-                        REGISTER CLIENT
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
-                {/* Sidebar: Clients */}
-                <div className="w-80 flex flex-col gap-4 bg-slate-50 rounded-[2rem] p-4 border border-slate-200">
-                    <div className="flex items-center gap-2 px-2 text-slate-400">
-                        <Building2 size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Client Roster</span>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2">
-                        {filteredClients.map(client => (
-                            <button
-                                key={client.id}
-                                onClick={() => setSelectedClientId(client.id)}
-                                className={`group flex items-center justify-between p-4 rounded-2xl transition-all ${selectedClientId === client.id
-                                    ? 'bg-white shadow-md border-indigo-500 text-indigo-600'
-                                    : 'hover:bg-white/50 text-slate-600 border-transparent'
-                                    } border-2`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedClientId === client.id ? 'bg-indigo-100' : 'bg-slate-100'
-                                        }`}>
-                                        <Hash size={14} />
-                                    </div>
-                                    <span className="font-bold text-sm truncate max-w-[120px]">{client.name}</span>
-                                </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteClient(client.id); }} className="p-1.5 hover:bg-red-50 text-red-500 rounded-md">
-                                        <Trash2 size={14} />
-                                    </button>
-                                    <ChevronRight size={16} className={selectedClientId === client.id ? 'text-indigo-400' : 'text-slate-300'} />
-                                </div>
-                            </button>
-                        ))}
-                    </div>
                 </div>
 
-                {/* Content: Exams & Protocols */}
-                <div className="flex-1 flex flex-col bg-white rounded-[2rem] border border-slate-200 overflow-hidden">
-                    {selectedClientId ? (
-                        <>
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                        <GraduationCap size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black tracking-tight text-slate-800">
-                                            {clients.find(c => c.id === selectedClientId)?.name}
-                                        </h3>
-                                        <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Protocol Registry</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setShowAddExam(true)}
-                                    className="px-4 py-2 border-2 border-slate-200 rounded-xl font-bold text-xs text-slate-500 hover:border-indigo-500 hover:text-indigo-600 transition-all flex items-center gap-2"
+                {/* Client List */}
+                <div className="flex-1 overflow-y-auto p-3 premium-scrollbar">
+                    <div className="space-y-2">
+                        {filteredClients.map(client => {
+                            const colorStyle = getColorStyle(client.color)
+                            return (
+                                <motion.button
+                                    key={client.id}
+                                    onClick={() => setSelectedClientId(client.id)}
+                                    whileHover={{ x: 4 }}
+                                    className="w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 group"
+                                    style={{
+                                        background: selectedClientId === client.id ? THEME.bgTertiary : 'transparent',
+                                        border: selectedClientId === client.id ? `1px solid ${THEME.gold}40` : '1px solid transparent'
+                                    }}
                                 >
-                                    <Plus size={16} />
-                                    ADD EXAM TYPE
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start content-start custom-scrollbar">
-                                {/* Exams Section */}
-                                <div className="space-y-6">
-                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Exam Protocols</h4>
-                                    {activeClientExams.length > 0 ? (
-                                        activeClientExams.map(exam => (
-                                            <div key={exam.id} className="p-6 rounded-[2rem] border-2 border-slate-100 hover:border-indigo-100 bg-slate-50/30 transition-all group">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <h4 className="font-bold text-slate-700">{exam.name}</h4>
-                                                    <button className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {exam.locations.map(loc => (
-                                                        <span key={loc} className="px-3 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5 shadow-sm">
-                                                            <MapPin size={10} className="text-indigo-500" />
-                                                            {loc}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="py-20 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[2rem]">
-                                            <GraduationCap size={48} className="mb-4 opacity-10" />
-                                            <p className="font-bold text-xs uppercase tracking-widest">No protocols defined</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Software Section */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between px-2">
-                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Client Software</h4>
-                                        <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg">
-                                            {clients.find(c => c.id === selectedClientId)?.softwares?.length || 0} Assets
-                                        </span>
+                                    <div 
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
+                                        style={{ background: colorStyle.bg, color: colorStyle.text }}
+                                    >
+                                        <Hash size={16} />
                                     </div>
-
-                                    <div className="p-6 rounded-[2rem] bg-slate-50 border-2 border-slate-100 space-y-4">
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Add software title..."
-                                                value={newSoftware}
-                                                onChange={(e) => setNewSoftware(e.target.value)}
-                                                className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none"
-                                            />
-                                            <button
-                                                onClick={handleAddSoftware}
-                                                disabled={isSavingSoftware || !newSoftware.trim()}
-                                                className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-50"
-                                            >
-                                                <Plus size={18} />
-                                            </button>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            {clients.find(c => c.id === selectedClientId)?.softwares?.map((sw, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 group">
-                                                    <div className="flex items-center gap-3">
-                                                        <Terminal size={14} className="text-indigo-400" />
-                                                        <span className="text-xs font-bold text-slate-600 uppercase">{sw}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleDeleteSoftware(sw)}
-                                                        className="p-1 hover:bg-red-50 text-red-300 hover:text-red-500 rounded transition-all"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm truncate" style={{ color: THEME.textPrimary }}>
+                                            {client.name}
+                                        </p>
+                                        <p className="text-xs" style={{ color: THEME.textMuted }}>
+                                            {exams.filter(e => e.client_id === client.id).length} exams
+                                        </p>
                                     </div>
-                                </div>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setEditingClient(client) }} 
+                                            className="p-1.5 rounded"
+                                            style={{ color: THEME.textSecondary }}
+                                        >
+                                            <Edit3 size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClient(client.id) }} 
+                                            className="p-1.5 rounded text-red-400"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </motion.button>
+                            )
+                        })}
+                        {filteredClients.length === 0 && (
+                            <div className="py-12 text-center">
+                                <Building2 size={32} className="mx-auto mb-2" style={{ color: THEME.textMuted }} />
+                                <p className="text-sm" style={{ color: THEME.textMuted }}>No clients found</p>
                             </div>
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-                            <Building2 size={80} className="mb-6 opacity-20" />
-                            <p className="text-xl font-black">Select a Client to view Protocols</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t text-center" style={{ borderColor: THEME.border }}>
+                    <p className="text-xs" style={{ color: THEME.textMuted }}>{clients.length} clients total</p>
+                </div>
+            </aside>
+
+            {/* Main Content - Exams */}
+            <div 
+                className="flex-1 flex flex-col rounded-2xl overflow-hidden"
+                style={{ background: THEME.bgSecondary, border: `1px solid ${THEME.border}` }}
+            >
+                {activeClient ? (
+                    <>
+                        {/* Client Header */}
+                        <div 
+                            className="p-6 flex items-center gap-6 border-b"
+                            style={{ borderColor: THEME.border, background: THEME.bgCard }}
+                        >
+                            <div 
+                                className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0"
+                                style={{ 
+                                    background: `linear-gradient(135deg, ${THEME.gold}, ${THEME.goldDark})`,
+                                    color: THEME.bgPrimary,
+                                    boxShadow: THEME.shadowGold
+                                }}
+                            >
+                                <Building2 size={28} />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: THEME.textPrimary }}>
+                                    {activeClient.name}
+                                </h2>
+                                <p className="text-sm mt-1" style={{ color: THEME.textSecondary }}>
+                                    {activeClientExams.length} exam{activeClientExams.length !== 1 ? 's' : ''} configured
+                                </p>
+                            </div>
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setShowAddExam(true)}
+                                className="px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2"
+                                style={{ background: THEME.gold, color: THEME.bgPrimary }}
+                            >
+                                <Plus size={16} /> Add Exam
+                            </motion.button>
+                        </div>
+
+                        {/* Exams Grid */}
+                        <div className="flex-1 overflow-y-auto p-6 premium-scrollbar">
+                            {activeClientExams.length > 0 ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {activeClientExams.map(exam => (
+                                        <motion.div 
+                                            key={exam.id} 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="p-5 rounded-xl group"
+                                            style={{ background: THEME.bgTertiary, border: `1px solid ${THEME.border}` }}
+                                        >
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div 
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                                        style={{ background: THEME.goldMuted, color: THEME.gold }}
+                                                    >
+                                                        <GraduationCap size={18} />
+                                                    </div>
+                                                    <h4 className="font-semibold" style={{ color: THEME.textPrimary }}>{exam.name}</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleDeleteExam(exam.id)}
+                                                    className="p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all text-red-400"
+                                                    style={{ background: 'rgba(239, 68, 68, 0.1)' }}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {exam.locations.length > 0 ? exam.locations.map(loc => (
+                                                    <span 
+                                                        key={loc} 
+                                                        className="px-2.5 py-1 rounded text-xs font-semibold uppercase flex items-center gap-1.5"
+                                                        style={{ background: THEME.bgCard, color: THEME.textSecondary }}
+                                                    >
+                                                        <MapPin size={10} style={{ color: THEME.gold }} />
+                                                        {loc}
+                                                    </span>
+                                                )) : (
+                                                    <span className="text-xs italic" style={{ color: THEME.textMuted }}>All locations</span>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div 
+                                    className="h-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed"
+                                    style={{ borderColor: THEME.border }}
+                                >
+                                    <GraduationCap size={48} style={{ color: THEME.textMuted }} />
+                                    <p className="mt-4 font-semibold" style={{ color: THEME.textPrimary }}>No exams configured</p>
+                                    <p className="text-sm mt-1" style={{ color: THEME.textMuted }}>Add exams for this client</p>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                        <Building2 size={64} style={{ color: THEME.bgTertiary }} />
+                        <h3 className="text-xl font-bold mt-6" style={{ fontFamily: "'Playfair Display', serif", color: THEME.textPrimary }}>
+                            Select a Client
+                        </h3>
+                        <p className="text-sm mt-2" style={{ color: THEME.textMuted }}>Choose from the list to manage exams</p>
+                    </div>
+                )}
             </div>
 
             {/* Modals */}
             <AnimatePresence>
                 {showAddClient && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-xl font-black uppercase tracking-tight">Register Client</h3>
-                                <button onClick={() => setShowAddClient(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+                    <Modal title="Add Client" onClose={() => setShowAddClient(false)}>
+                        <form onSubmit={handleAddClient} className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: THEME.textMuted }}>Client Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newClientName}
+                                    onChange={(e) => setNewClientName(e.target.value)}
+                                    placeholder="e.g. PEARSON VUE"
+                                    className="w-full p-4 rounded-xl text-sm font-medium focus:outline-none"
+                                    style={{ background: THEME.bgTertiary, color: THEME.textPrimary, border: `1px solid ${THEME.border}` }}
+                                    autoFocus
+                                />
                             </div>
-                            <form onSubmit={handleAddClient} className="p-8">
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Corporate Identity</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={newClientName}
-                                            onChange={(e) => setNewClientName(e.target.value)}
-                                            placeholder="e.g. British Council, IDP"
-                                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
-                                        CONFIRM REGISTRATION
-                                    </button>
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: THEME.textMuted }}>Color</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {CLIENT_COLORS.map(color => {
+                                        const style = getColorStyle(color.value)
+                                        return (
+                                            <button
+                                                key={color.value}
+                                                type="button"
+                                                onClick={() => setNewClientColor(color.value)}
+                                                className="p-3 rounded-lg text-xs font-semibold transition-all"
+                                                style={{
+                                                    background: style.bg,
+                                                    color: style.text,
+                                                    border: newClientColor === color.value ? `2px solid ${THEME.gold}` : '2px solid transparent'
+                                                }}
+                                            >
+                                                {color.name}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
-                            </form>
-                        </motion.div>
-                    </div>
+                            </div>
+                            <button type="submit" className="w-full py-3.5 rounded-xl font-semibold" style={{ background: THEME.gold, color: THEME.bgPrimary }}>
+                                Add Client
+                            </button>
+                        </form>
+                    </Modal>
+                )}
+
+                {editingClient && (
+                    <Modal title="Edit Client" onClose={() => setEditingClient(null)}>
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: THEME.textMuted }}>Client Name</label>
+                                <input
+                                    type="text"
+                                    value={editingClient.name}
+                                    onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
+                                    className="w-full p-4 rounded-xl text-sm font-medium focus:outline-none"
+                                    style={{ background: THEME.bgTertiary, color: THEME.textPrimary, border: `1px solid ${THEME.border}` }}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: THEME.textMuted }}>Color</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {CLIENT_COLORS.map(color => {
+                                        const style = getColorStyle(color.value)
+                                        return (
+                                            <button
+                                                key={color.value}
+                                                type="button"
+                                                onClick={() => setEditingClient({ ...editingClient, color: color.value })}
+                                                className="p-3 rounded-lg text-xs font-semibold transition-all"
+                                                style={{
+                                                    background: style.bg,
+                                                    color: style.text,
+                                                    border: editingClient.color === color.value ? `2px solid ${THEME.gold}` : '2px solid transparent'
+                                                }}
+                                            >
+                                                {color.name}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            <button onClick={handleUpdateClient} className="w-full py-3.5 rounded-xl font-semibold" style={{ background: THEME.gold, color: THEME.bgPrimary }}>
+                                Save Changes
+                            </button>
+                        </div>
+                    </Modal>
                 )}
 
                 {showAddExam && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                                <h3 className="text-xl font-black uppercase tracking-tight">Add Exam Protocol</h3>
-                                <button onClick={() => setShowAddExam(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+                    <Modal title={`Add Exam to ${activeClient?.name}`} onClose={() => setShowAddExam(false)}>
+                        <form onSubmit={handleAddExam} className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: THEME.textMuted }}>Exam Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newExam.name}
+                                    onChange={(e) => setNewExam({ ...newExam, name: e.target.value })}
+                                    placeholder="e.g. CMA, CPA, AWS"
+                                    className="w-full p-4 rounded-xl text-sm font-medium focus:outline-none"
+                                    style={{ background: THEME.bgTertiary, color: THEME.textPrimary, border: `1px solid ${THEME.border}` }}
+                                />
                             </div>
-                            <form onSubmit={handleAddExam} className="p-8 space-y-8">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Protocol Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={newExam.name}
-                                        onChange={(e) => setNewExam({ ...newExam, name: e.target.value })}
-                                        placeholder="e.g. IELTS UKVI, CD-IELTS"
-                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Operational Branches</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {BRANCHES.map(branch => (
-                                            <button
-                                                key={branch}
-                                                type="button"
-                                                onClick={() => toggleLocation(branch)}
-                                                className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all flex items-center gap-3 ${newExam.locations.includes(branch)
-                                                    ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-inner'
-                                                    : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-                                                    }`}
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: THEME.textMuted }}>Branches (optional)</label>
+                                <p className="text-xs mb-3" style={{ color: THEME.textMuted }}>Leave empty for all locations</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {BRANCHES.map(branch => (
+                                        <button
+                                            key={branch}
+                                            type="button"
+                                            onClick={() => toggleLocation(branch)}
+                                            className="p-3 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+                                            style={{
+                                                background: newExam.locations.includes(branch) ? THEME.goldMuted : THEME.bgTertiary,
+                                                color: newExam.locations.includes(branch) ? THEME.gold : THEME.textSecondary,
+                                                border: newExam.locations.includes(branch) ? `1px solid ${THEME.gold}40` : `1px solid ${THEME.border}`
+                                            }}
+                                        >
+                                            <div 
+                                                className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                                style={{ borderColor: newExam.locations.includes(branch) ? THEME.gold : THEME.textMuted, background: newExam.locations.includes(branch) ? THEME.gold : 'transparent' }}
                                             >
-                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${newExam.locations.includes(branch) ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
-                                                    }`}>
-                                                    {newExam.locations.includes(branch) && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                                                </div>
-                                                {branch.toUpperCase()}
-                                            </button>
-                                        ))}
-                                    </div>
+                                                {newExam.locations.includes(branch) && <div className="w-1.5 h-1.5 rounded-full" style={{ background: THEME.bgPrimary }} />}
+                                            </div>
+                                            {branch.charAt(0).toUpperCase() + branch.slice(1)}
+                                        </button>
+                                    ))}
                                 </div>
-
-                                <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
-                                    AUTHORIZE PROTOCOL
-                                </button>
-                            </form>
-                        </motion.div>
-                    </div>
+                            </div>
+                            <button type="submit" className="w-full py-3.5 rounded-xl font-semibold" style={{ background: THEME.gold, color: THEME.bgPrimary }}>
+                                Add Exam
+                            </button>
+                        </form>
+                    </Modal>
                 )}
             </AnimatePresence>
         </div>
     )
+}
+
+// Reusable Modal Component
+function Modal({ title, onClose, children }: { title: string, onClose: () => void, children: React.ReactNode }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}
+        >
+            <motion.div
+                initial={{ scale: 0.95, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 20 }}
+                className="w-full max-w-md rounded-2xl overflow-hidden"
+                style={{ background: THEME.bgSecondary, border: `1px solid ${THEME.border}`, boxShadow: THEME.shadow }}
+            >
+                <div className="p-5 flex justify-between items-center border-b" style={{ borderColor: THEME.border, background: THEME.bgCard }}>
+                    <h3 className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif", color: THEME.textPrimary }}>{title}</h3>
+                    <button onClick={onClose} style={{ color: THEME.textMuted }}><X size={20} /></button>
+                </div>
+                <div className="p-6">{children}</div>
+            </motion.div>
+        </motion.div>
+    )
+}
+
+export async function getClientsAndExams(): Promise<{ clients: Client[], exams: ClientExam[] }> {
+    const { data: clients } = await supabase.from('clients').select('*').order('name')
+    const { data: exams } = await supabase.from('client_exams').select('*').order('name')
+    return { clients: clients || [], exams: exams || [] }
 }

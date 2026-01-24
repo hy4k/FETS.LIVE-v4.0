@@ -12,7 +12,6 @@ import { askGemini } from '../lib/gemini'
 // Feature Components
 import { NewsManager } from './NewsManager'
 import IncidentManager from './IncidentManager'
-import { ClientControl } from './ClientControl'
 
 // --- Interfaces ---
 
@@ -162,7 +161,6 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsInte
   const navTabs = [
     { id: 'chat', label: 'Intelligence', icon: Bot },
     { id: 'news', label: 'Broadcasts', icon: Newspaper },
-    ...(isSuperAdmin ? [{ id: 'clients', label: 'System Config', icon: Settings }] : [])
   ];
 
   return (
@@ -375,27 +373,6 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsInte
               </div>
               <div className="p-8 bg-slate-50 text-slate-800">
                 <NewsManager />
-              </div>
-            </motion.div>
-          )}
-
-          {/* SYSTEM CONFIG */}
-          {activeTab === 'clients' && isSuperAdmin && (
-            <motion.div
-              key="clients"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="bg-white rounded-3xl shadow-2xl overflow-hidden"
-            >
-              <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-white flex items-center gap-4">
-                <div className="p-3 bg-amber-100 rounded-xl text-amber-600">
-                  <Settings size={24} />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800">Client Protocol Config</h2>
-              </div>
-              <div className="p-8 bg-slate-50 text-slate-800">
-                <ClientControl />
               </div>
             </motion.div>
           )}

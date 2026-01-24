@@ -249,6 +249,26 @@ export const ChecklistCreator: React.FC<ChecklistCreatorProps> = ({ onCancel, on
                                             </div>
                                         </div>
 
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <input
+                                                    {...register(`questions.${index}.section` as const)}
+                                                    placeholder="Section Name (e.g., DVR Verification)"
+                                                    className={`w-full p-3 ${neumorphicInset} outline-none bg-transparent text-sm`}
+                                                />
+                                            </div>
+                                            <div>
+                                                <select
+                                                    {...register(`questions.${index}.attachment_mode` as const)}
+                                                    className={`w-full p-3 ${neumorphicInset} outline-none bg-transparent text-sm`}
+                                                >
+                                                    <option value="none">No Attachment</option>
+                                                    <option value="optional">Attachment Optional</option>
+                                                    <option value="required">Attachment Required</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
                                         <div className="flex items-center space-x-4">
                                             <label className="flex items-center space-x-2 text-gray-600 cursor-pointer select-none">
                                                 <input type="checkbox" {...register(`questions.${index}.required` as const)} className="w-4 h-4 accent-blue-500" />

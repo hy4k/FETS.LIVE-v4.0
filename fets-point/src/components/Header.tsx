@@ -102,7 +102,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
     { id: 'lost-and-found', label: 'LOST & FOUND', icon: PackageSearch },
     { id: 'fets-intelligence', label: 'FETS INTELLIGENCE', icon: Brain },
-    { id: 'user-management', label: 'USER MGMT', icon: Shield },
+    { id: 'user-management', label: 'MANAGEMENT', icon: Shield },
   ].filter(item => {
     if (item.id === 'user-management') {
       const isMithun = profile?.email === 'mithun@fets.in';

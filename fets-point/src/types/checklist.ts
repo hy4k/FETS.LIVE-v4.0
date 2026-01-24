@@ -15,6 +15,13 @@ export interface Question {
   options?: string[]; // For radio, dropdown
   required: boolean;
   description?: string;
+the  attachment_mode?: 'none' | 'optional' | 'required';
+}
+
+export interface Attachment {
+  name: string;
+  url: string;
+  type: string;
 }
 
 export type ChecklistType = 'pre_exam' | 'post_exam' | 'custom';
@@ -39,6 +46,7 @@ export interface ChecklistSubmission {
   branch_id: string | null;
   submitted_at: string;
   answers: Record<string, any>; // question_id -> answer
+  attachments?: Record<string, Attachment[]>; // question_id -> attachments
   status: string;
 }
 

@@ -11,16 +11,18 @@ import { useBranch } from '../hooks/useBranch'
 import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule } from '../hooks/useCommandCentre'
 import { useNews } from '../hooks/useNewsManager'
-import { ExamScheduleWidget } from './ExamScheduleWidget'
-import { CommandCentreGraphs } from './CommandCentreGraphs'
+import { DailySpark } from './DailySpark'
+import { AccessHub } from './AccessHub'
 import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
 import { NotificationBanner } from './NotificationBanner'
 import { ChecklistTemplate } from '../types/checklist'
 import { StaffBranchSelector } from './checklist/StaffBranchSelector'
+import { FetsChatPopup } from './FetsChatPopup'
+import { StaffProfile } from '../types/shared'
 
 export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: (tab: string) => void; onAiQuery?: (query: string) => void }) {
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const { activeBranch } = useBranch()
 
     // --- React Query Hooks ---
@@ -53,10 +55,33 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
             .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) // Newest first
             .slice(0, 5) // Show top 5
     }, [newsItems, activeBranch])
+    const [todayStatus, setTodayStatus] = useState({ pre: 'Not started', post: 'Not started' })
+
+    const [staff, setStaff] = useState<StaffProfile[]>([])
+    const [presence, setPresence] = useState<Record<string, { status: string, last_seen: string }>>({})
+    const [openChats, setOpenChats] = useState<StaffProfile[]>([])
+
     const fetchAnalysis = async () => {
         try {
             const today = new Date().toISOString().split('T')[0]
             const startOfMonth = new Date(); startOfMonth.setDate(1);
+
+            // Fetch Staff for User List
+            const { data: staffData } = await supabase.from('staff_profiles').select('*').neq('user_id', user?.id)
+            setStaff(staffData || [])
+
+            // --- Checklist Status for Today ---
+            const { data: checklists } = await supabase
+                .from('checklist_submissions')
+                .select('*')
+                .gte('submitted_at', today)
+                .eq('branch_id', activeBranch !== 'global' ? activeBranch : undefined)
+
+            const preSubmission = checklists?.find((c: any) => c.template_id?.includes('pre') || c.answers?.type === 'pre_exam')
+            const postSubmission = checklists?.find((c: any) => c.template_id?.includes('post') || c.answers?.type === 'post_exam')
+            const preStatus = preSubmission ? 'Submitted' : 'Not started'
+            const postStatus = postSubmission ? 'Submitted' : 'Not started'
+            const issues = checklists?.filter((c: any) => c.status === 'flagged' || c.status === 'issue').length || 0
 
             // --- Operational Incidents ---
             const { data: events } = await (supabase as any)
@@ -93,25 +118,18 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                 topIssue: systemsFault > 0 ? 'Hardware Fault' : (topCat ? topCat[0] : 'Stable')
             })
 
-            // --- Checklist Metrics ---
-            const { data: checklists } = await (supabase as any)
-                .from('checklist_submissions')
-                .select('answers')
-                .gte('created_at', `${today}T00:00:00`)
-
-            let issues = 0
-            checklists?.forEach((Sub: any) => {
-                const ans = Sub.answers?.responses || Sub.answers || {}
-                Object.values(ans).forEach((val: any) => {
-                    if (val === false || val === 'No' || val === 'Incomplete') issues++
-                })
-            })
+            // --- Checklist Metrics & Today's Status ---
+            setTodayStatus({ pre: preStatus, post: postStatus })
 
             setChecklistMetrics({
                 total: checklists?.length || 0,
                 issues,
                 perfect: (checklists?.length || 0) - (issues > 0 ? 1 : 0)
             })
+
+            // Separate Staff Fetch to avoid failures impacting metrics
+            const { data: sData } = await supabase.from('staff_profiles').select('*').neq('user_id', user?.id)
+            if (sData) setStaff(sData)
 
             setLoadingAnalysis(false)
         } catch (e) {
@@ -120,9 +138,28 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
         }
     }
 
+    // Effect for Presence Management
     useEffect(() => {
-        fetchAnalysis()
-    }, [])
+        if (!user?.id) return
+        
+        const channel = supabase.channel('online-staff-centre', { config: { presence: { key: user.id } } })
+        channel.on('presence', { event: 'sync' }, () => {
+            const state = channel.presenceState()
+            const map: any = {}
+            for (const key in state) { if (state[key].length > 0) map[key] = state[key][0] }
+            setPresence(map)
+        }).subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') await channel.track({ user_id: user.id, status: 'online' })
+        })
+
+        return () => { channel.unsubscribe() }
+    }, [user?.id])
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchAnalysis()
+        }
+    }, [user?.id, activeBranch])
 
 
     const handleOpenChecklist = async (type: 'pre_exam' | 'post_exam' | 'custom') => {
@@ -307,50 +344,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                     </div>
                 </motion.div>
 
-                {/* --- FETS Intelligence Search Bar --- */}
-                <div className="w-full mb-10 flex justify-center">
-                    <div className="relative group w-full max-w-5xl">
-                        {/* Neumorphic Search Container */}
-                        <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className={`${neuInset} flex items-center p-2 relative bg-[#EEF2F9] border-2 border-amber-500/50 w-full`}>
-                            <div className="pl-6 pr-4 text-amber-500">
-                                <Sparkles size={24} className="animate-pulse" />
-                            </div>
-                            <input
-                                id="intel-search-input"
-                                type="text"
-                                placeholder="Ask anything about exams, candidates, rosters, or incidents..."
-                                className="w-full bg-transparent border-none focus:ring-0 text-slate-700 placeholder-slate-400 font-medium px-4 py-4 text-lg"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        const input = document.getElementById('intel-search-input') as HTMLInputElement;
-                                        const queryText = input?.value?.trim();
-                                        if (queryText && onAiQuery) {
-                                            onAiQuery(queryText);
-                                        } else if (onNavigate) {
-                                            onNavigate('fets-intelligence');
-                                        }
-                                    }
-                                }}
-                            />
-                            <button
-                                onClick={() => {
-                                    const input = document.getElementById('intel-search-input') as HTMLInputElement;
-                                    const queryText = input?.value?.trim();
-                                    if (queryText && onAiQuery) {
-                                        onAiQuery(queryText);
-                                    } else if (onNavigate) {
-                                        onNavigate('fets-intelligence');
-                                    }
-                                }}
-                                className={`${neuBtn} px-8 py-3 text-amber-600 hover:text-amber-700 hover:scale-[1.02] active:scale-[0.98] border-none flex items-center gap-2 mr-1`}
-                            >
-                                <Search size={22} />
-                                <span className="uppercase font-bold tracking-widest text-xs hidden md:inline-block">Ask AI</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                {/* AI Search Bar Removed as per request */}
 
                 {/* Main Grid Layout */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
@@ -367,263 +361,110 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                             <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-slate-300 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.1),1px_1px_1px_rgba(255,255,255,0.8)] flex items-center justify-center"><div className="w-1.5 h-0.5 bg-slate-400 rotate-45"></div></div>
                             <div className="absolute top-4 right-4 w-3 h-3 rounded-full bg-slate-300 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.1),1px_1px_1px_rgba(255,255,255,0.8)] flex items-center justify-center"><div className="w-1.5 h-0.5 bg-slate-400 rotate-45"></div></div>
 
-                            <h3 className="text-xl font-black text-slate-700 mb-8 flex items-center gap-3 uppercase tracking-tighter relative z-10">
-                                <div className={`${neuInset} p-2 text-amber-600`}>
+                            <h3 className="text-xl font-black text-slate-700 mb-8 flex items-center gap-3 tracking-tight relative z-10">
+                                <div className={`${neuInset} p-2 text-rose-400`}>
                                     <ListChecks size={20} />
                                 </div>
-                                <span className="bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">Protocol Command</span>
+                                <span className="bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent uppercase text-sm font-black tracking-widest">Daily Reports</span>
                             </h3>
 
                             {/* Horizontal Layout for Actions */}
                             <div className="grid grid-cols-2 lg:grid-cols-2 gap-8 relative z-10">
-                                <button
-                                    onClick={() => handleOpenChecklist('pre_exam')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-white shadow-md text-amber-500 flex items-center justify-center font-bold group-hover:bg-amber-100 transition-colors duration-300">
-                                        <ClipboardCheck size={32} />
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => handleOpenChecklist('pre_exam')}
+                                        className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full`}
+                                    >
+                                        <div className={`w-16 h-16 rounded-2xl ${todayStatus.pre === 'Submitted' ? 'bg-[#FFF5F5] text-[#E19898]' : 'bg-white text-[#E19898]'} shadow-md flex items-center justify-center font-bold group-hover:bg-[#FFF5F5] transition-colors duration-300`}>
+                                            <ClipboardCheck size={32} />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Step 01</div>
+                                            <div className="text-lg font-black text-slate-700 group-hover:text-[#E19898] transition-colors uppercase tracking-tight">Morning Check</div>
+                                        </div>
+                                    </button>
+                                    <div className="flex items-center justify-between px-3 py-2 bg-white/40 rounded-xl border border-white/60">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${todayStatus.pre === 'Submitted' ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${todayStatus.pre === 'Submitted' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                {todayStatus.pre === 'Submitted' ? 'Done' : 'Pending'}
+                                            </span>
+                                        </div>
+                                        {todayStatus.pre !== 'Submitted' ? (
+                                            <button 
+                                                onClick={() => handleOpenChecklist('pre_exam')}
+                                                className="text-[9px] font-black text-[#E19898] uppercase tracking-widest hover:text-[#D48686] transition-colors flex items-center gap-1 group/fn"
+                                            >
+                                                Fill Now <ChevronRight size={10} className="group-hover/fn:translate-x-0.5 transition-transform" />
+                                            </button>
+                                        ) : (
+                                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Verified</span>
+                                        )}
                                     </div>
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pre-deployment</div>
-                                        <div className="text-xl font-black text-slate-700 group-hover:text-amber-600 transition-colors uppercase tracking-tighter">Pre-exam Checklist</div>
-                                    </div>
-                                </button>
+                                </div>
 
-                                <button
-                                    onClick={() => handleOpenChecklist('post_exam')}
-                                    className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300`}
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-white shadow-md text-emerald-500 flex items-center justify-center font-bold group-hover:bg-emerald-100 transition-colors duration-300">
-                                        <CheckCircle size={32} />
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => handleOpenChecklist('post_exam')}
+                                        className={`${neuBtn} p-6 flex flex-col items-center justify-center gap-4 h-48 group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full ${todayStatus.post === 'Submitted' ? 'opacity-80' : ''}`}
+                                    >
+                                        <div className={`w-16 h-16 rounded-2xl ${todayStatus.post === 'Submitted' ? 'bg-[#F0F4F7] text-[#607D8B]' : 'bg-white text-[#607D8B]'} shadow-md flex items-center justify-center font-bold group-hover:bg-[#F0F4F7] transition-colors duration-300`}>
+                                            <CheckCircle size={32} />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Step 02</div>
+                                            <div className="text-lg font-black text-slate-700 group-hover:text-[#607D8B] transition-colors uppercase tracking-tight">Evening Check</div>
+                                        </div>
+                                    </button>
+                                    <div className="flex items-center justify-between px-3 py-2 bg-white/40 rounded-xl border border-white/60">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${todayStatus.post === 'Submitted' ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${todayStatus.post === 'Submitted' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                {todayStatus.post === 'Submitted' ? 'Done' : 'Pending'}
+                                            </span>
+                                        </div>
+                                        {todayStatus.post !== 'Submitted' ? (
+                                            <button 
+                                                onClick={() => handleOpenChecklist('post_exam')}
+                                                className="text-[9px] font-black text-[#607D8B] uppercase tracking-widest hover:text-[#546E7A] transition-colors flex items-center gap-1 group/fn"
+                                            >
+                                                Fill Now <ChevronRight size={10} className="group-hover/fn:translate-x-0.5 transition-transform" />
+                                            </button>
+                                        ) : (
+                                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Verified</span>
+                                        )}
                                     </div>
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Post-deployment</div>
-                                        <div className="text-xl font-black text-slate-700 group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">Post-exam Checklist</div>
-                                    </div>
-                                </button>
+                                </div>
                             </div>
                         </motion.div>
 
                         {/* 2. KEY METRICS ROW */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-                            {/* Health Score - AMBER/GOLD JEWEL CASE */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                                onClick={() => onNavigate && onNavigate('system-manager')}
-                                className={`${neuCard} p-6 relative group overflow-hidden border-t-4 border-t-amber-500 cursor-pointer hover:scale-[1.02] transition-transform`}
-                            >
-                                <div className="absolute -right-6 -bottom-6 text-amber-500/5 rotate-[-15deg]">
-                                    <Shield size={120} />
-                                </div>
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className={`${neuInset} p-3 text-amber-600 rounded-xl bg-amber-50/50`}>
-                                        <Activity size={20} />
-                                    </div>
-                                    {opsMetrics.critical > 0 && <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>}
-                                </div>
-                                <div className="relative z-10">
-                                    <div className="text-4xl font-black text-slate-800 mb-1 tracking-tight">
-                                        {Math.round(opsMetrics.healthScore)}
-                                        <span className="text-lg text-slate-400 font-bold ml-1">/100</span>
-                                    </div>
-                                    <div className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">System Health</div>
-                                </div>
-                            </motion.div>
-
-                            {/* Daily Operations Metrics - MERGED */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                                className={`${neuCard} p-6 col-span-2 relative group overflow-hidden border-t-4 border-t-slate-800`}
-                            >
-                                <div className="absolute -right-6 -bottom-6 text-slate-800/5 rotate-[-15deg]">
-                                    <Users size={160} />
-                                </div>
-                                <div className="flex justify-between items-center mb-6 relative z-10">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Day Report</span>
-                                        <h4 className="text-xl font-black text-slate-700 uppercase tracking-tighter">Operational Volume</h4>
-                                    </div>
-                                    <div className={`${neuInset} p-3 text-slate-600 rounded-xl`}>
-                                        <ClipboardCheck size={24} />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-8 relative z-10">
-                                    <div className="flex flex-col">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-5xl font-black text-slate-800 tracking-tighter">{dashboardData?.todayCandidates || 0}</span>
-                                            <span className="text-xs font-bold text-slate-400 uppercase">Pax</span>
-                                        </div>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Attendees Verified Today</p>
-                                    </div>
-                                    <div className="flex flex-col border-l border-slate-200 pl-8">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-5xl font-black text-slate-800 tracking-tighter">{checklistMetrics.total}</span>
-                                            <span className="text-xs font-bold text-slate-400 uppercase">Logs</span>
-                                        </div>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Deployment Logs Filed</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        {/* 2.5 ANALYTICS GRID */}
-                        <CommandCentreGraphs />
-
-                        {/* 3. CALENDAR WIDGET - EXECUTIVE PLANNER */}
+                        {/* 2. QUICK ACCESS HUB - ELEVATED ACCESS */}
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-                            className={`${neuCard} p-1 min-h-[400px] relative overflow-hidden`}
-                        >
-                            {/* Gold Gradient Spine */}
-                            <div className="h-2 w-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600"></div>
-                            <div className="p-2 bg-[var(--dashboard-bg)]/50 h-full rounded-b-3xl">
-                                <div className="bg-[var(--dashboard-bg)] rounded-2xl shadow-sm border border-white/60 h-full p-2">
-                                    <ExamScheduleWidget onNavigate={onNavigate} />
-                                </div>
-                            </div>
-                        </motion.div>
-
-                    </div>
-
-
-                    {/* RIGHT COLUMN: Notice Board */}
-                    <div className="xl:col-span-4 flex flex-col gap-10">
-
-                        {/* --- SKEUOMORPHIC HANGING NOTICE BOARD --- */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.6 }}
-                            className="xl:col-span-4 flex flex-col items-center relative py-12"
-                        >
-                            {/* The Nail & String Hook */}
-                            <div className="absolute top-0 flex flex-col items-center z-10">
-                                <div className="w-4 h-4 rounded-full bg-slate-400 shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3),1px_1px_2px_rgba(255,255,255,0.8)] border border-slate-500 relative">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                                </div>
-                                <div className="w-32 h-20 -mt-2">
-                                    <svg viewBox="0 0 100 60" className="w-full h-full fill-none stroke-slate-400 stroke-[1.5] opacity-60">
-                                        <path d="M 50 2 L 2 58 M 50 2 L 98 58" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            {/* The Board Itself */}
-                            <div className="w-full bg-[var(--dashboard-bg)] rounded-3xl relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_15px_30px_-10px_rgba(0,0,0,0.1)] border-[12px] border-[var(--neu-dark-shadow)] min-h-[550px] flex flex-col items-center pt-16 pb-12 px-6">
-
-                                {/* Inner Shadow for Recessed Depth */}
-                                <div className="absolute inset-0 rounded-[1.2rem] shadow-[inset_0_10px_20px_rgba(0,0,0,0.04)] pointer-events-none" />
-
-                                {/* Section Header Strip */}
-                                <div className="absolute top-4 -translate-y-1/2 bg-white px-10 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.1)] -rotate-1 border border-slate-100 flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-rose-500 shadow-md border-2 border-rose-600 absolute -top-1 left-1/2 -translate-x-1/2 scale-110" />
-                                    <h3 className="text-sm font-black text-slate-700 uppercase tracking-[0.3em] font-['Rajdhani']">
-                                        Notice Board
-                                    </h3>
-                                </div>
-
-                                {/* Notices Pins Area */}
-                                <div className="w-full space-y-8 mt-4">
-                                     <div className="flex justify-end mb-4">
-                                       <button
-                                         onClick={() => onNavigate && onNavigate('news-manager')} // Direct them to news manager for briefing
-                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-100/50 hover:bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider transition-colors"
-                                         title="Get AI Briefing"
-                                       >
-                                         <Sparkles size={12} />
-                                         <span>Briefing</span>
-                                       </button>
-                                     </div>
-                                    {notices.length > 0 ? (
-                                        notices.map((notice: any, idx: number) => {
-                                            const rotations = ['rotate-1', 'rotate-[-1]', 'rotate-2', 'rotate-[-2]', 'rotate-0'];
-                                            const rotation = rotations[idx % rotations.length];
-
-                                            return (
-                                                <motion.div
-                                                    key={notice.id || idx}
-                                                    whileHover={{ scale: 1.03, rotate: 0, y: -4, zIndex: 20 }}
-                                                    className={`
-                                                        ${rotation} bg-white p-6 relative shadow-[0_10px_25px_-5px_rgba(0,0,0,0.08)] 
-                                                        border-l-4 ${notice.priority === 'high' ? 'border-l-rose-500' : 'border-l-amber-500'}
-                                                        group cursor-default transition-all duration-300
-                                                    `}
-                                                >
-                                                    {/* Pinned Pushpin */}
-                                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-                                                        <div className="w-4 h-4 rounded-full bg-rose-500 shadow-lg border-2 border-rose-600 flex items-center justify-center">
-                                                            <div className="w-1 h-1 rounded-full bg-white/40" />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex justify-between items-start mb-3 opacity-60">
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                                            {new Date(notice.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                                                        </span>
-                                                        <div className="flex gap-1">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                                        </div>
-                                                    </div>
-
-                                                    <p className="text-sm font-bold text-slate-600 leading-relaxed font-['Rajdhani'] group-hover:text-slate-900 transition-colors">
-                                                        {notice.content}
-                                                    </p>
-
-                                                    {/* Subtle Paper Texture Line */}
-                                                    <div className="absolute bottom-2 right-4 opacity-5">
-                                                        <Quote size={40} className="rotate-180" />
-                                                    </div>
-                                                </motion.div>
-                                            )
-                                        })
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-20 opacity-30">
-                                            <div className="w-20 h-20 bg-slate-200/50 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                                                <Bell size={40} className="text-slate-400" />
-                                            </div>
-                                            <p className="text-sm font-black uppercase tracking-widest text-slate-500 font-['Rajdhani']">No Active Directives</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Footer Navigation */}
-                                <div className="mt-auto w-full pt-8">
-                                    <button
-                                        onClick={() => onNavigate && onNavigate('news-manager')}
-                                        className="w-full py-4 bg-white/50 hover:bg-white text-[10px] font-black text-amber-700 uppercase tracking-[0.4em] transition-all border-y border-amber-900/5 flex items-center justify-center gap-3 group"
-                                    >
-                                        Manage Notices <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Decorative Loose Strings / Tapes (Optional Enhancement) */}
-                            <div className="absolute -bottom-4 left-10 w-8 h-12 bg-white/20 -rotate-12 backdrop-blur-sm border border-white/30 hidden xl:block" />
-                            <div className="absolute -bottom-2 right-12 w-6 h-10 bg-white/10 rotate-15 backdrop-blur-sm border border-white/20 hidden xl:block" />
-                        </motion.div>
-
-                        {/* --- CLIENT ACCESS HUB --- */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
+                            initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.7 }}
-                            className={`${neuCard} p-8 flex flex-col gap-6`}
+                            transition={{ delay: 0.2 }}
+                            className={`${neuCard} p-8 flex flex-col gap-6 relative overflow-hidden`}
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-white shadow-lg">
-                                    <Sparkles size={18} />
+                            <div className="flex items-center justify-between relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className={`${neuInset} p-3 text-amber-500 rounded-xl`}>
+                                        <Sparkles size={22} className="animate-pulse" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Critical Links</span>
+                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Quick Access</h3>
+                                    </div>
                                 </div>
-                                <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] font-['Rajdhani']">Scheduler Interface Hub</h4>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden md:block">Verified Portals Only</div>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-6">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 relative z-10">
                                 {[
+                                    { name: 'CELPIP', logo: 'client-logos/celpip.jpg', url: 'https://testcentreportal.paragontesting.ca/TestCentrePortal/Login' },
+                                    { name: 'PSI GPS', logo: 'client-logos/psi.png', url: 'https://gps.psiexams.com/login' },
+                                    { name: 'CMA US', logo: 'client-logos/cma_us.png', url: 'https://proscheduler.prometric.com/home' },
                                     { name: 'Prometric', logo: 'client-logos/prometric.png', url: 'https://easyserve.prometric.com/my.policy' },
-                                    { name: 'PSI', logo: 'client-logos/psi.png', url: 'https://test-takers.psiexams.com/' },
-                                    { name: 'ITTS', logo: 'client-logos/itts.png', url: 'https://www.itts.com/' },
                                     { name: 'Pearson VUE', logo: 'client-logos/pearson_vue.png', url: 'https://connect.pearsonvue.com/Connect/#/authenticate' }
                                 ].map((client) => (
                                     <a
@@ -631,16 +472,104 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                         href={client.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`${neuBtn} p-4 flex items-center justify-center h-28 hover:scale-105 transition-all group`}
-                                        title={`Access ${client.name} Scheduler`}
+                                        className={`${neuBtn} p-6 flex items-center justify-center h-24 hover:scale-105 transition-all group overflow-hidden bg-white/40`}
+                                        title={`Launch ${client.name}`}
                                     >
                                         <img
                                             src={client.logo}
                                             alt={client.name}
-                                            className="max-w-full max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-500"
+                                            className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-110"
                                         />
                                     </a>
                                 ))}
+                            </div>
+
+                            {/* Decorative Grid Pattern Overlay */}
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '16px 16px' }} />
+                        </motion.div>
+
+                        {/* 2.5 ACCESS HUB - CREDENTIAL MANAGEMENT */}
+                        <AccessHub />
+
+                        {/* 3. DAILY SPARK - MOTIVATION & GAMIFICATION */}
+                        <DailySpark />
+
+                    </div>
+
+
+                    {/* RIGHT COLUMN: Real-time Agent Monitoring */}
+                    <div className="xl:col-span-4 flex flex-col gap-10">
+
+                        {/* --- SKEUOMORPHIC AGENT MONITORING PANEL --- */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className="xl:col-span-4 flex flex-col items-center relative py-12"
+                        >
+                            {/* The Monitoring Board */}
+                            <div className="w-full bg-[var(--dashboard-bg)] rounded-3xl relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_15px_30px_-10px_rgba(0,0,0,0.1)] border-[12px] border-[var(--neu-dark-shadow)] min-h-[650px] flex flex-col items-center pt-16 pb-12 px-6">
+
+                                {/* Inner Shadow for Recessed Depth */}
+                                <div className="absolute inset-0 rounded-[1.2rem] shadow-[inset_0_10px_20px_rgba(0,0,0,0.04)] pointer-events-none" />
+
+                                {/* Section Header Strip */}
+                                <div className="absolute top-4 -translate-y-1/2 bg-white px-10 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.1)] -rotate-1 border border-slate-100 flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-md border-2 border-emerald-600 absolute -top-1 left-1/2 -translate-x-1/2 scale-110" />
+                                    <h3 className="text-sm font-black text-slate-700 uppercase tracking-[0.3em] font-['Rajdhani']">
+                                        Live Desk
+                                    </h3>
+                                </div>
+
+                                {/* Agent List Area */}
+                                <div className="w-full space-y-4 mt-4 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                                    {staff.length > 0 ? (
+                                        staff.sort((a, b) => {
+                                            const aOnline = presence[a.user_id]?.status === 'online' ? 1 : 0;
+                                            const bOnline = presence[b.user_id]?.status === 'online' ? 1 : 0;
+                                            return bOnline - aOnline;
+                                        }).map((agent) => {
+                                            const isOnline = presence[agent.user_id]?.status === 'online';
+                                            
+                                            return (
+                                                <motion.div
+                                                    key={agent.id}
+                                                    whileHover={{ scale: 1.02, x: 5 }}
+                                                    className={`bg-white p-3 rounded-2xl shadow-sm border-l-4 ${isOnline ? 'border-l-emerald-500' : 'border-l-slate-300'} flex items-center justify-between group transition-all`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden bg-slate-50">
+                                                                {agent.avatar_url ? <img src={agent.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 font-black text-xs">{agent.full_name?.[0] || '?'}</div>}
+                                                            </div>
+                                                            {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{agent.full_name}</p>
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{agent.branch_assigned || 'Active Agent'}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => !openChats.find(c => c.id === agent.id) && setOpenChats(prev => [...prev, agent])}
+                                                        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                            isOnline 
+                                                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white' 
+                                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                                        }`}
+                                                    >
+                                                        Chat
+                                                    </button>
+                                                </motion.div>
+                                            )
+                                        })
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
+                                            <Users size={40} className="mb-2" />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">No Agents Detected</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     </div>
@@ -649,22 +578,42 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
 
             </div>
 
+            {/* MULTI-WINDOW FETCHAT POPUPS */}
+            <AnimatePresence>
+                {openChats.map((targetUser, idx) => (
+                    <FetsChatPopup
+                        key={targetUser.id}
+                        targetUser={targetUser}
+                        onClose={() => setOpenChats(prev => prev.filter(c => c.id !== targetUser.id))}
+                        zIndex={2000 + idx}
+                    />
+                ))}
+            </AnimatePresence>
+
+            {/* STAFF/BRANCH SELECTOR MODAL */}
             <AnimatePresence>
                 {showStaffSelector && activeTemplate && (
                     <StaffBranchSelector
-                        onSelect={(data) => {
-                            setPreSelection(data);
+                        onClose={() => { setShowStaffSelector(false); setActiveTemplate(null); }}
+                        onSelect={(staffId, branchId, staffName) => {
+                            setPreSelection({ staffId, branchId, staffName });
                             setShowStaffSelector(false);
                             setShowChecklistModal(true);
                         }}
-                        onClose={() => setShowStaffSelector(false)}
                     />
                 )}
+            </AnimatePresence>
+
+            {/* CHECKLIST FORM MODAL */}
+            <AnimatePresence>
                 {showChecklistModal && activeTemplate && (
                     <ChecklistFormModal
                         template={activeTemplate}
-                        onClose={() => setShowChecklistModal(false)}
-                        onSuccess={fetchAnalysis}
+                        onClose={() => { setShowChecklistModal(false); setActiveTemplate(null); setPreSelection(null); }}
+                        onSuccess={() => {
+                            fetchAnalysis();
+                            toast.success('Checklist submitted successfully!');
+                        }}
                         currentUser={profile}
                         overrideStaff={preSelection ? { id: preSelection.staffId, name: preSelection.staffName } : undefined}
                         overrideBranch={preSelection?.branchId}

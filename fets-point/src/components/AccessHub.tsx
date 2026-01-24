@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Shield, Key, Lock, Eye, EyeOff, Copy, ExternalLink, Search,
-    Plus, X, Minus, Maximize2, Globe, Server, Fingerprint, 
-    ChevronRight, Layers, Database, Building2
+    Plus, X, Minus, Globe, Server, Fingerprint, 
+    ChevronRight, Layers, Database, Building2, Save
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast'
 
 interface VaultEntry {
     id: string
+    user_id: string
     title: string
     category: string
     username?: string
@@ -242,6 +243,166 @@ const AccessHubPopup: React.FC<AccessHubPopupProps> = ({ entry, onClose, zIndex 
     )
 }
 
+// Add Entry Modal
+const AddEntryModal: React.FC<{ onClose: () => void; onSuccess: () => void; userId: string }> = ({ onClose, onSuccess, userId }) => {
+    const [saving, setSaving] = useState(false)
+    const [formData, setFormData] = useState({
+        title: '',
+        category: 'General',
+        username: '',
+        password: '',
+        url: '',
+        notes: ''
+    })
+
+    const categories = ['General', 'Corporate', 'Financial', 'Personal', 'Emergency']
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!formData.title.trim()) {
+            toast.error('Title is required')
+            return
+        }
+
+        setSaving(true)
+        try {
+            const { error } = await supabase.from('fets_vault').insert({
+                user_id: userId,
+                title: formData.title.trim(),
+                category: formData.category,
+                username: formData.username.trim() || null,
+                password: formData.password || null,
+                url: formData.url.trim() || null,
+                notes: formData.notes.trim() || null,
+                tags: []
+            })
+
+            if (error) throw error
+            toast.success('Credential saved!')
+            onSuccess()
+            onClose()
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to save')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                            <Plus size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold text-sm uppercase tracking-wide">New Credential</h3>
+                            <span className="text-white/60 text-[10px] uppercase tracking-widest">Add to your vault</span>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Title *</label>
+                        <input
+                            type="text"
+                            value={formData.title}
+                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="e.g., Gmail, Netflix, Bank Account"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Category</label>
+                        <select
+                            value={formData.category}
+                            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+                        >
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Username / Email</label>
+                            <input
+                                type="text"
+                                value={formData.username}
+                                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                                placeholder="user@email.com"
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Password</label>
+                            <input
+                                type="password"
+                                value={formData.password}
+                                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                                placeholder="••••••••"
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">URL</label>
+                        <input
+                            type="url"
+                            value={formData.url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Notes</label>
+                        <textarea
+                            value={formData.notes}
+                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="Additional notes..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors resize-none"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-sm hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {saving ? (
+                            <>Saving...</>
+                        ) : (
+                            <>
+                                <Save size={16} />
+                                Save Credential
+                            </>
+                        )}
+                    </button>
+                </form>
+            </motion.div>
+        </div>
+    )
+}
+
 // Main Access Hub Widget Component
 export function AccessHub() {
     const { user } = useAuth()
@@ -250,16 +411,20 @@ export function AccessHub() {
     const [searchTerm, setSearchTerm] = useState('')
     const [activePopup, setActivePopup] = useState<VaultEntry | null>(null)
     const [hoveredId, setHoveredId] = useState<string | null>(null)
+    const [showAddModal, setShowAddModal] = useState(false)
 
     useEffect(() => {
         if (user?.id) fetchEntries()
     }, [user?.id])
 
     const fetchEntries = async () => {
+        if (!user?.id) return
         try {
+            // Fetch only entries belonging to the current user
             const { data, error } = await supabase
                 .from('fets_vault')
                 .select('*')
+                .eq('user_id', user.id)
                 .order('title', { ascending: true })
 
             if (error) throw error
@@ -314,16 +479,29 @@ export function AccessHub() {
                         </div>
                     </div>
                     
-                    {/* Search */}
-                    <div className="relative w-64">
-                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search credentials..."
-                            className="w-full bg-white/60 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
-                        />
+                    <div className="flex items-center gap-3">
+                        {/* Add Button */}
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowAddModal(true)}
+                            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                        >
+                            <Plus size={16} />
+                            Add New
+                        </motion.button>
+
+                        {/* Search */}
+                        <div className="relative w-64">
+                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search credentials..."
+                                className="w-full bg-white/60 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -396,7 +574,14 @@ export function AccessHub() {
                     ) : (
                         <div className="col-span-full py-12 text-center">
                             <Lock size={40} className="mx-auto mb-3 text-slate-200" />
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">No credentials found</p>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">No credentials yet</p>
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                className="text-xs font-bold text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors flex items-center gap-2 mx-auto"
+                            >
+                                <Plus size={14} />
+                                Add your first credential
+                            </button>
                         </div>
                     )}
                 </div>
@@ -421,6 +606,17 @@ export function AccessHub() {
                     <AccessHubPopup
                         entry={activePopup}
                         onClose={() => setActivePopup(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Add Modal */}
+            <AnimatePresence>
+                {showAddModal && user?.id && (
+                    <AddEntryModal
+                        onClose={() => setShowAddModal(false)}
+                        onSuccess={fetchEntries}
+                        userId={user.id}
                     />
                 )}
             </AnimatePresence>

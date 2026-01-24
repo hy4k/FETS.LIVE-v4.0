@@ -156,14 +156,34 @@ export const FetsChatPopup: React.FC<FetsChatPopupProps> = ({ targetUser, onClos
     const handleDeleteMessage = async (msgId: string, forAll: boolean = false) => {
         try {
             if (forAll) {
-                await supabase.from('messages').update({ status: 'deleted_for_all', content: '🚫 Message deleted' }).eq('id', msgId)
+                // Update message to show as deleted for everyone
+                const { error } = await supabase.from('messages').update({ 
+                    status: 'deleted_for_all', 
+                    content: '🚫 Message deleted' 
+                }).eq('id', msgId)
+                
+                if (error) throw error
+                
+                // Update local state immediately
+                setMessages(prev => prev.map(m => 
+                    m.id === msgId 
+                        ? { ...m, status: 'deleted_for_all', content: '🚫 Message deleted' } 
+                        : m
+                ))
             } else {
-                await supabase.from('messages').delete().eq('id', msgId)
+                // Delete message from database
+                const { error } = await supabase.from('messages').delete().eq('id', msgId)
+                
+                if (error) throw error
+                
+                // Remove from local state immediately
+                setMessages(prev => prev.filter(m => m.id !== msgId))
             }
             setContextMenuMsgId(null)
             toast.success(forAll ? 'Deleted for everyone' : 'Message deleted')
-        } catch (err) {
-            toast.error('Delete failed')
+        } catch (err: any) {
+            console.error('Delete error:', err)
+            toast.error(err.message || 'Delete failed')
         }
     }
 

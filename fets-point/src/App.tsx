@@ -19,7 +19,6 @@ import { PageLoadingFallback } from './components/LoadingFallback';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { UpdatePassword } from './components/UpdatePassword';
-import { AiAssistant } from './components/AiAssistant';
 import { Fetchat } from './components/Fetchat';
 import { BranchIndicator } from './components/BranchIndicator';
 // Import Slate directly for global access
@@ -268,8 +267,7 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Floating AI Assistant - ALWAYS VISIBLE */}
-        <AiAssistant />
+        {/* Global Chat Layer */}
         <GlobalChatLayer />
         <BranchIndicator />
 

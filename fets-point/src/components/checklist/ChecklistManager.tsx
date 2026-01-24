@@ -753,9 +753,10 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
 
 // --- Sub-Components ---
 
-const TemplateCard = ({ template, index, onEdit, onDelete, onFill }: {
+const TemplateCard = ({ template, index, isSuperAdmin, onEdit, onDelete, onFill }: {
     template: ChecklistTemplate;
     index: number;
+    isSuperAdmin?: boolean;
     onEdit: (t: ChecklistTemplate) => void;
     onToggle: (id: string, s: boolean) => void;
     onDelete: (id: string) => void;

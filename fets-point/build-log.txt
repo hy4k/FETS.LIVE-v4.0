@@ -1,0 +1,8 @@
+﻿
+> fets-point@4.0.0 build C:\Dev\antigravity\New folder\2028\FETS.LIVE-v4.0\fets-point
+> tsc -b tsconfig.app.json && vite build
+
+src/types/checklist.ts(18,1): error TS1131: Property or signature expected.
+src/types/checklist.ts(18,22): error TS1109: Expression expected.
+src/types/checklist.ts(19,1): error TS1128: Declaration or statement expected.
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

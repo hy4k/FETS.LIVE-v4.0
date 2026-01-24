@@ -595,8 +595,8 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                 {showStaffSelector && activeTemplate && (
                     <StaffBranchSelector
                         onClose={() => { setShowStaffSelector(false); setActiveTemplate(null); }}
-                        onSelect={(staffId, branchId, staffName) => {
-                            setPreSelection({ staffId, branchId, staffName });
+                        onSelect={(data) => {
+                            setPreSelection({ staffId: data.staffId, branchId: data.branchId, staffName: data.staffName });
                             setShowStaffSelector(false);
                             setShowChecklistModal(true);
                         }}

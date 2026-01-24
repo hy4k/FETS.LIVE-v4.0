@@ -15,7 +15,8 @@ export interface Question {
   options?: string[]; // For radio, dropdown
   required: boolean;
   description?: string;
-the  attachment_mode?: 'none' | 'optional' | 'required';
+  section?: string; // For grouping questions
+  attachment_mode?: 'none' | 'optional' | 'required';
 }
 
 export interface Attachment {

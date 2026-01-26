@@ -6,8 +6,11 @@ export function FetsLogo() {
             <img 
                 src="/fets_live_logo.png" 
                 alt="FETS.LIVE" 
-                className="h-14 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                className="h-20 md:h-24 w-auto object-contain"
+                style={{ 
+                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))',
+                    minHeight: '60px'
+                }}
             />
         </div>
     );

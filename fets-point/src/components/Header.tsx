@@ -273,8 +273,8 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <FetsLogo />
               </div>
             ) : (
-             /* Desktop Logo - Absolute Positioned Spanning 2 Rows */
-             <div className="absolute top-2 left-6 z-50 scale-125 origin-top-left drop-shadow-2xl">
+             /* Desktop Logo - Massive 2-Row Span */
+             <div className="absolute top-5 left-10 z-50 scale-[1.8] origin-top-left drop-shadow-2xl hover:scale-[1.9] transition-transform duration-500">
                 <FetsLogo />
              </div>
             )}
@@ -359,7 +359,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
             <div className="max-w-[1920px] mx-auto px-10 w-full flex items-center justify-between gap-10">
 
               {/* COMPACT NEUMORPHIC BRANCH SELECTOR (Second Row) */}
-              <div ref={dropdownRef} className="relative shrink-0 ml-32"> {/* Added left margin to clear big logo */}
+              <div ref={dropdownRef} className="relative shrink-0 ml-48"> {/* Significantly increased margin for massive logo */}
                 <button
                   onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
                   className={`

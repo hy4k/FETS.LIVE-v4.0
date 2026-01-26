@@ -1,132 +1,75 @@
 /* ===================================================
-   FETS.LIVE Ultimate Crystal Globe Logo
+   FETS.LIVE Neumorphic Text Logo
    =================================================== */
 
-/* Main container */
-.fets-logo-container {
-    position: relative;
-    width: 80px;
-    height: 80px;
+.fets-text-logo-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
-    perspective: 1000px; /* Essential for 3D feel */
+    padding: 1rem;
     cursor: pointer;
-    z-index: 50;
+    user-select: none;
+    /* Create a soft container background to merge with header */
+    background: transparent;
 }
 
-/* Ambient crystalline glow */
-.fets-logo-glow {
-    position: absolute;
-    inset: -15px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle,
-        rgba(255, 220, 100, 0.4) 0%,
-        rgba(200, 150, 50, 0.2) 40%,
-        transparent 70%
-    );
-    filter: blur(8px);
-    animation: crystalPulse 4s ease-in-out infinite;
-    pointer-events: none;
-    z-index: -1;
-}
-
-@keyframes crystalPulse {
-    0%, 100% { transform: scale(0.9); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-}
-
-/* Globe wrapper */
-.fets-logo-globe {
-    position: relative;
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    /* Create a deep spherical look with shadows */
-    box-shadow: 
-        inset 0 0 20px rgba(0,0,0,0.5), /* Inner depth */
-        0 10px 20px rgba(0,0,0,0.3),    /* Drop shadow */
-        0 0 15px rgba(255, 200, 0, 0.3); /* Outer glow */
+.fets-main-text {
+    font-family: 'Syncopate', sans-serif;
+    font-weight: 700;
+    font-size: 3rem; /* Large size */
+    line-height: 0.85;
+    letter-spacing: -0.05em;
+    color: #4E342E; /* Dark brown/black for contrast on warm bg */
     
-    transform-style: preserve-3d;
-    /* Gentle floating animation instead of flat spin to preserve text readability */
-    animation: spaceFloat 6s ease-in-out infinite;
+    /* Neumorphic Text Shadow - Extruded look */
+    text-shadow: 
+        3px 3px 6px rgba(166, 171, 189, 0.5),
+        -2px -2px 5px rgba(255, 255, 255, 0.8);
+    
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #4E342E 0%, #2d1b18 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 10;
 }
 
-@keyframes spaceFloat {
-    0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
-    33% { transform: translateY(-3px) rotateX(5deg) rotateY(5deg); }
-    66% { transform: translateY(3px) rotateX(-5deg) rotateY(-5deg); }
+.fets-sub-text {
+    font-family: 'Syncopate', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    letter-spacing: 0.4em;
+    color: #8E7F7D;
+    margin-left: 4px;
+    margin-top: 4px;
+    
+    position: relative;
+    z-index: 10;
 }
 
-/* The Logo Image */
-.fets-logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ensure it fills the circle */
-    border-radius: 50%;
-    pointer-events: none;
+/* Hover Interaction */
+.fets-text-logo-container:hover .fets-main-text {
+    transform: scale(1.02);
+    /* Deeper shadow on hover */
+    text-shadow: 
+        5px 5px 10px rgba(166, 171, 189, 0.6),
+        -3px -3px 7px rgba(255, 255, 255, 0.9);
 }
 
-/* Surface Shine / Refraction - Simulates Rotation/Movement */
-.fets-logo-shine {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: linear-gradient(
-        135deg,
-        transparent 40%,
-        rgba(255, 255, 255, 0.4) 45%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.4) 55%,
-        transparent 60%
-    );
-    background-size: 200% 200%;
-    mix-blend-mode: overlay; /* Blends nicely with gold */
-    animation: shineSweep 5s linear infinite;
-}
-
-@keyframes shineSweep {
-    0% { background-position: 200% 200%; }
-    100% { background-position: -200% -200%; }
-}
-
-/* Subtle Orbital Ring */
-.fets-logo-orbit {
-    position: absolute;
-    width: 110%;
-    height: 110%;
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    border-radius: 50%;
-    top: -5%;
-    left: -5%;
-    transform: rotateX(70deg) rotateY(15deg);
-    pointer-events: none;
-    animation: orbitSpin 10s linear infinite;
-}
-
-@keyframes orbitSpin {
-    from { transform: rotateX(70deg) rotateY(15deg) rotate(0deg); }
-    to { transform: rotateX(70deg) rotateY(15deg) rotate(360deg); }
-}
-
-/* Interactions */
-.fets-logo-container:hover .fets-logo-globe {
-    animation-play-state: paused;
-    transform: scale(1.1);
-    box-shadow: 
-        inset 0 0 10px rgba(0,0,0,0.3),
-        0 0 30px rgba(255, 215, 0, 0.6);
-}
-
-.fets-logo-container:hover .fets-logo-orbit {
-    border-color: rgba(255, 215, 0, 0.8);
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+.fets-dot {
+    color: #F6C845; /* Gold dot */
+    -webkit-text-fill-color: initial;
+    text-shadow: 0 0 10px rgba(246, 200, 69, 0.6);
 }
 
 /* Responsive */
-@media (min-width: 768px) {
-    .fets-logo-container { width: 90px; height: 90px; }
-    .fets-logo-globe { width: 80px; height: 80px; }
+@media (min-width: 1024px) {
+    .fets-main-text {
+        font-size: 3.5rem;
+    }
+    .fets-sub-text {
+        font-size: 1.1rem;
+    }
 }

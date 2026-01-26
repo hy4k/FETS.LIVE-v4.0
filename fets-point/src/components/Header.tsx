@@ -257,7 +257,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
         <div className="max-w-[1920px] mx-auto px-4 md:px-6 h-20 relative z-20 flex items-center justify-between gap-4 md:gap-8">
 
           {/* LEFT: Branding */}
-          <div className="flex items-center gap-4 md:gap-6 shrink-0">
+          <div className="flex items-center gap-4 md:gap-6 shrink-0 relative z-50">
             {isMobile && (
               <button
                 onClick={() => setSidebarOpen?.(true)}
@@ -266,9 +266,18 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <Menu size={20} />
               </button>
             )}
-            <div className={`flex flex-col items-start ${isMobile ? 'scale-75' : 'scale-90'} origin-left pt-2`}>
-              <FetsLogo />
-            </div>
+            
+            {/* Mobile Logo */}
+            {isMobile ? (
+              <div className="flex flex-col items-start scale-75 origin-left pt-2">
+                <FetsLogo />
+              </div>
+            ) : (
+             /* Desktop Logo - Absolute Positioned Spanning 2 Rows */
+             <div className="absolute top-2 left-6 z-50 scale-125 origin-top-left drop-shadow-2xl">
+                <FetsLogo />
+             </div>
+            )}
           </div>
 
           {/* CENTER: CORE NAVIGATION (Neumorphic Buttons) */}
@@ -350,38 +359,38 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
             <div className="max-w-[1920px] mx-auto px-10 w-full flex items-center justify-between gap-10">
 
               {/* COMPACT NEUMORPHIC BRANCH SELECTOR (Second Row) */}
-              <div ref={dropdownRef} className="relative shrink-0">
+              <div ref={dropdownRef} className="relative shrink-0 ml-32"> {/* Added left margin to clear big logo */}
                 <button
                   onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
                   className={`
-                    group relative flex items-center gap-4 px-6 py-3.5 transition-all duration-300
-                    rounded-[18px] bg-[#F6C845] border-none
+                    group relative flex items-center gap-3 px-4 py-2 transition-all duration-300
+                    rounded-[14px] bg-[#F6C845] border-none
                     ${isBranchDropdownOpen
-                      ? 'shadow-[inset_4px_4px_8px_#C99E22,inset_-4px_-4px_8px_#FFEA7A] translate-y-[0.5px]'
-                      : 'shadow-[6px_6px_14px_#C99E22,-6px_-6px_14px_#FFEA7A] hover:-translate-y-1 hover:shadow-[8px_8px_20px_#C99E22,-8px_-8px_20px_#FFEA7A]'
+                      ? 'shadow-[inset_2px_2px_4px_#C99E22,inset_-2px_-2px_4px_#FFEA7A] translate-y-[0.5px]'
+                      : 'shadow-[4px_4px_10px_#C99E22,-4px_-4px_10px_#FFEA7A] hover:-translate-y-0.5 hover:shadow-[5px_5px_12px_#C99E22,-5px_-5px_12px_#FFEA7A]'
                     }
                   `}
                 >
-                  <div className="relative z-10 flex items-center gap-3">
+                  <div className="relative z-10 flex items-center gap-2">
                     <div className={`
-                      p-2 rounded-xl bg-white/10 transition-transform duration-500
+                      p-1.5 rounded-lg bg-white/10 transition-transform duration-500
                       ${isBranchDropdownOpen ? 'scale-90' : 'group-hover:rotate-12'}
                     `}>
-                      <MapPin size={16} className="text-[#4E342E] opacity-70" />
+                      <MapPin size={12} className="text-[#4E342E] opacity-70" />
                     </div>
 
                     <div className="flex flex-col items-start pt-0.5">
-                      <span className="text-[7px] font-black uppercase tracking-[0.4em] text-[#4E342E]/50 mb-0">Operational Node</span>
-                      <span className="text-sm font-black text-[#4E342E] uppercase tracking-wider">
+                      <span className="text-[6px] font-black uppercase tracking-[0.3em] text-[#4E342E]/50 mb-px">Node</span>
+                      <span className="text-xs font-black text-[#4E342E] uppercase tracking-wider leading-none">
                         {currentBranchName}
                       </span>
                     </div>
 
                     <div className={`
-                      ml-1 p-1 transition-transform duration-500
+                      ml-1 p-0.5 transition-transform duration-500
                       ${isBranchDropdownOpen ? 'rotate-180' : ''}
                     `}>
-                      <ChevronDown size={14} className="text-[#4E342E]/50" />
+                      <ChevronDown size={12} className="text-[#4E342E]/50" />
                     </div>
                   </div>
                 </button>

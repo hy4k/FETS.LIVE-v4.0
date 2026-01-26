@@ -1,0 +1,161 @@
+/* Mobile-Optimized Styles */
+
+/* Touch-friendly tap targets */
+.mobile-tap-target {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling for mobile */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Full viewport on mobile */
+.mobile-full-screen {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Hide scrollbar but keep functionality */
+.mobile-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mobile-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bottom safe area for iOS */
+.mobile-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Card stack for mobile lists */
+.mobile-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* Mobile sticky header */
+.mobile-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: inherit;
+  backdrop-filter: blur(8px);
+}
+
+/* Responsive table - card view on mobile */
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+  }
+  
+  .responsive-table thead {
+    display: none;
+  }
+  
+  .responsive-table tbody, 
+  .responsive-table tr, 
+  .responsive-table td {
+    display: block;
+    width: 100%;
+  }
+  
+  .responsive-table tr {
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .responsive-table td {
+    text-align: left !important;
+    padding: 0.5rem 0;
+    border: none;
+  }
+  
+  .responsive-table td:before {
+    content: attr(data-label);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #6B7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+}
+
+/* Mobile-optimized calendar grid */
+@media (max-width: 768px) {
+  .mobile-calendar-grid {
+    font-size: 0.75rem;
+  }
+  
+  .mobile-calendar-cell {
+    min-height: 60px;
+    padding: 0.25rem;
+  }
+  
+  .mobile-calendar-event {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    margin-bottom: 0.125rem;
+  }
+}
+
+/* Floating action button for mobile */
+.mobile-fab {
+  position: fixed;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  right: 1rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 50;
+  touch-action: manipulation;
+}
+
+/* Pull to refresh indicator */
+.mobile-pull-refresh {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.mobile-pull-refresh.active {
+  opacity: 1;
+}
+
+/* Swipe actions */
+.mobile-swipeable {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.mobile-swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+  align-items: center;
+}

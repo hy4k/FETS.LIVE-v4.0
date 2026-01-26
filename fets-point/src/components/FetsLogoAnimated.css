@@ -1,5 +1,5 @@
 /* ===================================================
-   FETS.LIVE Neumorphic Text Logo
+   FETS.LIVE Refined Text Logo
    =================================================== */
 
 .fets-text-logo-container {
@@ -7,69 +7,50 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    padding: 1rem;
     cursor: pointer;
     user-select: none;
-    /* Create a soft container background to merge with header */
-    background: transparent;
+    position: relative;
 }
 
 .fets-main-text {
     font-family: 'Syncopate', sans-serif;
     font-weight: 700;
-    font-size: 3rem; /* Large size */
-    line-height: 0.85;
-    letter-spacing: -0.05em;
-    color: #4E342E; /* Dark brown/black for contrast on warm bg */
+    font-size: 1.5rem; /* Much smaller */
+    line-height: 1;
+    letter-spacing: 0.1em;
+    color: #2D1B18; /* Dark brown for strong contrast */
     
-    /* Neumorphic Text Shadow - Extruded look */
+    /* Strong 3D embossed effect */
     text-shadow: 
-        3px 3px 6px rgba(166, 171, 189, 0.5),
-        -2px -2px 5px rgba(255, 255, 255, 0.8);
+        1px 1px 2px rgba(0, 0, 0, 0.3),
+        2px 2px 4px rgba(255, 200, 69, 0.4),
+        -1px -1px 1px rgba(255, 255, 255, 0.6);
     
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #4E342E 0%, #2d1b18 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    position: relative;
-    z-index: 10;
 }
 
 .fets-sub-text {
     font-family: 'Syncopate', sans-serif;
     font-weight: 400;
-    font-size: 1rem;
-    letter-spacing: 0.4em;
-    color: #8E7F7D;
-    margin-left: 4px;
-    margin-top: 4px;
-    
-    position: relative;
-    z-index: 10;
+    font-size: 0.5rem; /* Very small */
+    letter-spacing: 0.3em;
+    color: #4E342E;
+    margin-left: 2px;
+    margin-top: 2px;
+    opacity: 0.8;
 }
 
 /* Hover Interaction */
 .fets-text-logo-container:hover .fets-main-text {
-    transform: scale(1.02);
-    /* Deeper shadow on hover */
+    transform: translateY(-1px);
     text-shadow: 
-        5px 5px 10px rgba(166, 171, 189, 0.6),
-        -3px -3px 7px rgba(255, 255, 255, 0.9);
+        1px 1px 3px rgba(0, 0, 0, 0.4),
+        3px 3px 6px rgba(255, 200, 69, 0.5),
+        -1px -1px 1px rgba(255, 255, 255, 0.7);
 }
 
 .fets-dot {
-    color: #F6C845; /* Gold dot */
+    color: #FF6B35; /* Orange accent */
     -webkit-text-fill-color: initial;
-    text-shadow: 0 0 10px rgba(246, 200, 69, 0.6);
-}
-
-/* Responsive */
-@media (min-width: 1024px) {
-    .fets-main-text {
-        font-size: 3.5rem;
-    }
-    .fets-sub-text {
-        font-size: 1.1rem;
-    }
+    text-shadow: 0 0 8px rgba(255, 107, 53, 0.5);
 }

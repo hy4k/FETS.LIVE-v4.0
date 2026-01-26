@@ -257,7 +257,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
         <div className="max-w-[1920px] mx-auto px-4 md:px-6 h-20 relative z-20 flex items-center justify-between gap-4 md:gap-8">
 
           {/* LEFT: Branding */}
-          <div className="flex items-center gap-4 md:gap-6 shrink-0 relative z-50">
+          <div className="flex items-center gap-4 md:gap-6 shrink-0">
             {isMobile && (
               <button
                 onClick={() => setSidebarOpen?.(true)}
@@ -267,17 +267,10 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
               </button>
             )}
             
-            {/* Mobile Logo */}
-            {isMobile ? (
-              <div className="flex flex-col items-start scale-75 origin-left pt-2">
-                <FetsLogo />
-              </div>
-            ) : (
-             /* Desktop Logo - Text Based Spanning Rows */
-             <div className="absolute top-2 left-6 z-50 origin-top-left">
-                <FetsLogo />
-             </div>
-            )}
+            {/* Logo - Both Mobile and Desktop in normal flow */}
+            <div className="flex flex-col items-start">
+              <FetsLogo />
+            </div>
           </div>
 
           {/* CENTER: CORE NAVIGATION (Neumorphic Buttons) */}
@@ -359,7 +352,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
             <div className="max-w-[1920px] mx-auto px-10 w-full flex items-center justify-between gap-10">
 
               {/* COMPACT NEUMORPHIC BRANCH SELECTOR (Second Row) */}
-              <div ref={dropdownRef} className="relative shrink-0 ml-64"> {/* Significantly increased margin for massive text logo */}
+              <div ref={dropdownRef} className="relative shrink-0">
                 <button
                   onClick={() => canSwitch && setIsBranchDropdownOpen(!isBranchDropdownOpen)}
                   className={`

@@ -39,7 +39,7 @@ export const useDashboardStats = () => {
         applyBranchFilter(supabase.from('social_posts').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         // applyBranchFilter(supabase.from('chat_messages').select('*', { count: 'exact', head: true }).gte('created_at', `${today}T00:00:00`), activeBranch),
         applyBranchFilter(supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'closed'), activeBranch),
-        applyBranchFilter(supabase.from('calendar_sessions').select('client_name, candidate_count').eq('date', today), activeBranch),
+        applyBranchFilter(supabase.from('calendar_sessions').select('*').eq('date', today), activeBranch),
       ])
 
       const todaysRoster = todaysRosterData && todaysRosterData.length > 0

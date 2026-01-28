@@ -292,20 +292,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
           {/* RIGHT: COMMAND CONTROLS (Pills) */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
 
-            {/* Quick Forum Button */}
-            <button
-              onClick={onQuickCapture}
-              className="fets-pill-control relative group"
-              title="Quick Slate Entry"
-            >
-              <div className="relative">
-                <PenTool className="w-4 h-4 opacity-70 group-hover:text-amber-600 group-hover:opacity-100 transition-all" />
-              </div>
-              <span className="text-xs uppercase tracking-wider hidden sm:inline">Slate</span>
-            </button>
-
-
-            {/* Notifications */}
+            {/* Pulse (Notifications) */}
             <button
               onClick={() => setShowNotificationPanel(!showNotificationPanel)}
               className="fets-pill-control relative"
@@ -314,7 +301,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <Bell className="w-4 h-4 opacity-70" />
                 {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
               </div>
-              <span className="text-xs uppercase tracking-wider hidden sm:inline">Alerts</span>
+              <span className="text-xs uppercase tracking-wider hidden sm:inline">Pulse</span>
             </button>
 
             {/* EXIT Button (Desktop) */}

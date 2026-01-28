@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Plus,
     List,
@@ -18,11 +18,13 @@ import {
     Sparkles,
     CheckCircle2,
     Play,
-    ChevronRight,
     Search,
-    ChevronLeft,
-    Calendar as CalendarIcon,
-    Maximize2
+    Maximize2,
+    Box,
+    Clock,
+    MapPin,
+    MessageSquare,
+    AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChecklistCreator } from './ChecklistCreator';
@@ -35,15 +37,7 @@ import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     format,
-    startOfMonth,
-    endOfMonth,
-    eachDayOfInterval,
-    isSameDay,
-    isSameMonth,
-    addMonths,
-    subMonths,
-    startOfWeek,
-    endOfWeek
+    isSameDay
 } from 'date-fns';
 import { useBranch } from '../../hooks/useBranch';
 
@@ -59,16 +53,11 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     const [history, setHistory] = useState<ChecklistSubmission[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [selectedSubmission, setSelectedSubmission] = useState<ChecklistSubmission | null>(null);
-    const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
     const [editingTemplate, setEditingTemplate] = useState<ChecklistTemplate | null>(null);
     const [submittingTemplate, setSubmittingTemplate] = useState<ChecklistTemplate | null>(null);
     const [showFillModal, setShowFillModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [historyFilterType, setHistoryFilterType] = useState<string>('all');
-
-    const [showDayOverview, setShowDayOverview] = useState(false);
 
     // Select Flow
     const [showStaffSelector, setShowStaffSelector] = useState(false);
@@ -86,15 +75,8 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
     const canManageTemplates = isSuperAdmin;
     const canAccessAnalysis = true; // Still open to all for now as per previous logic, but templates are restricted
 
-    useEffect(() => {
-        if (view === 'history') {
-            fetchHistory();
-        } else {
-            fetchTemplates();
-        }
-    }, [view, activeBranch]);
 
-    const fetchTemplates = async () => {
+    const fetchTemplates = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('checklist_templates' as any)
@@ -108,9 +90,9 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
             setTemplates((data as any) || []);
         }
         setLoading(false);
-    };
+    }, []);
 
-    const fetchHistory = async () => {
+    const fetchHistory = useCallback(async () => {
         setHistoryLoading(true);
         try {
             // Fetch submissions with template details and profile details in one go
@@ -148,7 +130,15 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
         } finally {
             setHistoryLoading(false);
         }
-    };
+    }, [activeBranch]);
+
+    useEffect(() => {
+        if (view === 'history') {
+            fetchHistory();
+        } else {
+            fetchTemplates();
+        }
+    }, [view, activeBranch, fetchHistory, fetchTemplates]);
 
     const toggleStatus = async (id: string, currentStatus: boolean) => {
         const { error } = await supabase
@@ -454,188 +444,118 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                             )}
                         </div>
                     ) : view === 'history' ? (
-                        <div className="space-y-8">
-                            {/* Calendar Navigation */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] rounded-xl text-amber-600">
-                                        <CalendarIcon size={24} />
-                                    </div>
-                                    <h2 className="text-2xl font-black text-gray-700 uppercase tracking-tight">
-                                        {format(currentMonth, 'MMMM yyyy')}
-                                    </h2>
+                        <div className="space-y-4 pb-20">
+                            {sortedDates.length === 0 ? (
+                                <div className={`${neumorphicCard} p-16 text-center shadow-inner`}>
+                                    <History size={48} className="mx-auto mb-4 text-gray-300" />
+                                    <h3 className="text-xl font-black text-gray-700 uppercase">No Logs Found</h3>
+                                    <p className="text-gray-500 mt-2">No checklists have been submitted matching criteria.</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
-                                        className={neumorphicIconBtn}
+                            ) : (
+                                sortedDates.map((dateKey, dateIdx) => (
+                                    <motion.div
+                                        key={dateKey}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: dateIdx * 0.1 }}
+                                        className="relative"
                                     >
-                                        <ChevronLeft size={20} />
-                                    </button>
-                                    <button
-                                        onClick={() => setCurrentMonth(new Date())}
-                                        className="px-4 py-2 font-bold text-xs uppercase tracking-widest bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] rounded-xl hover:text-amber-600 transition-colors"
-                                    >
-                                        Today
-                                    </button>
-                                    <button
-                                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
-                                        className={neumorphicIconBtn}
-                                    >
-                                        <ChevronRight size={20} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Calendar Grid */}
-                            <div className="bg-[#e0e5ec] p-6 rounded-[2rem] shadow-[inset_6px_6px_12px_#bec3c9,inset_-6px_-6px_12px_#ffffff] border border-white/20">
-                                {/* Week Days Header */}
-                                <div className="grid grid-cols-7 mb-4">
-                                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                                        <div key={day} className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 py-2">
-                                            {day}
+                                        {/* Date Header */}
+                                        <div className="sticky top-24 z-20 py-6 bg-[#e0e5ec]/95 backdrop-blur flex items-center gap-4 border-b border-white/50 mb-6">
+                                            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-amber-600">
+                                                <span className="text-[10px] font-black uppercase">
+                                                    {format(new Date(dateKey), 'MMM')}
+                                                </span>
+                                                <span className="text-lg font-black leading-none">
+                                                    {format(new Date(dateKey), 'dd')}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-gray-700 uppercase tracking-tight">
+                                                    {isSameDay(new Date(dateKey), new Date()) ? 'Today' :
+                                                        isSameDay(new Date(dateKey), new Date(Date.now() - 86400000)) ? 'Yesterday' :
+                                                            format(new Date(dateKey), 'EEEE')}
+                                                </h3>
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{format(new Date(dateKey), 'MMMM yyyy')}</p>
+                                            </div>
+                                            <div className="h-0.5 bg-gray-300/30 flex-1 ml-4 rounded-full"></div>
                                         </div>
-                                    ))}
-                                </div>
 
-                                {/* Days */}
-                                <div className="grid grid-cols-7 gap-3">
-                                    {eachDayOfInterval({
-                                        start: startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }),
-                                        end: endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 })
-                                    }).map((day, dayIdx) => {
-                                        const dateKey = format(day, 'yyyy-MM-dd');
-                                        const daySubmissions = groupedHistory[dateKey] || [];
-                                        const isToday = isSameDay(day, new Date());
-                                        const isSelected = selectedDate && isSameDay(day, selectedDate);
-                                        const isCurrentMonth = isSameMonth(day, currentMonth);
+                                        <div className="grid gap-4">
+                                            {groupedHistory[dateKey].map((sub: any) => (
+                                                <div
+                                                    key={sub.id}
+                                                    className="group p-5 rounded-3xl bg-[#e0e5ec] shadow-[9px_9px_16px_#bec3c9,-9px_-9px_16px_#ffffff] hover:shadow-[5px_5px_10px_#bec3c9,-5px_-5px_10px_#ffffff] hover:translate-x-1 transition-all border border-white/40 flex flex-col lg:flex-row items-center gap-6 relative overflow-hidden"
+                                                >
+                                                    {/* Accent Side Bar */}
+                                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 
+                                                        ${sub.checklist_templates?.type === 'pre_exam' ? 'bg-blue-500' :
+                                                            sub.checklist_templates?.type === 'post_exam' ? 'bg-purple-500' : 'bg-amber-500'}`}
+                                                    />
 
-                                        return (
-                                            <motion.div
-                                                key={day.toString()}
-                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: dayIdx * 0.01 }}
-                                                onClick={() => {
-                                                    setSelectedDate(day);
-                                                    setShowDayOverview(true);
-                                                }}
-                                                className={`
-                                                    min-h-[100px] rounded-2xl p-3 flex flex-col gap-2 cursor-pointer transition-all border border-transparent
-                                                    ${!isCurrentMonth ? 'opacity-40 grayscale' : ''}
-                                                    ${isSelected
-                                                        ? 'bg-white shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] border-amber-400/50'
-                                                        : 'bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] hover:scale-105 hover:z-10'
-                                                    }
-                                                `}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <span className={`text-xs font-bold ${isToday ? 'bg-amber-500 text-white px-2 py-0.5 rounded-md shadow-sm' : 'text-gray-500'}`}>
-                                                        {format(day, 'd')}
-                                                    </span>
-                                                    {daySubmissions.length > 0 && (
-                                                        <span className="text-[9px] font-black text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">
-                                                            {daySubmissions.length}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex flex-wrap gap-1 content-start flex-1">
-                                                    {daySubmissions.slice(0, 4).map((sub: any, i: number) => (
-                                                        <div
-                                                            key={sub.id}
-                                                            title={`${sub.submitted_by_profile?.full_name} - ${sub.checklist_templates?.title}`}
-                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow-sm border border-white/50
-                                                                ${sub.checklist_templates?.type === 'pre_exam' ? 'bg-blue-400' :
-                                                                    sub.checklist_templates?.type === 'post_exam' ? 'bg-purple-400' : 'bg-amber-400'}`}
+                                                    {/* Time & User Avatar */}
+                                                    <div className="flex items-center gap-5 w-full lg:w-auto min-w-[200px] pl-4">
+                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg transform group-hover:scale-110 transition-transform duration-300
+                                                            ${sub.checklist_templates?.type === 'pre_exam' ? 'bg-gradient-to-br from-blue-400 to-blue-600' :
+                                                                sub.checklist_templates?.type === 'post_exam' ? 'bg-gradient-to-br from-purple-400 to-purple-600' : 'bg-gradient-to-br from-amber-400 to-amber-600'}`}
                                                         >
                                                             {sub.submitted_by_profile?.full_name?.charAt(0) || '?'}
                                                         </div>
-                                                    ))}
-                                                    {daySubmissions.length > 4 && (
-                                                        <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[8px] font-bold">
-                                                            +{daySubmissions.length - 4}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Day Overview Popup Modal */}
-                            <AnimatePresence>
-                                {showDayOverview && selectedDate && groupedHistory[format(selectedDate, 'yyyy-MM-dd')] && (
-                                    <div className="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                            className={`${neumorphicCard} w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden bg-[#e0e5ec] shadow-[30px_30px_60px_#bebebe,-30px_-30px_60px_#ffffff]`}
-                                        >
-                                            <div className="p-6 border-b border-white/20 flex items-start justify-between bg-white/10">
-                                                <div>
-                                                    <h2 className="text-2xl font-black text-gray-700 uppercase tracking-tight">Timeline <span className="text-amber-600">Overview</span></h2>
-                                                    <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">
-                                                        {format(selectedDate, 'EEEE, MMMM do, yyyy')}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setShowDayOverview(false)}
-                                                    className="p-3 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-500 hover:text-red-500 transition-all"
-                                                >
-                                                    <X size={20} />
-                                                </button>
-                                            </div>
-
-                                            <div className="p-8 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
-                                                {groupedHistory[format(selectedDate, 'yyyy-MM-dd')].map((submission: any, idx: number) => (
-                                                    <div
-                                                        key={submission.id}
-                                                        className="flex items-center justify-between p-4 rounded-3xl bg-[#e0e5ec] shadow-[5px_5px_10px_#bec3c9,-5px_-5px_10px_#ffffff] hover:shadow-[inset_2px_2px_5px_#bec3c9,inset_-2px_-2px_5px_#ffffff] transition-all group"
-                                                    >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md
-                                                                ${submission.checklist_templates?.type === 'pre_exam' ? 'bg-blue-400' :
-                                                                    submission.checklist_templates?.type === 'post_exam' ? 'bg-purple-400' : 'bg-amber-400'}`}
-                                                            >
-                                                                <ClipboardList size={20} />
+                                                        <div>
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-3xl font-black text-gray-700 leading-none">
+                                                                    {format(new Date(sub.submitted_at), 'hh:mm')}
+                                                                </span>
+                                                                <span className="text-xs font-bold text-gray-400 uppercase">
+                                                                    {format(new Date(sub.submitted_at), 'a')}
+                                                                </span>
                                                             </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-black text-gray-700 uppercase leading-none">{submission.checklist_templates?.title}</h4>
-                                                                <div className="flex items-center gap-2 mt-1.5">
-                                                                    <span className="text-[10px] font-bold text-gray-400">{format(new Date(submission.submitted_at), 'p')}</span>
-                                                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                                    <span className="text-[10px] font-black text-amber-600 uppercase">{submission.submitted_by_profile?.full_name}</span>
-                                                                </div>
-                                                            </div>
+                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 truncate max-w-[120px]">
+                                                                {sub.submitted_by_profile?.full_name}
+                                                            </p>
                                                         </div>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedSubmission(submission);
-                                                                // The details modal will have a higher z-index (9999) to cover this
-                                                            }}
-                                                            className="p-3 rounded-2xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-500 hover:text-blue-600 active:shadow-inner transition-all"
-                                                        >
-                                                            <Eye size={18} />
-                                                        </button>
                                                     </div>
-                                                ))}
-                                            </div>
 
-                                            <div className="p-6 border-t border-white/20 bg-white/5 flex justify-end">
-                                                <button
-                                                    onClick={() => setShowDayOverview(false)}
-                                                    className="px-8 py-3 rounded-2xl bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-700 font-black uppercase tracking-widest text-xs hover:text-amber-600 active:shadow-inner transition-all flex items-center gap-2"
-                                                >
-                                                    Close View
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    </div>
-                                )}
-                            </AnimatePresence>
+                                                    {/* Vertical Separator (Hidden on mobile) */}
+                                                    <div className="hidden lg:block w-px h-16 bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
+
+                                                    {/* Details */}
+                                                    <div className="flex-1 w-full text-center lg:text-left">
+                                                        <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
+                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border
+                                                                ${sub.checklist_templates?.type === 'pre_exam' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                                                                    sub.checklist_templates?.type === 'post_exam' ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-amber-50 border-amber-200 text-amber-600'}`}
+                                                            >
+                                                                {sub.checklist_templates?.type === 'pre_exam' ? 'Start Shift' : sub.checklist_templates?.type === 'post_exam' ? 'End Shift' : 'Custom'}
+                                                            </span>
+                                                        </div>
+                                                        <h4 className="text-xl font-bold text-gray-800 uppercase tracking-tight leading-tight">{sub.checklist_templates?.title}</h4>
+                                                    </div>
+
+                                                    {/* Action */}
+                                                    <div className="w-full lg:w-auto flex justify-end gap-3 px-4 lg:px-0">
+                                                        <button
+                                                            onClick={() => setSelectedSubmission(sub)}
+                                                            className="px-6 py-3 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-600 font-bold text-xs uppercase tracking-wider hover:text-blue-600 hover:scale-105 active:scale-95 active:shadow-inner transition-all flex items-center gap-2 group/btn"
+                                                        >
+                                                            <Eye size={18} className="group-hover/btn:text-blue-600 transition-colors" />
+                                                            <span>Review</span>
+                                                        </button>
+                                                        {isSuperAdmin && (
+                                                            <button
+                                                                onClick={() => deleteSubmission(sub.id)}
+                                                                className="px-4 py-3 rounded-xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-400 hover:text-red-500 hover:shadow-[inset_2px_2px_5px_#bec3c9,inset_-2px_-2px_5px_#ffffff] active:scale-95 transition-all"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                     ) : null}
                 </div>
@@ -667,83 +587,12 @@ export const ChecklistManager: React.FC<ChecklistManagerProps> = ({ currentUser 
                     )}
 
                     {/* Submission Details Modal - POPUP PORTAL STYLE */}
+                    {/* Submission Details Modal - POPUP PORTAL STYLE */}
                     {selectedSubmission && (
-                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className={`${neumorphicCard} w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden bg-[#e0e5ec] shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]`}
-                            >
-                                <div className="p-6 border-b border-white/20 flex items-start justify-between bg-white/10">
-                                    <div>
-                                        <h2 className="text-2xl font-black text-gray-700 uppercase tracking-tight">Protocol <span className="text-amber-600">Review</span></h2>
-                                        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">{selectedSubmission.checklist_templates?.title}</p>
-                                    </div>
-                                    <button onClick={() => setSelectedSubmission(null)} className={neumorphicIconBtn}>
-                                        <X size={20} />
-                                    </button>
-                                </div>
-                                <div className="p-8 overflow-y-auto flex-1 space-y-8 custom-scrollbar">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-5 rounded-2xl bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff]">
-                                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Authorised Personnel</span>
-                                            <span className="block text-gray-700 font-bold text-lg">{selectedSubmission.submitted_by_profile?.full_name || 'N/A'}</span>
-                                        </div>
-                                        <div className="p-5 rounded-2xl bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff]">
-                                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Temporal Verification</span>
-                                            <span className="block text-gray-700 font-bold text-lg">{format(new Date(selectedSubmission.submitted_at), 'PPP • p')}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <h3 className="font-black text-gray-400 uppercase text-[10px] tracking-widest flex items-center gap-2 mb-6">
-                                            <Activity size={12} className="text-amber-600" /> Executive Summary
-                                        </h3>
-                                        {selectedSubmission.checklist_templates?.questions ? (
-                                            selectedSubmission.checklist_templates.questions.map((q: any, idx: number) => {
-                                                const responses = selectedSubmission.answers?.responses || selectedSubmission.answers || {};
-                                                const answer = responses[q.id];
-                                                return (
-                                                    <div key={q.id || idx} className="p-5 rounded-2xl bg-[#e0e5ec] shadow-[5px_5px_10px_#bec3c9,-5px_-5px_10px_#ffffff] flex items-start gap-5 group hover:shadow-[inset_2px_2px_5px_#bec3c9,inset_-2px_-2px_5px_#ffffff] transition-all">
-                                                        <div className="w-10 h-10 rounded-xl bg-white/40 flex items-center justify-center text-gray-400 font-black text-sm shadow-sm border border-white/20">{(idx + 1).toString().padStart(2, '0')}</div>
-                                                        <div className="flex-1">
-                                                            <p className="text-gray-700 font-bold mb-3">{q.text || q.title || `Question ${idx + 1}`}</p>
-                                                            <div className="flex items-center gap-2">
-                                                                {(answer === true || answer === 'Yes' || answer === 'Completed') ? (
-                                                                    <div className="px-4 py-1.5 bg-green-100 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] flex items-center gap-1.5 shadow-sm">
-                                                                        <CheckCircle size={14} /> Compliance Verified
-                                                                    </div>
-                                                                ) : (answer === false || answer === 'No' || answer === 'Incomplete') ? (
-                                                                    <div className="px-4 py-1.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] flex items-center gap-1.5 shadow-sm">
-                                                                        <X size={14} /> Action Required
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold border border-blue-200/50">{String(answer || 'N/A')}</div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <div className="p-10 text-center text-gray-400 italic bg-white/5 rounded-2xl border border-white/10">
-                                                Protocol template mismatch. Displaying raw data dump:
-                                                <pre className="mt-4 text-[10px] text-left overflow-x-auto p-4 bg-black/5 rounded-lg">{JSON.stringify(selectedSubmission.answers, null, 2)}</pre>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="p-6 border-t border-white/20 bg-white/5 flex justify-end">
-                                    <button
-                                        onClick={() => setSelectedSubmission(null)}
-                                        className="px-8 py-3 rounded-2xl bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-700 font-black uppercase tracking-widest text-xs hover:text-amber-600 active:shadow-inner transition-all"
-                                    >
-                                        Dismiss
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
+                        <SubmissionDetailsModal
+                            submission={selectedSubmission}
+                            onClose={() => setSelectedSubmission(null)}
+                        />
                     )}
                 </AnimatePresence>
             </div>
@@ -861,7 +710,8 @@ const HistoryItem = ({ submission, index, onSelect, onDelete }: {
         <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center justify-between p-6 rounded-[2rem] bg-[#e0e5ec] shadow-[9px_9px_16px_#bebebe,-9px_-9px_16px_#ffffff] group hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] transition-all"
+            onClick={() => onSelect(submission)}
+            className="flex items-center justify-between p-6 rounded-[2rem] bg-[#e0e5ec] shadow-[9px_9px_16px_#bebebe,-9px_-9px_16px_#ffffff] group hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] transition-all cursor-pointer"
         >
             <div className="flex-1">
                 <div className="flex items-center gap-4 mb-3">
@@ -888,10 +738,10 @@ const HistoryItem = ({ submission, index, onSelect, onDelete }: {
                     {submission.status}
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={() => onSelect(submission)} className="p-3.5 rounded-2xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-500 hover:text-blue-600 transition-all hover:scale-105 active:scale-95">
+                    <button onClick={(e) => { e.stopPropagation(); onSelect(submission); }} className="p-3.5 rounded-2xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-gray-500 hover:text-blue-600 transition-all hover:scale-105 active:scale-95">
                         <Eye size={20} />
                     </button>
-                    <button onClick={() => onDelete(submission.id)} className="p-3.5 rounded-2xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-red-300 hover:text-red-500 transition-all hover:scale-105 active:scale-95">
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(submission.id); }} className="p-3.5 rounded-2xl bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-red-300 hover:text-red-500 transition-all hover:scale-105 active:scale-95">
                         <Trash2 size={20} />
                     </button>
                 </div>
@@ -899,5 +749,191 @@ const HistoryItem = ({ submission, index, onSelect, onDelete }: {
         </motion.div>
     );
 };
+
+const SubmissionDetailsModal = ({ submission, onClose }: { submission: any; onClose: () => void }) => {
+    // 1. Group questions by section
+    const groupedQuestions = useMemo(() => {
+        const questions = submission.checklist_templates?.questions || [];
+        const groups: Record<string, any[]> = {};
+        
+        // Default group if no section
+        const DEFAULT_SECTION = 'General Verification';
+
+        questions.forEach((q: any) => {
+            const section = q.section || DEFAULT_SECTION;
+            if (!groups[section]) groups[section] = [];
+            groups[section].push(q);
+        });
+
+        return groups;
+    }, [submission]);
+
+    const isPre = submission.checklist_templates?.type === 'pre_exam';
+    const isPost = submission.checklist_templates?.type === 'post_exam';
+    const themeColor = isPre ? 'blue' : isPost ? 'purple' : 'amber';
+    const themeGradient = isPre ? 'from-blue-500 to-blue-600' : isPost ? 'from-purple-500 to-purple-600' : 'from-amber-500 to-amber-600';
+    const themeLight = isPre ? 'bg-blue-50 text-blue-700' : isPost ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700';
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-[#e0e5ec] rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+                {/* Header Banner */}
+                <div className={`relative px-8 py-8 bg-gradient-to-r ${themeGradient} text-white shrink-0`}>
+                    <div className="absolute top-0 right-0 p-32 bg-white opacity-5 rounded-full blur-3xl transform -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    
+                    <div className="relative z-10 flex justify-between items-start">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2 opacity-90">
+                                <span className="px-2.5 py-1 rounded-lg bg-white/20 text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md border border-white/20">
+                                    {isPre ? 'Start Shift Protocol' : isPost ? 'End Shift Protocol' : 'Custom Check'}
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                                    <Clock size={12} />
+                                    {format(new Date(submission.submitted_at), 'HH:mm')} hrs
+                                </span>
+                            </div>
+                            <h2 className="text-3xl font-black uppercase tracking-tight leading-none mb-1 text-white drop-shadow-sm">
+                                {submission.checklist_templates?.title}
+                            </h2>
+                            <p className="text-white/70 text-xs font-medium uppercase tracking-widest">
+                                Submission ID: {submission.id.slice(0, 8)}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={onClose}
+                            className="p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/10"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    {/* Metadata Strip */}
+                    <div className="mt-8 flex items-center gap-8 text-xs font-bold bg-black/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white text-gray-800 flex items-center justify-center font-black text-base shadow-lg">
+                                {submission.submitted_by_profile?.full_name?.charAt(0)}
+                            </div>
+                            <div>
+                                <p className="opacity-50 text-[9px] uppercase tracking-widest mb-0.5">Submitted By</p>
+                                <p className="text-lg leading-none">{submission.submitted_by_profile?.full_name || 'Unknown'}</p>
+                            </div>
+                        </div>
+                        <div className="w-px h-8 bg-white/20"></div>
+                        <div>
+                            <p className="opacity-50 text-[9px] uppercase tracking-widest mb-0.5">Submission Date</p>
+                            <p className="text-lg leading-none">{format(new Date(submission.submitted_at), 'dd MMM yyyy')}</p>
+                        </div>
+                        <div className="w-px h-8 bg-white/20"></div>
+                        <div>
+                             <p className="opacity-50 text-[9px] uppercase tracking-widest mb-0.5">Location Node</p>
+                             <div className="flex items-center gap-1.5">
+                                <MapPin size={14} className="opacity-80"/>
+                                <p className="text-lg leading-none uppercase">{submission.branch_id || 'Global'}</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    {/* Progress Overview (Optional visual summary) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {Object.entries(groupedQuestions).map(([section, questions]) => (
+                            <div key={section} className="flex flex-col gap-4">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-inner ${themeLight}`}>
+                                        <Box size={16} />
+                                    </div>
+                                    <h3 className="text-sm font-black text-gray-600 uppercase tracking-widest">
+                                        {section}
+                                    </h3>
+                                    <div className="h-px bg-gray-300 flex-1 ml-2 opacity-50"></div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {questions.map((q: any) => {
+                                        const answer = submission.answers[q.id];
+                                        const hasAnswer = answer !== undefined && answer !== null && answer !== '';
+                                        
+                                        // Visual Logic
+                                        let isNegative = false; // logic to determine if answer is "bad"
+                                        if (q.type === 'radio' || q.type === 'dropdown') {
+                                           if (typeof answer === 'string' && (answer.toLowerCase() === 'no' || answer.toLowerCase() === 'fail' || answer.toLowerCase() === 'poor')) isNegative = true;
+                                        }
+
+                                        return (
+                                            <div 
+                                                key={q.id} 
+                                                className={`
+                                                    p-5 rounded-2xl bg-[#e0e5ec] shadow-[5px_5px_10px_#bec3c9,-5px_-5px_10px_#ffffff] border 
+                                                    ${isNegative ? 'border-red-200 bg-red-50/10' : 'border-white/50'} 
+                                                    flex flex-col gap-3 transition-all hover:translate-y-[-2px]
+                                                `}
+                                            >
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <p className="text-sm font-bold text-gray-700 leading-snug">{q.text}</p>
+                                                    {/* Status Indicator */}
+                                                    {hasAnswer ? (
+                                                        <div className={`shrink-0`}>
+                                                            {q.type === 'checkbox' ? (
+                                                                answer ? <CheckCircle2 className="text-green-500" size={20}/> : <X className="text-gray-300" size={20}/>
+                                                            ) : (typeof answer === 'string' && (answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'pass' || answer.toLowerCase() === 'good')) ? (
+                                                                <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-100/80 text-green-700 text-[10px] font-black uppercase tracking-wider border border-green-200">
+                                                                    <CheckCircle2 size={12} /> {answer}
+                                                                </span>
+                                                            ) : (typeof answer === 'string' && (answer.toLowerCase() === 'no' || answer.toLowerCase() === 'fail' || answer.toLowerCase() === 'poor')) ? (
+                                                                <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-100/80 text-red-700 text-[10px] font-black uppercase tracking-wider border border-red-200">
+                                                                    <AlertCircle size={12} /> {answer}
+                                                                </span>
+                                                            ) : (
+                                                                 <span className="px-2.5 py-1 rounded-lg bg-gray-200/50 text-gray-600 text-[10px] font-bold uppercase tracking-wider">
+                                                                    {String(answer)}
+                                                                 </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="px-2 py-1 rounded bg-gray-100 text-gray-400 text-[9px] font-bold uppercase tracking-wider">Skipped</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Text responses or comments */}
+                                                {(q.type === 'text' || q.type === 'textarea') && hasAnswer && (
+                                                     <div className="p-3 bg-white/40 rounded-xl text-xs font-medium text-gray-600 border border-white/40 italic flex gap-2">
+                                                        <MessageSquare size={14} className="text-gray-400 mt-0.5 shrink-0"/>
+                                                        {answer}
+                                                     </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 bg-[#e0e5ec] border-t border-white/20 flex items-center justify-between shrink-0">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        Validated System Entry
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="px-8 py-3 rounded-xl bg-gray-200 text-gray-600 font-bold uppercase tracking-widest text-xs hover:bg-gray-300 hover:text-gray-800 transition-colors shadow-sm"
+                    >
+                        Close Review
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
+
 
 export default ChecklistManager;

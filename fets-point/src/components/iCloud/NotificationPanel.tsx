@@ -65,77 +65,84 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - subtle, not too dark */}
       <motion.div
         className="notification-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
         onClick={onClose}
         style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.15)',
+          backdropFilter: 'blur(2px)',
           zIndex: 9998
         }}
       />
 
-      {/* Panel */}
+      {/* Panel - Fast, snappy animation */}
       <motion.div
         className="notification-panel"
-        initial={{ opacity: 0, x: 300, scale: 0.9 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        exit={{ opacity: 0, x: 300, scale: 0.9 }}
-        transition={{ type: "spring", damping: 20, stiffness: 300 }}
+        initial={{ opacity: 0, y: -10, x: 0 }}
+        animate={{ opacity: 1, y: 0, x: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
         style={{
           position: 'fixed',
-          top: 100,
-          right: 20,
-          width: 400,
-          maxHeight: '80vh',
-          zIndex: 9999
+          top: 80,
+          right: 16,
+          width: 380,
+          maxHeight: '75vh',
+          zIndex: 9999,
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12)'
         }}
       >
-        <GlassCard className="notification-container" style={{ padding: 0 }}>
-          {/* Header */}
+        <GlassCard className="notification-container" style={{ padding: 0, background: 'rgba(255, 255, 255, 0.98)' }}>
+          {/* Header - Clean, elegant */}
           <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+            padding: '14px 18px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, #FAFAF9 0%, #F5F5F4 100%)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Bell size={20} />
-              <span style={{ fontWeight: 600, fontSize: '16px' }}>Notifications</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Bell size={18} style={{ color: '#78716C' }} />
+              <span style={{ fontWeight: 600, fontSize: '15px', color: '#44403C', letterSpacing: '0.02em' }}>Pulse</span>
               {unreadCount > 0 && (
                 <div style={{
-                  backgroundColor: '#ef4444',
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                   color: 'white',
-                  borderRadius: '9999px',
+                  borderRadius: '10px',
                   padding: '2px 8px',
-                  fontSize: '12px',
-                  fontWeight: 600
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)'
                 }}>
                   {unreadCount}
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
                   style={{
-                    padding: '4px 12px',
-                    fontSize: '12px',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    color: '#2563eb',
+                    padding: '5px 10px',
+                    fontSize: '11px',
+                    backgroundColor: 'rgba(120, 113, 108, 0.08)',
+                    color: '#57534E',
                     border: 'none',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   Mark all read
@@ -144,32 +151,35 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
               <button
                 onClick={onClose}
                 style={{
-                  padding: '4px',
+                  padding: '5px',
                   backgroundColor: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  borderRadius: '4px'
+                  borderRadius: '6px',
+                  color: '#A8A29E',
+                  transition: 'color 0.15s ease'
                 }}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>
 
-          {/* Notifications List */}
+          {/* Notifications List - Smooth scrolling, refined spacing */}
           <div style={{
-            maxHeight: 'calc(80vh - 80px)',
-            overflowY: 'auto'
+            maxHeight: 'calc(70vh - 70px)',
+            overflowY: 'auto',
+            scrollBehavior: 'smooth'
           }}>
             {isLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-                Loading notifications...
+              <div style={{ padding: '50px 20px', textAlign: 'center', color: '#A8A29E' }}>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>Loading...</div>
               </div>
             ) : notifications.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-                <Bell size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
-                <p style={{ fontWeight: 500 }}>No notifications</p>
-                <p style={{ fontSize: '14px', marginTop: '4px' }}>You're all caught up!</p>
+              <div style={{ padding: '50px 20px', textAlign: 'center', color: '#A8A29E' }}>
+                <Bell size={36} style={{ margin: '0 auto 12px', opacity: 0.25 }} />
+                <p style={{ fontWeight: 500, fontSize: '14px', color: '#78716C' }}>All clear</p>
+                <p style={{ fontSize: '12px', marginTop: '4px', color: '#A8A29E' }}>No new updates</p>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -177,11 +187,11 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification.id, notification.link)}
                   style={{
-                    padding: '16px 20px',
-                    borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+                    padding: '14px 18px',
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
                     cursor: notification.link ? 'pointer' : 'default',
-                    transition: 'background-color 0.2s',
-                    backgroundColor: notification.is_read ? 'transparent' : 'rgba(59, 130, 246, 0.05)',
+                    transition: 'background-color 0.12s ease',
+                    backgroundColor: notification.is_read ? 'transparent' : 'rgba(245, 158, 11, 0.04)',
                     position: 'relative'
                   }}
                   onMouseEnter={(e) => {
@@ -190,13 +200,13 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
                     }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = notification.is_read ? 'transparent' : 'rgba(59, 130, 246, 0.05)'
+                    e.currentTarget.style.backgroundColor = notification.is_read ? 'transparent' : 'rgba(245, 158, 11, 0.04)'
                   }}
                 >
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'start' }}>
                     <div
                       style={{
-                        padding: '8px',
+                        padding: '7px',
                         borderRadius: '8px',
                       }}
                       className={getNotificationColor(notification.priority, notification.is_read)}
@@ -213,9 +223,10 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
                       }}>
                         <h4 style={{
                           margin: 0,
-                          fontWeight: notification.is_read ? 500 : 600,
-                          fontSize: '14px',
-                          color: notification.is_read ? '#6b7280' : '#111827'
+                          fontWeight: notification.is_read ? 400 : 500,
+                          fontSize: '13px',
+                          color: notification.is_read ? '#78716C' : '#44403C',
+                          lineHeight: '1.4'
                         }}>
                           {notification.title}
                         </h4>

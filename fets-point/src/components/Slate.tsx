@@ -17,7 +17,7 @@ interface SlateEntry {
   user_id: string
   title: string
   content: string
-  category: 'note' | 'idea' | 'task' | 'reflection' | 'dream'
+  category: 'note' | 'idea' | 'task' | 'reflection' | 'dream' | 'memo' | 'journal' | 'quote'
   is_starred: boolean
   is_pinned: boolean
   mood?: string
@@ -25,26 +25,36 @@ interface SlateEntry {
   updated_at: string
 }
 
-// --- Luxury Color Palette ---
+// --- FETS Theme Color Palette (Matching App Theme) ---
 const COLORS = {
-  gold: '#D4AF37',
+  // Primary Gold/Amber tones matching the header
+  tuscanYellow: '#E4A853',
+  deepGold: '#C4922F',
   champagne: '#F7E7CE',
-  burgundy: '#800020',
+  darkChocolate: '#3D2B1F',
+  warmBrown: '#5D4E37',
   ivory: '#FFFFF0',
+  // Accent Colors
   sapphire: '#0F52BA',
   emerald: '#50C878',
   amethyst: '#9966CC',
-  pearl: '#FDEEF4',
+  coral: '#FF6B6B',
+  teal: '#20B2AA',
   bronze: '#CD7F32',
-  cream: '#FFFDD0'
+  cream: '#FFFDD0',
+  slate: '#607D8B'
 }
 
+// --- Enhanced Category Varieties ---
 const CATEGORY_CONFIG = {
-  note: { icon: Pen, color: 'from-amber-400 to-yellow-500', label: 'Note', accent: COLORS.gold },
+  note: { icon: Pen, color: 'from-amber-400 to-yellow-500', label: 'Note', accent: COLORS.tuscanYellow },
   idea: { icon: Sparkles, color: 'from-violet-400 to-purple-500', label: 'Idea', accent: COLORS.amethyst },
   task: { icon: Flag, color: 'from-emerald-400 to-green-500', label: 'Task', accent: COLORS.emerald },
-  reflection: { icon: Heart, color: 'from-rose-400 to-pink-500', label: 'Reflection', accent: COLORS.burgundy },
-  dream: { icon: Star, color: 'from-blue-400 to-indigo-500', label: 'Dream', accent: COLORS.sapphire }
+  reflection: { icon: Heart, color: 'from-rose-400 to-pink-500', label: 'Reflection', accent: COLORS.coral },
+  dream: { icon: Star, color: 'from-blue-400 to-indigo-500', label: 'Dream', accent: COLORS.sapphire },
+  memo: { icon: Bookmark, color: 'from-orange-400 to-amber-500', label: 'Memo', accent: COLORS.deepGold },
+  journal: { icon: BookMarked, color: 'from-teal-400 to-cyan-500', label: 'Journal', accent: COLORS.teal },
+  quote: { icon: Feather, color: 'from-slate-400 to-gray-500', label: 'Quote', accent: COLORS.slate }
 }
 
 // --- Book Cover Component ---
@@ -91,7 +101,7 @@ const BookCover = ({
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         className="relative rounded-lg overflow-hidden shadow-2xl"
         style={{
-          background: `linear-gradient(135deg, ${COLORS.burgundy} 0%, #4a0010 50%, ${COLORS.burgundy} 100%)`,
+          background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 50%, ${COLORS.darkChocolate} 100%)`,
           minHeight: '500px'
         }}
       >
@@ -107,7 +117,7 @@ const BookCover = ({
         <div 
           className="absolute left-0 top-0 bottom-0 w-8"
           style={{
-            background: `linear-gradient(90deg, ${COLORS.bronze} 0%, ${COLORS.gold} 50%, ${COLORS.bronze} 100%)`,
+            background: `linear-gradient(90deg, ${COLORS.bronze} 0%, ${COLORS.tuscanYellow} 50%, ${COLORS.bronze} 100%)`,
             boxShadow: 'inset -4px 0 8px rgba(0,0,0,0.3)'
           }}
         />
@@ -267,7 +277,7 @@ const EntryEditor = ({
         {/* Header */}
         <div 
           className="px-6 py-4 flex items-center justify-between"
-          style={{ background: `linear-gradient(135deg, ${COLORS.burgundy} 0%, #4a0010 100%)` }}
+          style={{ background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)` }}
         >
           <div className="flex items-center gap-3">
             <BookOpen size={20} className="text-amber-400" />
@@ -353,7 +363,7 @@ const EntryEditor = ({
             <button
               onClick={handleSubmit}
               className="flex-1 px-6 py-3 font-bold rounded-xl text-white shadow-lg transition-all hover:shadow-xl"
-              style={{ background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.bronze} 100%)` }}
+              style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
             >
               <span className="flex items-center justify-center gap-2">
                 <Pen size={18} />
@@ -645,7 +655,7 @@ export function Slate() {
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                style={{ background: `linear-gradient(135deg, ${COLORS.burgundy} 0%, #4a0010 100%)` }}
+                style={{ background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)` }}
               >
                 <BookOpen size={24} className="text-amber-400" />
               </button>
@@ -733,7 +743,7 @@ export function Slate() {
               setShowEditor(true)
             }}
             className="flex items-center gap-2 px-5 py-3 font-bold rounded-xl text-white shadow-lg hover:shadow-xl transition-all"
-            style={{ background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.bronze} 100%)` }}
+            style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
           >
             <Plus size={18} />
             New Entry
@@ -771,7 +781,7 @@ export function Slate() {
             <button
               onClick={() => setShowEditor(true)}
               className="px-6 py-3 font-bold rounded-xl text-white shadow-lg"
-              style={{ background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.bronze} 100%)` }}
+              style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
             >
               Create Your First Entry
             </button>

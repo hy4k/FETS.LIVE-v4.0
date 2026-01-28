@@ -349,7 +349,7 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
     const totals = useMemo(() => {
         const byBranch: { [branch: string]: { candidates: number; sessions: number } } = {};
         let totalCandidates = 0;
-        let totalSessions = sessions.length;
+        const totalSessions = sessions.length;
 
         sessions.forEach(session => {
             const branch = session.branch_location || 'calicut';

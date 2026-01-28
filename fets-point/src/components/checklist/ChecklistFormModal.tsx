@@ -21,6 +21,15 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
     const [submitting, setSubmitting] = useState(false);
     const [attachments, setAttachments] = useState<Record<string, any[]>>({});
     const [activeSection, setActiveSection] = useState<string>('');
+    const [availableSystems, setAvailableSystems] = useState<any[]>([]); // Systems for dropdown
+
+    useEffect(() => {
+        const fetchSystems = async () => {
+            const { data } = await supabase.from('systems').select('id, name, branch_location, system_type, ip_address').order('name');
+            if (data) setAvailableSystems(data);
+        };
+        fetchSystems();
+    }, []);
 
     const questions = template.questions || [];
     const watchedValues = watch();
@@ -99,9 +108,15 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
 
         setSubmitting(true);
         try {
+            // CRITICAL: submitted_by MUST be the auth.uid() (user_id from staff_profiles)
+            // The RLS policy requires auth.uid() = submitted_by for INSERT
+            // Note: When overrideStaff is used for admin submission on behalf of another user,
+            // we still use the current user's auth ID since that's what RLS checks
+            const authUserId = currentUser.user_id || currentUser.id;
+            
             const submission = {
                 template_id: template.id,
-                submitted_by: overrideStaff?.id || currentUser.user_id || currentUser.id,
+                submitted_by: authUserId, // Always use the authenticated user's ID
                 branch_id: overrideBranch || currentUser.branch_assigned || currentUser.branch_id || null,
                 submitted_at: new Date().toISOString(),
                 answers: data,
@@ -109,14 +124,26 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                 status: 'submitted'
             };
 
-            const { error } = await supabase.from('checklist_submissions').insert(submission);
-            if (error) throw error;
+            console.log('📋 Submitting checklist:', {
+                template_id: submission.template_id,
+                submitted_by: submission.submitted_by,
+                branch_id: submission.branch_id,
+                currentUser_user_id: currentUser.user_id,
+                currentUser_id: currentUser.id
+            });
 
+            const { error } = await supabase.from('checklist_submissions').insert(submission);
+            if (error) {
+                console.error('❌ Supabase insert error:', error);
+                throw error;
+            }
+
+            console.log('✅ Checklist submitted successfully');
             toast.success('Form saved successfully.');
             if (onSuccess) onSuccess();
             onClose();
         } catch (error: any) {
-            console.error('Submission error:', error);
+            console.error('❌ Submission error:', error);
             toast.error(error.message || 'Failed to save form.');
         } finally {
             setSubmitting(false);
@@ -270,7 +297,52 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                     </div>
 
                                     <div className="space-y-8">
-                                        {groupQuestions.map((q, idx) => (
+                                        {groupQuestions.map((q, idx) => {
+                                            // ---------------------------------------------------------
+                                            // LOGIC: Conditional Visibility & Custom System Error Input
+                                            // ---------------------------------------------------------
+                                            
+                                            // 1. Identify if this is the dependent question
+                                            const isSystemErrorQuestion = q.text.toLowerCase().includes('system number') && q.text.toLowerCase().includes('error note');
+                                            
+                                            // 2. Conditional Visibility Logic
+                                            if (isSystemErrorQuestion) {
+                                                const triggerQuestion = questions.find(qst => qst.text.toLowerCase().includes('any workstation errors'));
+                                                // If trigger exists, check its value. If it's NOT "Yes" (or equivalent positive), hide this question.
+                                                if (triggerQuestion) {
+                                                    const triggerValue = watchedValues[triggerQuestion.id];
+                                                    const isYes = typeof triggerValue === 'string' && ['yes', 'fail', 'error', 'issues'].some(v => triggerValue.toLowerCase().includes(v));
+                                                    // Also check for boolean true if it's a checkbox, though usually these are Radios
+                                                    const isChecked = triggerValue === true;
+                                                    
+                                                    if (!isYes && !isChecked) return null;
+                                                }
+                                            }
+
+                                            // 3. Render Custom System Selector if matched
+                                            if (isSystemErrorQuestion) {
+                                                return (
+                                                     <SystemErrorInput 
+                                                        key={q.id}
+                                                        question={q}
+                                                        theme={theme}
+                                                        register={register}
+                                                        setValue={setValue}
+                                                        watch={watch}
+                                                        errors={errors}
+                                                        attachments={attachments}
+                                                        onFilesSelected={handleFilesSelected}
+                                                        activeBranch={overrideBranch || currentUser.branch_assigned || currentUser.branch_id || 'Global'}
+                                                        availableSystems={availableSystems}
+                                                     />
+                                                );
+                                            }
+
+                                            // ---------------------------------------------------------
+                                            // END CUSTOM LOGIC
+                                            // ---------------------------------------------------------
+
+                                            return (
                                             <motion.div 
                                                 key={q.id || idx}
                                                 variants={itemVariants}
@@ -446,7 +518,8 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                                     </div>
                                                 </div>
                                             </motion.div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </motion.div>
                             ))}
@@ -501,6 +574,117 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                     </div>
                 </div>
             </motion.div>
+        </div>
+    );
+};
+
+const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, attachments, onFilesSelected, activeBranch, availableSystems }: any) => {
+    const [selectedSysIds, setSelectedSysIds] = useState<string[]>([]);
+    const [errorNote, setErrorNote] = useState('');
+    const [search, setSearch] = useState('');
+    
+    // Initialize from form state if present
+    useEffect(() => {
+        const currentVal = watch(question.id);
+        if (currentVal && typeof currentVal === 'object') {
+             if (currentVal.systems) setSelectedSysIds(currentVal.systems);
+             if (currentVal.note) setErrorNote(currentVal.note);
+        }
+    }, [watch, question.id]);
+
+    // Sync to form
+    useEffect(() => {
+        setValue(question.id, {
+            systems: selectedSysIds,
+            note: errorNote,
+            summary: `${selectedSysIds.length} Systems: ${errorNote}` 
+        });
+    }, [selectedSysIds, errorNote, setValue, question.id]);
+
+    const filteredSystems = availableSystems.filter((s: any) => {
+        const matchesBranch = activeBranch === 'Global' || s.branch_location === activeBranch;
+        const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.ip_address && s.ip_address.includes(search));
+        return matchesBranch && matchesSearch; 
+    });
+
+    const toggleSystem = (id: string) => {
+        setSelectedSysIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    return (
+        <div className={`p-6 md:p-8 rounded-[2rem] border transition-all duration-300 bg-white ${selectedSysIds.length > 0 ? 'border-amber-200 bg-amber-50/5' : 'border-slate-100'}`}>
+            <h3 className="text-lg md:text-xl font-black text-slate-700 leading-snug tracking-tight mb-4">
+                {question.text} <span className="text-rose-400 ml-1">*</span>
+            </h3>
+            
+            <div className="space-y-6">
+                {/* 1. System Selector */}
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Affected System(s)</label>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <input 
+                            type="text" 
+                            placeholder="Search systems..." 
+                            className="w-full bg-transparent outline-none text-xs font-bold mb-4 border-b border-slate-200 pb-2"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                            {filteredSystems.length > 0 ? filteredSystems.map((sys: any) => (
+                                <div 
+                                    key={sys.id} 
+                                    onClick={() => toggleSystem(sys.id)}
+                                    className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${selectedSysIds.includes(sys.id) ? `bg-${theme.accent}-100 border-${theme.accent}-200` : 'bg-white border-slate-100 hover:border-slate-200'}`}
+                                >
+                                    <div>
+                                        <p className="text-xs font-black uppercase">{sys.name}</p>
+                                        <p className="text-[9px] font-bold text-slate-400">{sys.ip_address}</p>
+                                    </div>
+                                    {selectedSysIds.includes(sys.id) && (
+                                        <div className={`w-5 h-5 rounded-full ${theme.primary} text-white flex items-center justify-center`}>
+                                            <Check size={12} />
+                                        </div>
+                                    )}
+                                </div>
+                            )) : (
+                                <p className="text-[10px] text-slate-400 italic">No matching systems found in {activeBranch}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Error Note */}
+                <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Error Details</label>
+                     <textarea
+                        value={errorNote}
+                        onChange={e => setErrorNote(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-rose-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm resize-none"
+                        placeholder="Describe the error..."
+                        rows={3}
+                     />
+                </div>
+
+                {/* 3. Attachment */}
+                 <div className={`p-6 rounded-[1.5rem] border-2 border-dashed ${attachments[question.id]?.length > 0 ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-slate-50/30'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
+                                Proof of Error
+                            </span>
+                        </div>
+                        {attachments[question.id]?.length > 0 && (
+                            <div className="flex items-center gap-2 text-emerald-600 bg-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                <Check size={14} /> Attached
+                            </div>
+                        )}
+                    </div>
+                    <FileUpload 
+                        onFilesSelected={(files) => onFilesSelected(question.id, files)} 
+                        maxFiles={1} 
+                    />
+                </div>
+            </div>
         </div>
     );
 };

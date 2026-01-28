@@ -96,6 +96,7 @@ export function useRealtimeNotifications() {
 
 /**
  * Show toast notification based on priority and type
+ * Design: Elegant, subtle visual treat - not loud or intrusive
  */
 function showToastNotification(notification: Notification) {
   const { priority, title, message, type } = notification
@@ -103,52 +104,76 @@ function showToastNotification(notification: Notification) {
   // Get icon based on type
   const icon = getNotificationIcon(type)
 
-  // Show toast based on priority
+  // Common elegant styling - glassmorphism inspired
+  const elegantBase = {
+    borderRadius: '12px',
+    padding: '12px 16px',
+    fontSize: '13px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    maxWidth: '360px'
+  }
+
+  // Show toast based on priority - only critical and high show toasts
   switch (priority) {
     case 'critical':
-      toast.error(`${title}: ${message}`, {
+      // Critical: Visible but still elegant
+      toast(`${title}`, {
         icon: icon,
-        duration: 10000, // 10 seconds for critical
+        duration: 8000,
         style: {
-          background: '#FEE2E2',
+          ...elegantBase,
+          background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
           color: '#991B1B',
-          fontWeight: 'bold'
-        }
-      })
-      break
-
-    case 'high':
-      toast(`${title}: ${message}`, {
-        icon: icon,
-        duration: 6000, // 6 seconds
-        style: {
-          background: '#FEF3C7',
-          color: '#92400E',
           fontWeight: '600'
         }
       })
       break
 
-    case 'medium':
-      toast(`${title}: ${message}`, {
+    case 'high':
+      // High: Subtle amber glow
+      toast(`${title}`, {
         icon: icon,
-        duration: 4000, // 4 seconds
+        duration: 5000,
         style: {
-          background: '#DBEAFE',
-          color: '#1E3A8A'
+          ...elegantBase,
+          background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+          color: '#92400E',
+          fontWeight: '500'
+        }
+      })
+      break
+
+    case 'medium':
+      // Medium: Soft blue, short duration
+      toast(title, {
+        icon: icon,
+        duration: 3000,
+        style: {
+          ...elegantBase,
+          background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+          color: '#1E40AF',
+          fontWeight: '400'
         }
       })
       break
 
     case 'low':
-      // Don't show toast for low priority - only update UI
-      console.log('ℹ️  Low priority notification (no toast):', title)
+      // Low priority: No toast - only update UI silently
+      console.log('ℹ️  Pulse update (silent):', title)
       break
 
     default:
-      toast(`${title}: ${message}`, {
+      // Default: Minimal, disappears quickly
+      toast(title, {
         icon: icon,
-        duration: 4000
+        duration: 2500,
+        style: {
+          ...elegantBase,
+          background: 'linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%)',
+          color: '#374151'
+        }
       })
   }
 }

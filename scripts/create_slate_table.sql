@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.slate_entries (
   user_id UUID NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  category TEXT DEFAULT 'note' CHECK (category IN ('note', 'idea', 'task', 'reflection', 'dream')),
+  category TEXT DEFAULT 'note' CHECK (category IN ('note', 'idea', 'task', 'reflection', 'dream', 'memo', 'journal', 'quote')),
   is_starred BOOLEAN DEFAULT FALSE,
   is_pinned BOOLEAN DEFAULT FALSE,
   mood TEXT,

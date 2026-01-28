@@ -11,8 +11,9 @@ import { useBranch } from '../hooks/useBranch'
 import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule } from '../hooks/useCommandCentre'
 import { useNews } from '../hooks/useNewsManager'
-import { DailySpark } from './DailySpark'
 import { AccessHub } from './AccessHub'
+import { InkNotebook } from './InkNotebook'
+import { TeamPresence } from './TeamPresence'
 import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
 import { NotificationBanner } from './NotificationBanner'
@@ -57,18 +58,11 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
     }, [newsItems, activeBranch])
     const [todayStatus, setTodayStatus] = useState({ pre: 'Not started', post: 'Not started' })
 
-    const [staff, setStaff] = useState<StaffProfile[]>([])
-    const [presence, setPresence] = useState<Record<string, { status: string, last_seen: string }>>({})
-    const [openChats, setOpenChats] = useState<StaffProfile[]>([])
-
-    const fetchAnalysis = async () => {
+    const fetchAnalysis = React.useCallback(async () => {
         try {
             const today = new Date().toISOString().split('T')[0]
             const startOfMonth = new Date(); startOfMonth.setDate(1);
 
-            // Fetch Staff for User List
-            const { data: staffData } = await supabase.from('staff_profiles').select('*').neq('user_id', user?.id)
-            setStaff(staffData || [])
 
             // --- Checklist Status for Today ---
             const { data: checklists } = await supabase
@@ -127,39 +121,20 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                 perfect: (checklists?.length || 0) - (issues > 0 ? 1 : 0)
             })
 
-            // Separate Staff Fetch to avoid failures impacting metrics
-            const { data: sData } = await supabase.from('staff_profiles').select('*').neq('user_id', user?.id)
-            if (sData) setStaff(sData)
 
             setLoadingAnalysis(false)
         } catch (e) {
             console.error("Analysis load failed", e)
             setLoadingAnalysis(false)
         }
-    }
+    }, [activeBranch])
 
-    // Effect for Presence Management
-    useEffect(() => {
-        if (!user?.id) return
-        
-        const channel = supabase.channel('online-staff-centre', { config: { presence: { key: user.id } } })
-        channel.on('presence', { event: 'sync' }, () => {
-            const state = channel.presenceState()
-            const map: any = {}
-            for (const key in state) { if (state[key].length > 0) map[key] = state[key][0] }
-            setPresence(map)
-        }).subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') await channel.track({ user_id: user.id, status: 'online' })
-        })
-
-        return () => { channel.unsubscribe() }
-    }, [user?.id])
 
     useEffect(() => {
         if (user?.id) {
             fetchAnalysis()
         }
-    }, [user?.id, activeBranch])
+    }, [user?.id, fetchAnalysis])
 
 
     const handleOpenChecklist = async (type: 'pre_exam' | 'post_exam' | 'custom') => {
@@ -205,13 +180,19 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
 
     useEffect(() => {
         let timer: any
-        if (isTimerActive && timeLeft > 0) {
+        if (isTimerActive) {
             timer = setInterval(() => {
-                setTimeLeft(prev => prev - 1)
+                setTimeLeft(prev => {
+                    if (prev <= 0) {
+                        clearInterval(timer)
+                        return 0
+                    }
+                    return prev - 1
+                })
             }, 1000)
         }
         return () => clearInterval(timer)
-    }, [isTimerActive, timeLeft])
+    }, [isTimerActive])
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600).toString().padStart(2, '0')
@@ -264,7 +245,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                     <div className="flex flex-wrap items-center gap-8 w-full lg:w-auto">
 
                         {/* THE EXECUTIVE OFFICER PLATE */}
-                        <div className={`${neuCard} p-6 flex items-center gap-8 min-w-[450px] relative overflow-hidden group hover:scale-[1.01] transition-all cursor-default`}>
+                        <div className={`${neuCard} p-6 flex flex-col md:flex-row items-start md:items-center gap-8 min-w-[500px] relative overflow-hidden group transition-all cursor-default`}>
                             {/* Animated Background Pulse */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-amber-500/10 transition-all duration-700" />
 
@@ -284,63 +265,103 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                 <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-400 rounded-full z-15 animate-ping opacity-60" />
                             </div>
 
-                            {/* Officer Details */}
-                            <div className="flex flex-col flex-1 z-10">
-                                <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em] font-['Rajdhani'] mb-1">Duty Officer</span>
-                                <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter mb-3 leading-tight">
-                                    {profile?.full_name || 'System Operator'}
-                                </h2>
+                            {/* Officer Details & Exam Schedule */}
+                            <div className="flex flex-col flex-1 z-10 w-full">
+                                {/* Stylized User Name */}
+                                <div className="mb-6">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1 block h-4"></span>
+                                    <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter italic leading-none font-['Rajdhani']">
+                                        {profile?.full_name || 'Authorized User'}
+                                    </h2>
+                                </div>
 
-                                <div className="flex items-center gap-6">
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Shift Ends In</span>
-                                            <div className="flex items-center gap-1">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setIsTimerActive(!isTimerActive); }}
-                                                    className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-500"
-                                                >
-                                                    {isTimerActive ? <Pause size={10} /> : <Play size={10} />}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); resetTimer(); }}
-                                                    className="p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-500"
-                                                >
-                                                    <RotateCcw size={10} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <span className={`text-lg font-black tabular-nums font-['Rajdhani'] ${timeLeft < 3600 ? 'text-rose-500 animate-pulse' : 'text-slate-700'}`}>
-                                            {formatTime(timeLeft)}
+                                {/* Today's Exam Schedule */}
+                                <div className="flex flex-col gap-3 w-full">
+                                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                            {activeBranch}
                                         </span>
                                     </div>
-                                    <div className="w-px h-8 bg-slate-200" />
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Caffeine Index</span>
-                                        <span className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-1.5">
-                                            <Coffee size={12} className={isTimerActive ? "animate-bounce" : ""} />
-                                            Optimal Level
-                                        </span>
+                                    
+                                    <div className={`flex flex-col gap-2 relative min-h-[60px] ${activeBranch === 'global' ? 'max-h-[300px] overflow-y-auto pr-2 custom-scrollbar' : ''}`}>
+                                        {!dashboardData?.todaysExams || dashboardData.todaysExams.length === 0 ? (
+                                            <div className="text-xs text-slate-400 italic flex items-center gap-2 mt-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                                No exams scheduled for today
+                                            </div>
+                                        ) : (
+                                            (activeBranch === 'global' ? dashboardData.todaysExams : dashboardData.todaysExams.slice(0, 3)).map((exam: any, idx: number) => {
+                                                // 1. Session Logic
+                                                const time = exam.start_time || '09:00';
+                                                const hour = parseInt(time.split(':')[0]);
+                                                const session = hour < 12 ? 'AM' : 'PM';
+
+                                                // 2. Client Name Logic
+                                                let displayClient = exam.client_name || 'Unknown';
+                                                if (displayClient.toUpperCase().includes('PEARSON')) displayClient = 'PEARSON';
+                                                if (displayClient.toUpperCase().includes('PROMETRIC')) displayClient = 'PROMETRIC';
+
+                                                // 3. Exam Name Logic
+                                                let displayExam = exam.exam_name || displayClient; // Fallback to client if no exam name
+                                                const upperExam = displayExam.toUpperCase();
+                                                
+                                                // Specific overrides
+                                                if (upperExam.includes('CMA US')) displayExam = 'CMA';
+                                                else if (upperExam.includes('CELPIP')) displayExam = 'CELPIP';
+                                                else if (displayClient === 'PEARSON') {
+                                                   // General Pearson rule: < 8 chars keep, else truncate/select
+                                                   if (displayExam.length > 8) {
+                                                       if (displayExam.includes(' ')) {
+                                                           // Multiple words: Take first word
+                                                           displayExam = displayExam.split(' ')[0];
+                                                       } else {
+                                                           // Single word > 8 chars: Take first 4 letters
+                                                          displayExam = displayExam.substring(0, 4);
+                                                       }
+                                                   }
+                                                } else {
+                                                    // Fallback for others: Shorten if too long
+                                                    if (displayExam.length > 12) displayExam = displayExam.substring(0, 8) + '..';
+                                                }
+
+                                                return (
+                                                    <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs group/exam hover:bg-white/50 p-1.5 rounded-lg transition-colors cursor-default">
+                                                        {/* Session Indicator */}
+                                                        <div className="col-span-2 flex items-center gap-1.5">
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${session === 'AM' ? 'bg-amber-400' : 'bg-indigo-400'}`} />
+                                                            <span className="font-bold text-slate-500">{session}</span>
+                                                        </div>
+                                                        {/* Client Name */}
+                                                        <div className="col-span-5 font-bold text-slate-700 truncate uppercase" title={exam.client_name}>
+                                                            {displayClient}
+                                                        </div>
+                                                        {/* Exam Name (Short) */}
+                                                        <div className="col-span-3 font-mono text-slate-400 tracking-tight text-[10px] uppercase truncate" title={exam.exam_name}>
+                                                            {displayExam}
+                                                        </div>
+                                                        {/* Candidates */}
+                                                        <div className="col-span-2 text-right font-black text-amber-600">
+                                                            {exam.candidate_count || 0} <span className="text-[9px] text-slate-400 font-normal">pax</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })
+                                        )}
+                                        {/* View More Hint if > 3 and NOT Global */}
+                                        {activeBranch !== 'global' && dashboardData?.todaysExams && dashboardData.todaysExams.length > 3 && (
+                                            <div className="text-[9px] text-center text-slate-400 mt-1 italic">
+                                                + {dashboardData.todaysExams.length - 3} more sessions
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Decorative Button Action */}
-                            <div className={`${neuBtn} p-3 ml-4 self-center group-hover:bg-white group-hover:text-amber-600 transition-all`}>
-                                <Activity size={18} />
                             </div>
                         </div>
 
                         {/* Chronos Module (Time/Date) */}
-                        <div className={`${neuCard} px-10 py-6 flex flex-col items-end gap-1 min-w-[200px] border-r-8 border-r-slate-800`}>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] font-['Rajdhani']">Standard Time</div>
-                            <div className="text-4xl font-black text-slate-800 tracking-tighter font-['Rajdhani']">
-                                {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                            </div>
-                            <div className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
-                                {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                            </div>
-                        </div>
                     </div>
                 </motion.div>
 
@@ -491,86 +512,22 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                         {/* 2.5 ACCESS HUB - CREDENTIAL MANAGEMENT */}
                         <AccessHub />
 
-                        {/* 3. DAILY SPARK - MOTIVATION & GAMIFICATION */}
-                        <DailySpark />
+
+                        {/* 3.5 TEAM PRESENCE & FETS MEET */}
+                        <TeamPresence onFetsMeetClick={() => onNavigate?.('frame')} />
 
                     </div>
 
 
-                    {/* RIGHT COLUMN: Real-time Agent Monitoring */}
-                    <div className="xl:col-span-4 flex flex-col gap-10">
-
-                        {/* --- SKEUOMORPHIC AGENT MONITORING PANEL --- */}
+                    {/* RIGHT COLUMN: Shared Notebook - FRAME */}
+                    <div className="xl:col-span-4 flex flex-col">
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.6 }}
-                            className="xl:col-span-4 flex flex-col items-center relative py-12"
+                            className="flex-1 min-h-[800px] flex flex-col"
                         >
-                            {/* The Monitoring Board */}
-                            <div className="w-full bg-[var(--dashboard-bg)] rounded-3xl relative shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_15px_30px_-10px_rgba(0,0,0,0.1)] border-[12px] border-[var(--neu-dark-shadow)] min-h-[650px] flex flex-col items-center pt-16 pb-12 px-6">
-
-                                {/* Inner Shadow for Recessed Depth */}
-                                <div className="absolute inset-0 rounded-[1.2rem] shadow-[inset_0_10px_20px_rgba(0,0,0,0.04)] pointer-events-none" />
-
-                                {/* Section Header Strip */}
-                                <div className="absolute top-4 -translate-y-1/2 bg-white px-10 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.1)] -rotate-1 border border-slate-100 flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-md border-2 border-emerald-600 absolute -top-1 left-1/2 -translate-x-1/2 scale-110" />
-                                    <h3 className="text-sm font-black text-slate-700 uppercase tracking-[0.3em] font-['Rajdhani']">
-                                        Live Desk
-                                    </h3>
-                                </div>
-
-                                {/* Agent List Area */}
-                                <div className="w-full space-y-4 mt-4 overflow-y-auto custom-scrollbar flex-1 pr-1">
-                                    {staff.length > 0 ? (
-                                        staff.sort((a, b) => {
-                                            const aOnline = presence[a.user_id]?.status === 'online' ? 1 : 0;
-                                            const bOnline = presence[b.user_id]?.status === 'online' ? 1 : 0;
-                                            return bOnline - aOnline;
-                                        }).map((agent) => {
-                                            const isOnline = presence[agent.user_id]?.status === 'online';
-                                            
-                                            return (
-                                                <motion.div
-                                                    key={agent.id}
-                                                    whileHover={{ scale: 1.02, x: 5 }}
-                                                    className={`bg-white p-3 rounded-2xl shadow-sm border-l-4 ${isOnline ? 'border-l-emerald-500' : 'border-l-slate-300'} flex items-center justify-between group transition-all`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative">
-                                                            <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden bg-slate-50">
-                                                                {agent.avatar_url ? <img src={agent.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400 font-black text-xs">{agent.full_name?.[0] || '?'}</div>}
-                                                            </div>
-                                                            {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{agent.full_name}</p>
-                                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{agent.branch_assigned || 'Active Agent'}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        onClick={() => !openChats.find(c => c.id === agent.id) && setOpenChats(prev => [...prev, agent])}
-                                                        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                                                            isOnline 
-                                                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white' 
-                                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                                                        }`}
-                                                    >
-                                                        Chat
-                                                    </button>
-                                                </motion.div>
-                                            )
-                                        })
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-                                            <Users size={40} className="mb-2" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">No Agents Detected</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <InkNotebook />
                         </motion.div>
                     </div>
 
@@ -578,17 +535,6 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
 
             </div>
 
-            {/* MULTI-WINDOW FETCHAT POPUPS */}
-            <AnimatePresence>
-                {openChats.map((targetUser, idx) => (
-                    <FetsChatPopup
-                        key={targetUser.id}
-                        targetUser={targetUser}
-                        onClose={() => setOpenChats(prev => prev.filter(c => c.id !== targetUser.id))}
-                        zIndex={2000 + idx}
-                    />
-                ))}
-            </AnimatePresence>
 
             {/* STAFF/BRANCH SELECTOR MODAL */}
             <AnimatePresence>

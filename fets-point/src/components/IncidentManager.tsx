@@ -4,12 +4,15 @@ import {
   Search, Plus, Send, Clock, User, CheckCircle, AlertTriangle,
   Monitor, MessageSquare, ChevronRight, Activity, Filter, Eye,
   Calendar, Users, UserX, Globe, Building, Wrench, X, Hash,
-  Phone, CheckSquare, StickyNote, Settings, Check
+  Phone, CheckSquare, StickyNote, Settings, Check, Wifi,
+  ClipboardCheck, Package, UserCog, Briefcase, Building2
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
+import RaiseACaseModal, { CaseFormData } from './RaiseACaseModal'
+import { CASE_CATEGORIES, getCategoryById, getCategoryColor } from '../config/caseCategories.config'
 
 // --- Types ---
 interface Incident {
@@ -17,13 +20,20 @@ interface Incident {
   title: string
   description: string
   category: string
-  status: 'open' | 'assigned' | 'in_progress' | 'escalated' | 'closed'
-  severity: 'critical' | 'major' | 'minor'
+  status: 'open' | 'in_progress' | 'closed'
+  severity?: 'critical' | 'major' | 'minor' // Legacy field - no longer used
   reporter?: string
   created_at: string
   branch_location: string
-  // Using metadata for flexible data like contact info, task lists etc
-  metadata?: any 
+  // Using metadata for flexible data like follow-up answers, vendor info etc
+  metadata?: {
+    follow_up_data?: Record<string, string>
+    vendor_info?: {
+      shopName?: string
+      contactNumber?: string
+      externalCompany?: string
+    }
+  }
 }
 
 interface Comment {
@@ -39,19 +49,28 @@ interface Comment {
 // --- Menu Config ---
 const SOURCES = [
   { id: 'all', label: 'All Cases', icon: Activity },
-  { id: 'staff', label: 'Staff / Roster', icon: Users },
-  { id: 'candidate', label: 'Candidates', icon: UserX },
-  { id: 'exam', label: 'Exams & Cal', icon: Calendar },
-  { id: 'system', label: 'Systems / IT', icon: Monitor },
+  { id: 'roster', label: 'Roster', icon: Users },
+  { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'facility', label: 'Facility', icon: Building },
+  { id: 'systems', label: 'Systems', icon: Monitor },
+  { id: 'network', label: 'Network', icon: Wifi },
+  { id: 'exam', label: 'Exam Ops', icon: ClipboardCheck },
+  { id: 'assets', label: 'Assets', icon: Package },
+  { id: 'vendor', label: 'Vendor', icon: Wrench },
+  { id: 'staff', label: 'Staff/Admin', icon: UserCog },
 ]
 
 const STATUS_OPTIONS = [
-    { value: 'open', label: 'OPEN CASE', color: '#3b82f6', bg: '#eff6ff' },
+    { value: 'open', label: 'OPEN', color: '#3b82f6', bg: '#eff6ff' },
     { value: 'in_progress', label: 'IN PROGRESS', color: '#f59e0b', bg: '#fffbeb' },
-    { value: 'assigned', label: 'ASSIGNED', color: '#8b5cf6', bg: '#f5f3ff' },
-    { value: 'closed', label: 'RESOLVED', color: '#10b981', bg: '#ecfdf5' },
+    { value: 'closed', label: 'CLOSED', color: '#10b981', bg: '#ecfdf5' },
 ]
+
+// Map legacy statuses to new simplified statuses
+const getDisplayStatus = (status: string) => {
+    if (status === 'assigned' || status === 'escalated') return 'in_progress'
+    return status
+}
 
 export default function IncidentManager() {
   const { profile } = useAuth()
@@ -187,6 +206,41 @@ export default function IncidentManager() {
       toast.success('Case Status Updated')
   }
 
+  // Handle new case creation from RaiseACaseModal
+  const handleCreateCase = async (caseData: CaseFormData) => {
+      const metadata: any = {}
+
+      if (Object.keys(caseData.followUpData).length > 0) {
+          metadata.follow_up_data = caseData.followUpData
+      }
+
+      if (caseData.vendorInfo) {
+          metadata.vendor_info = caseData.vendorInfo
+      }
+
+      const { error } = await supabase.from('incidents').insert({
+          title: caseData.title,
+          description: caseData.description,
+          category: caseData.category,
+          status: 'open',
+          user_id: profile?.id,
+          reporter: profile?.full_name || 'Admin',
+          branch_location: activeBranch === 'global' ? 'calicut' : activeBranch,
+          metadata: Object.keys(metadata).length > 0 ? metadata : null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+      })
+
+      if (error) {
+          console.error('Failed to create case:', error)
+          toast.error('Failed to create case')
+          throw error
+      }
+
+      toast.success('Case Opened Successfully')
+      loadIncidents()
+  }
+
   // --- Filtering ---
   const filtered = incidents.filter(i => {
       const matchSrc = filterSource === 'all' || i.category === filterSource
@@ -263,110 +317,236 @@ export default function IncidentManager() {
   }
 
   return (
-    <div className="ip-container">
-       {/* New Header Style: Glass Card with Title */}
-       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30">
-            <div className="bg-white/90 backdrop-blur-md px-8 py-3 rounded-full shadow-lg border border-white/50 flex items-center gap-4 cursor-default transition-transform hover:scale-105">
-                 <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]" />
-                 <h1 className="text-xl font-[Righteous] text-slate-800 tracking-widest uppercase mb-0 leading-none">
-                     Raise a Case
-                 </h1>
-            </div>
-       </div>
-
-       {/* LEFT MENU */}
-       <div className="ip-sidebar">
-           <div className="ip-glass-menu">
-               {SOURCES.map(s => (
-                   <button 
-                      key={s.id}
-                      className={`ip-menu-item ${filterSource === s.id ? 'active' : ''}`}
-                      onClick={() => setFilterSource(s.id)}
-                   >
-                       <s.icon className="w-5 h-5" />
-                       <span className="ip-menu-label">{s.label}</span>
-                   </button>
-               ))}
+    <div className="rac-page-container">
+       {/* ========== TOP HEADER BAR ========== */}
+       <div className="rac-top-header">
+           {/* Brand Logo - Custom Image */}
+           <div className="rac-brand">
+               <img
+                   src="/assets/raise-a-case-logo.jpg"
+                   alt="Raise A Case"
+                   className="rac-brand-logo-img"
+               />
+               <div className="rac-brand-badge">
+                   <span className="rac-badge-dot" />
+                   <span>LIVE</span>
+               </div>
            </div>
-           
-           <button 
-              className="mt-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl py-4 font-bold shadow-xl shadow-slate-900/20 hover:scale-105 transition-transform flex items-center justify-center gap-3 border border-slate-700/50"
+
+           {/* Raise A Case Button - Top Right */}
+           <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="rac-create-btn"
               onClick={() => setShowCreate(true)}
            >
-              <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-500/40">
-                  <Plus className="w-4 h-4" />
-              </div>
-              <span className="tracking-wide text-sm font-[Righteous]">RAISE A CASE</span>
-           </button>
+              <div className="rac-create-btn-glow" />
+              <Plus className="w-5 h-5" />
+              <span>Raise A Case</span>
+           </motion.button>
        </div>
 
-       {/* MIDDLE LIST */}
-       <div className="ip-list-panel">
-           <div className="ip-list-header">
-               <input 
-                  className="ip-search"
-                  placeholder="Search case files..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-               />
+       {/* ========== MAIN CONTENT AREA ========== */}
+       <div className="rac-main-layout">
+           {/* LEFT MENU - Colorful Category Filter */}
+           <div className="rac-sidebar">
+               <div className="rac-filter-title">
+                   <Filter className="w-4 h-4" />
+                   <span>Categories</span>
+               </div>
+               <div className="rac-category-list">
+                   {SOURCES.map((s, idx) => {
+                       const colors = [
+                           'from-violet-500 to-purple-600',
+                           'from-blue-500 to-cyan-500',
+                           'from-emerald-500 to-teal-500',
+                           'from-orange-500 to-amber-500',
+                           'from-rose-500 to-pink-500',
+                           'from-indigo-500 to-blue-500',
+                           'from-fuchsia-500 to-pink-500',
+                           'from-cyan-500 to-blue-500',
+                           'from-lime-500 to-green-500',
+                           'from-amber-500 to-orange-500',
+                       ]
+                       const isActive = filterSource === s.id
+                       return (
+                           <motion.button
+                              key={s.id}
+                              whileHover={{ x: 4 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`rac-category-item ${isActive ? 'active' : ''}`}
+                              onClick={() => setFilterSource(s.id)}
+                           >
+                               <div className={`rac-category-icon bg-gradient-to-br ${colors[idx % colors.length]}`}>
+                                   <s.icon className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="rac-category-label">{s.label}</span>
+                               {isActive && (
+                                   <motion.div
+                                       layoutId="activeIndicator"
+                                       className="rac-active-indicator"
+                                   />
+                               )}
+                           </motion.button>
+                       )
+                   })}
+               </div>
            </div>
-           
-           <div className="ip-scroll-area custom-scrollbar">
-               {filtered.map(inc => (
-                  <div 
-                      key={inc.id}
-                      className={`ip-card-item ${selectedId === inc.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedId(inc.id)}
-                      style={{ '--ip-status-color': STATUS_OPTIONS.find(s=>s.value===inc.status)?.color } as any}
-                  >
-                      <div className="flex justify-between mb-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                             {inc.category?.toUpperCase() || 'GENERAL'}
-                          </span>
-                          <span className="text-[10px] text-gray-400">{new Date(inc.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <div className="font-bold text-slate-800 leading-tight mb-2">{inc.title}</div>
-                      <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full`} style={{ background: STATUS_OPTIONS.find(s=>s.value===inc.status)?.color }}/>
-                          <span className="text-xs font-medium text-slate-500">
-                             {STATUS_OPTIONS.find(s=>s.value===inc.status)?.label}
-                          </span>
+
+           {/* MIDDLE LIST - Cases */}
+           <div className="rac-list-panel">
+               <div className="rac-list-header">
+                   <div className="rac-search-box">
+                       <Search className="w-4 h-4 text-slate-400" />
+                       <input
+                          className="rac-search-input"
+                          placeholder="Search cases..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                       />
+                   </div>
+                   <div className="rac-list-count">
+                       <span className="rac-count-number">{filtered.length}</span>
+                       <span className="rac-count-label">cases</span>
+                   </div>
+               </div>
+
+               <div className="rac-cases-scroll">
+               {filtered.map(inc => {
+                      const categoryConfig = getCategoryById(inc.category)
+                      const CategoryIcon = categoryConfig?.icon || Activity
+                      const categoryColors = getCategoryColor(inc.category)
+                      const displayStatus = getDisplayStatus(inc.status)
+                      const statusConfig = STATUS_OPTIONS.find(s => s.value === displayStatus)
+
+                      return (
+                          <motion.div
+                              key={inc.id}
+                              whileHover={{ x: 2 }}
+                              className={`rac-case-card ${selectedId === inc.id ? 'selected' : ''}`}
+                              onClick={() => setSelectedId(inc.id)}
+                          >
+                              <div className="rac-case-card-header">
+                                  <div className="rac-case-category">
+                                      <div
+                                          className="rac-case-category-icon"
+                                          style={{ background: `linear-gradient(135deg, ${categoryColors.color}, ${categoryColors.color}dd)` }}
+                                      >
+                                          <CategoryIcon size={12} className="text-white" />
+                                      </div>
+                                      <span style={{ color: categoryColors.color }}>
+                                         {categoryConfig?.label || inc.category}
+                                      </span>
+                                  </div>
+                                  <span className="rac-case-date">{new Date(inc.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div className="rac-case-title">{inc.title}</div>
+                              <div className="rac-case-footer">
+                                  <div
+                                      className="rac-case-status"
+                                      style={{ background: statusConfig?.bg, color: statusConfig?.color }}
+                                  >
+                                      <div className="rac-status-dot" style={{ background: statusConfig?.color }} />
+                                      {statusConfig?.label}
+                                  </div>
+                                  <span className="rac-case-id">#{inc.id.slice(0,6)}</span>
+                              </div>
+                          </motion.div>
+                      )
+                   })}
+               </div>
+           </div>
+
+           {/* RIGHT PLAYGROUND */}
+           <div className="rac-playground">
+           {activeIncident ? (
+               (() => {
+                  const activeCategoryConfig = getCategoryById(activeIncident.category)
+                  const ActiveCategoryIcon = activeCategoryConfig?.icon || Activity
+                  const activeCategoryColors = getCategoryColor(activeIncident.category)
+                  const activeDisplayStatus = getDisplayStatus(activeIncident.status)
+                  const activeStatusConfig = STATUS_OPTIONS.find(s => s.value === activeDisplayStatus)
+                  const vendorInfo = activeIncident.metadata?.vendor_info
+
+                  return (
+                  <>
+                  {/* Colorful Case Header */}
+                  <div className="rac-case-header-detail">
+                      <div className="rac-case-header-top">
+                          <div className="rac-case-header-info">
+                              <div
+                                  className="rac-case-icon-large"
+                                  style={{ background: `linear-gradient(135deg, ${activeCategoryColors.color}, ${activeCategoryColors.color}cc)` }}
+                              >
+                                  <ActiveCategoryIcon size={24} className="text-white" />
+                              </div>
+                              <div>
+                                  <div
+                                      className="rac-case-category-badge"
+                                      style={{ background: activeCategoryColors.bgColor, color: activeCategoryColors.color }}
+                                  >
+                                      {activeCategoryConfig?.label || activeIncident.category}
+                                  </div>
+                                  <h2 className="rac-case-title-large">{activeIncident.title}</h2>
+                                  <div className="rac-case-meta-row">
+                                      <span className="rac-meta-tag">
+                                          <User className="w-3 h-3" />
+                                          {activeIncident.reporter || 'System'}
+                                      </span>
+                                      <span className="rac-meta-tag rac-meta-id">
+                                          <Hash className="w-3 h-3" />
+                                          CASE-{activeIncident.id.slice(0,6).toUpperCase()}
+                                      </span>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <select
+                              className="rac-status-dropdown"
+                              value={activeDisplayStatus}
+                              onChange={(e) => handleStatusUpdate(e.target.value)}
+                              style={{
+                                  background: activeStatusConfig?.bg,
+                                  color: activeStatusConfig?.color,
+                                  borderColor: activeStatusConfig?.color
+                              }}
+                          >
+                              {STATUS_OPTIONS.map(o => (
+                                  <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                          </select>
                       </div>
                   </div>
-               ))}
-           </div>
-       </div>
 
-       {/* RIGHT PLAYGROUND */}
-       <div className="ip-playground">
-           {activeIncident ? (
-               <>
-                  <div className="ip-case-header">
-                      <div>
-                          <h2 className="ip-case-title">{activeIncident.title}</h2>
-                          <div className="ip-case-meta">
-                              <span className="ip-tag"><User className="w-3 h-3"/> {activeIncident.reporter || 'System'}</span>
-                              <span className="ip-tag"><Hash className="w-3 h-3"/> {activeIncident.id.slice(0,6)}</span>
-                              <span className={`ip-tag ${activeIncident.severity === 'critical' ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50'}`}>
-                                  {activeIncident.severity?.toUpperCase()} PRIORITY
-                              </span>
+                  {/* Vendor Info Section - Colorful */}
+                  {vendorInfo && (vendorInfo.shopName || vendorInfo.contactNumber || vendorInfo.externalCompany) && (
+                      <div className="rac-vendor-card">
+                          <div className="rac-vendor-header">
+                              <Briefcase size={16} />
+                              <span>External Vendor</span>
+                          </div>
+                          <div className="rac-vendor-details">
+                              {vendorInfo.shopName && (
+                                  <div className="rac-vendor-item">
+                                      <Building2 size={14} />
+                                      <span>{vendorInfo.shopName}</span>
+                                  </div>
+                              )}
+                              {vendorInfo.contactNumber && (
+                                  <div className="rac-vendor-item">
+                                      <Phone size={14} />
+                                      <span>{vendorInfo.contactNumber}</span>
+                                  </div>
+                              )}
+                              {vendorInfo.externalCompany && (
+                                  <div className="rac-vendor-item">
+                                      <Briefcase size={14} />
+                                      <span>{vendorInfo.externalCompany}</span>
+                                  </div>
+                              )}
                           </div>
                       </div>
-                      
-                      <select 
-                          className="ip-status-select"
-                          value={activeIncident.status}
-                          onChange={(e) => handleStatusUpdate(e.target.value)}
-                          style={{ 
-                              background: STATUS_OPTIONS.find(s=>s.value===activeIncident.status)?.bg,
-                              color: STATUS_OPTIONS.find(s=>s.value===activeIncident.status)?.color
-                          }}
-                      >
-                          {STATUS_OPTIONS.map(o => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                      </select>
-                  </div>
+                  )}
 
                   <div className="ip-canvas custom-scrollbar">
                       {/* Original Issue Card */}
@@ -465,120 +645,31 @@ export default function IncidentManager() {
                       </div>
                   )}
                </>
+                  )
+               })()
            ) : (
-                <div className="ip-empty-canvas">
-                    <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                        <Activity className="w-10 h-10 text-slate-300" />
+                <div className="rac-empty-state">
+                    <div className="rac-empty-icon">
+                        <div className="rac-empty-icon-ring" />
+                        <div className="rac-empty-icon-ring delay-1" />
+                        <div className="rac-empty-icon-ring delay-2" />
+                        <Activity className="w-12 h-12 text-violet-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-300">SELECT A CASE FILE</h2>
+                    <h2 className="rac-empty-title">Select a Case</h2>
+                    <p className="rac-empty-subtitle">Choose a case from the list to view details and collaborate</p>
                 </div>
            )}
+           </div>
        </div>
 
-       {/* CREATE MODAL */}
-       <AnimatePresence>
-           {showCreate && <CreateCaseModal onClose={() => setShowCreate(false)} onSuccess={() => {
-               setShowCreate(false)
-               loadIncidents()
-           }} />}
-       </AnimatePresence>
+       {/* CREATE MODAL - New Multi-Step RaiseACaseModal */}
+       <RaiseACaseModal
+           isOpen={showCreate}
+           onClose={() => setShowCreate(false)}
+           onSubmit={handleCreateCase}
+       />
     </div>
   )
 }
 
-function CreateCaseModal({ onClose, onSuccess }: any) {
-    const { profile } = useAuth()
-    const { activeBranch } = useBranch()
-    const [form, setForm] = useState({ title: '', description: '', category: 'staff', severity: 'minor' })
-    const [saving, setSaving] = useState(false)
-
-    const save = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setSaving(true)
-        try {
-            // FIXED: Removed 'source' column usage, mapping strictly to 'category'
-            const { error } = await supabase.from('incidents').insert({
-                title: form.title,
-                description: form.description,
-                category: form.category,
-                severity: form.severity,
-                status: 'open',
-                user_id: profile?.id,
-                reporter: profile?.full_name || 'Admin',
-                branch_location: activeBranch === 'global' ? 'calicut' : activeBranch,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            })
-            if(error) throw error
-            toast.success('Case Opened')
-            onSuccess()
-        } catch (err) {
-            console.error(err)
-            toast.error('Failed to create case')
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-                <div className="bg-slate-900 text-white p-6 relative overflow-hidden">
-                    <div className="relative z-10">
-                        <h2 className="text-xl font-bold font-[Righteous] tracking-wider">NEW INCIDENT CASE</h2>
-                        <p className="text-slate-400 text-xs mt-1">Fill details to initialize playground tracking</p>
-                    </div>
-                    <Activity className="absolute -right-6 -top-6 w-32 h-32 text-slate-800 opacity-50" />
-                </div>
-                
-                <form onSubmit={save} className="p-6 flex flex-col gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Subject</label>
-                        <input required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-blue-500" 
-                            value={form.title} onChange={e => setForm({...form, title: e.target.value})}
-                        />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                             <label className="text-xs font-bold text-slate-500 uppercase">Category</label>
-                             <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg"
-                                value={form.category} onChange={e => setForm({...form, category: e.target.value})}
-                             >
-                                 <option value="staff">Staff / Roster</option>
-                                 <option value="candidate">Candidate</option>
-                                 <option value="exam">Exam / Calendar</option>
-                                 <option value="system">System / IT</option>
-                                 <option value="facility">Facility</option>
-                             </select>
-                        </div>
-                        <div>
-                             <label className="text-xs font-bold text-slate-500 uppercase">Severity</label>
-                             <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg"
-                                value={form.severity} onChange={e => setForm({...form, severity: e.target.value})}
-                             >
-                                 <option value="minor">Routine (Minor)</option>
-                                 <option value="major">Significant (Major)</option>
-                                 <option value="critical">Critical (Urgent)</option>
-                             </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Description</label>
-                        <textarea required className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg min-h-[100px]" 
-                            value={form.description} onChange={e => setForm({...form, description: e.target.value})}
-                        />
-                    </div>
-
-                    <div className="flex gap-3 mt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">CANCEL</button>
-                        <button disabled={saving} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-shadow">
-                            {saving ? 'OPENING...' : 'OPEN CASE'}
-                        </button>
-                    </div>
-                </form>
-            </motion.div>
-        </div>
-    )
-}
+// Old CreateCaseModal removed - now using RaiseACaseModal component

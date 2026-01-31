@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Schedule, StaffProfile } from '../types/shared'
 import { User, Clock, Calendar } from 'lucide-react'
+import { formatDateForIST } from '../utils/dateUtils'
 
 type Props = {
   staffProfiles: StaffProfile[]
@@ -166,7 +167,7 @@ export const MonthlyRosterTimeline: React.FC<Props> = ({ staffProfiles, schedule
 
                   {/* Shift Cells */}
                   {days.map((d, cIdx) => {
-                    const iso = d.toISOString().split('T')[0]
+                    const iso = formatDateForIST(d)
                     const key = `${staff.id}-${iso}`
                     const s = scheduleMap.get(key)
                     const code = s?.shift_code || ''

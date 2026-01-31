@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Plus, Search, Edit, UserCheck, UserX, Phone, X, Calendar,
   Trash2, FileText, Download, ChevronLeft, ChevronRight,
-  CheckCircle, Grid, List, FileSpreadsheet, MapPin, Activity, TrendingUp
+  CheckCircle, Grid, List, FileSpreadsheet, MapPin, Activity, TrendingUp, RefreshCw
 } from 'lucide-react'
 import { CandidateAnalysis } from './CandidateAnalysis'
 import { useAuth } from '../hooks/useAuth'

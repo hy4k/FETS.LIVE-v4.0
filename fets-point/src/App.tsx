@@ -23,6 +23,8 @@ import { Fetchat } from './components/Fetchat';
 import { BranchIndicator } from './components/BranchIndicator';
 // Import Slate directly for global access
 import { DigitalNotebook } from './components/DigitalNotebook';
+// Import AI Assistant for floating widget
+import { AiAssistant } from './components/AiAssistant';
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
@@ -45,6 +47,7 @@ const UserManagement = lazy(() => import('./components/UserManagement').then(mod
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 const IncidentLogPage = lazy(() => import('./components/IncidentLogPage').then(module => ({ default: module.IncidentLogPage })))
 const Slate = lazy(() => import('./components/Slate').then(module => ({ default: module.Slate })))
+const FetsOmniAI = lazy(() => import('./components/FetsOmniAI').then(module => ({ default: module.FetsOmniAI })))
 
 // Create QueryClient instance with optimized settings
 const queryClient = new QueryClient({
@@ -230,7 +233,8 @@ function AppContent() {
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'settings': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
       'user-management': { component: <UserManagement />, name: 'User Management' },
-      'slate': { component: <Slate />, name: 'Slate' }
+      'slate': { component: <Slate />, name: 'Slate' },
+      'fets-omni-ai': { component: <FetsOmniAI initialQuery={aiQuery} />, name: 'FETS OMNI AI' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center']
@@ -272,6 +276,9 @@ function AppContent() {
         {/* Global Chat Layer */}
         <GlobalChatLayer />
         <BranchIndicator />
+
+        {/* AI Assistant Floating Widget */}
+        <AiAssistant />
 
         <ConnectionStatus />
         {process.env.NODE_ENV === 'development' && <DatabaseSetup />}

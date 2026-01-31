@@ -1,27 +1,21 @@
 {
   "mcpServers": {
     "supabase": {
-      "command": "pnpm",
+      "command": "npx",
       "args": [
-        "exec",
-        "mcp-server-supabase",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
         "--project-ref",
-        "qqewusetilxxfvfkmsed",
-        "--service-role-key-auth"
+        "qqewusetilxxfvfkmsed"
       ],
       "env": {
-        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
+        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_ACCESS_TOKEN"
       }
     },
-    "supabase-migration": {
-      "command": "node",
-      "args": [
-        "mcp-supabase-migration/index.js"
-      ],
-      "env": {
-        "SUPABASE_PROJECT_REF": "qqewusetilxxfvfkmsed",
-        "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}"
-      }
+    "kilo": {
+      "host": "localhost",
+      "port": 1234,
+      "enabled": true
     }
   }
 }

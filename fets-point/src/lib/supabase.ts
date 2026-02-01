@@ -38,12 +38,25 @@ console.log('✅ Supabase client created and exported with relaxed types')
 // Helper functions for common operations
 export const supabaseHelpers = {
   // Candidates
-  async getCandidates(filters?: { date?: string; status?: string; branch_location?: string }) {
+  async getCandidates(filters?: { date?: string; startDate?: string; endDate?: string; status?: string; branch_location?: string }) {
     let query = supabase.from('candidates').select('*')
 
     if (filters?.date) {
       query = query.gte('exam_date', `${filters.date}T00:00:00Z`)
         .lt('exam_date', `${filters.date}T23:59:59Z`)
+    } else {
+      // Range filtering
+      if (filters?.startDate) {
+        query = query.gte('exam_date', `${filters.startDate}T00:00:00Z`)
+      }
+      if (filters?.endDate) {
+        query = query.lt('exam_date', `${filters.endDate}T23:59:59Z`)
+      }
+      // If no date filters are provided, and no specific date is selected, 
+      // we DON'T filter by date, effectively fetching all history (up to default limit).
+      // However, to ensure "Candidates Added" are visible, we should probably sort by created_at DESC if no date filter is present?
+      // But the user UI is a calendar/list that might expect order by exam_date.
+      // Let's stick to exam_date ordering but allow range to be infinite if not specified.
     }
 
     if (filters?.status) {

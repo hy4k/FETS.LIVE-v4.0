@@ -221,7 +221,7 @@ const SystemGridCard: React.FC<SystemGridCardProps> = ({
                     : { backgroundColor: variant === 'server' ? '#fff' : theme.bg, borderColor: variant === 'server' ? theme.primary : '#fff' };
 
     return (
-        <div key={sys.id} className={`relative transition-all duration-500 h-full ${variant !== 'default' ? scaleClasses[variant] : ''}`}>
+        <div key={sys.id} className={`relative transition-all duration-500 h-full ${variant !== 'default' ? scaleClasses[variant] : ''} ${isExpanded ? 'z-[100]' : ''}`}>
             <motion.div
                 whileHover={isTransferredOut ? { scale: 1.02 } : { y: -5, scale: variant === 'server' ? 1.05 : 1.02 }}
                 style={!isTransferredOut ? cardStyle : undefined}
@@ -1122,7 +1122,7 @@ const SystemManager = () => {
             <AnimatePresence>
                 {
                     showTransferModal && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1198,7 +1198,7 @@ const SystemManager = () => {
             <AnimatePresence>
                 {
                     showAddModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1416,7 +1416,7 @@ const SystemManager = () => {
             <AnimatePresence>
                 {
                     showManageModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 30 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}

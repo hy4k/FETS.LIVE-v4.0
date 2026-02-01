@@ -404,7 +404,7 @@ const AddEntryModal: React.FC<{ onClose: () => void; onSuccess: () => void; user
 }
 
 // Main Access Hub Widget Component
-export function AccessHub() {
+export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
     const { user } = useAuth()
     const [entries, setEntries] = useState<VaultEntry[]>([])
     const [loading, setLoading] = useState(true)
@@ -413,11 +413,7 @@ export function AccessHub() {
     const [hoveredId, setHoveredId] = useState<string | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
 
-    useEffect(() => {
-        if (user?.id) fetchEntries()
-    }, [user?.id])
-
-    const fetchEntries = async () => {
+    const fetchEntries = React.useCallback(async () => {
         if (!user?.id) return
         try {
             // Fetch only entries belonging to the current user
@@ -434,7 +430,11 @@ export function AccessHub() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [user?.id])
+
+    useEffect(() => {
+        if (user?.id) fetchEntries()
+    }, [user?.id, fetchEntries])
 
     const filteredEntries = entries.filter(entry =>
         entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -481,15 +481,17 @@ export function AccessHub() {
                     
                     <div className="flex items-center gap-3">
                         {/* Add Button */}
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setShowAddModal(true)}
-                            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
-                        >
-                            <Plus size={16} />
-                            Add New
-                        </motion.button>
+                        {!readOnly && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setShowAddModal(true)}
+                                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                            >
+                                <Plus size={16} />
+                                Add New
+                            </motion.button>
+                        )}
 
                         {/* Search */}
                         <div className="relative w-64">
@@ -575,13 +577,15 @@ export function AccessHub() {
                         <div className="col-span-full py-12 text-center">
                             <Lock size={40} className="mx-auto mb-3 text-slate-200" />
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">No credentials yet</p>
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="text-xs font-bold text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors flex items-center gap-2 mx-auto"
-                            >
-                                <Plus size={14} />
-                                Add your first credential
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="text-xs font-bold text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors flex items-center gap-2 mx-auto"
+                                >
+                                    <Plus size={14} />
+                                    Add your first credential
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

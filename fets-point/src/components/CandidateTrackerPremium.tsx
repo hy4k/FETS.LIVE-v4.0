@@ -19,7 +19,7 @@ import {
 import { useClients, useClientExams } from '../hooks/useClients'
 import { toast } from 'react-hot-toast'
 import * as XLSX from 'xlsx'
-import { format, subMonths } from 'date-fns'
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -155,8 +155,10 @@ export function CandidateTrackerPremium() {
 
   // Queries
   const filters = useMemo(() => ({
-    branch_location: locationFilter !== 'all' ? locationFilter : undefined
-  }), [locationFilter])
+    branch_location: locationFilter !== 'all' ? locationFilter : undefined,
+    startDate: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
+    endDate: format(endOfMonth(currentDate), 'yyyy-MM-dd')
+  }), [locationFilter, currentDate])
 
   const { data: rawCandidates, isLoading, refetch } = useCandidates(filters)
   

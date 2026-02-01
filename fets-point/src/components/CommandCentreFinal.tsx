@@ -510,7 +510,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                         </motion.div>
 
                         {/* 2.5 ACCESS HUB - CREDENTIAL MANAGEMENT */}
-                        <AccessHub />
+                        <AccessHub readOnly={true} />
 
 
                         {/* 3.5 TEAM PRESENCE & FETS MEET */}

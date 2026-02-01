@@ -23,6 +23,8 @@ import { Fetchat } from './components/Fetchat';
 import { BranchIndicator } from './components/BranchIndicator';
 // Import Slate directly for global access
 import { DigitalNotebook } from './components/DigitalNotebook';
+// Import AI Assistant for floating widget
+import { AiAssistant } from './components/AiAssistant';
 
 import { supabase } from './lib/supabase';
 import { useIsMobile, useScreenSize } from './hooks/use-mobile';
@@ -32,12 +34,12 @@ import { useIsMobile, useScreenSize } from './hooks/use-mobile';
 const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard').then(module => ({ default: module.ICloudDashboard })))
 const CommandCentre = lazy(() => import('./components/CommandCentreFinal'))
 const CandidateTracker = lazy(() => import('./components/CandidateTrackerPremium').then(module => ({ default: module.CandidateTrackerPremium })))
-const MyDesk = lazy(() => import('./components/MyDeskNew').then(module => ({ default: module.MyDeskNew })))
+const MyDesk = lazy(() => import('./components/MyDeskLivingBoard').then(module => ({ default: module.MyDeskLivingBoard })))
 const StaffManagement = lazy(() => import('./components/StaffManagement').then(module => ({ default: module.StaffManagement })))
 const FetsVault = lazy(() => import('./components/FetsVault').then(module => ({ default: module.FetsVault })))
 const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then(module => ({ default: module.FetsIntelligence })))
 const FetsRoster = lazy(() => import('./components/FetsRosterPremium'))
-const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium'))
+const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium').then(module => ({ default: module.FetsCalendarPremium })))
 const SystemManager = lazy(() => import('./components/SystemManager').then(module => ({ default: module.default })))
 const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager').then(module => ({ default: module.ChecklistManager })))
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
@@ -45,6 +47,7 @@ const UserManagement = lazy(() => import('./components/UserManagement').then(mod
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 const IncidentLogPage = lazy(() => import('./components/IncidentLogPage').then(module => ({ default: module.IncidentLogPage })))
 const Slate = lazy(() => import('./components/Slate').then(module => ({ default: module.Slate })))
+const FetsOmniAI = lazy(() => import('./components/FetsOmniAI').then(module => ({ default: module.FetsOmniAI })))
 
 // Create QueryClient instance with optimized settings
 const queryClient = new QueryClient({
@@ -220,7 +223,7 @@ function AppContent() {
       'candidate-tracker': { component: <CandidateTracker />, name: 'Candidate Tracker' },
       'fets-roster': { component: <FetsRoster />, name: 'FETS Roster' },
       'fets-calendar': { component: <FetsCalendar />, name: 'FETS Calendar' },
-      'my-desk': { component: <MyDesk />, name: 'My Desk' },
+      'my-desk': { component: <MyDesk onNavigate={setActiveTab} />, name: 'My Desk' },
       'staff-management': { component: <StaffManagement />, name: 'Staff Management' },
       'fets-intelligence': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS Intelligence' },
       'incident-log': { component: <IncidentLogPage />, name: 'Incident Log' },
@@ -230,7 +233,8 @@ function AppContent() {
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'settings': { component: <FetsIntelligence />, name: 'FETS Intelligence' },
       'user-management': { component: <UserManagement />, name: 'User Management' },
-      'slate': { component: <Slate />, name: 'Slate' }
+      'slate': { component: <Slate />, name: 'Slate' },
+      'fets-omni-ai': { component: <FetsOmniAI initialQuery={aiQuery} />, name: 'FETS OMNI AI' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center']
@@ -251,20 +255,26 @@ function AppContent() {
     )
   }
 
+  // Check if current page should hide header (Living Board style pages)
+  const isFullscreenPage = activeTab === 'my-desk'
+
   return (
     <>
       <div className={`golden-theme min-h-screen relative ${getBranchTheme(activeBranch)}`}>
-        <Header
-          isMobile={isMobile}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          setActiveTab={setActiveTab}
-          activeTab={activeTab}
-          onQuickCapture={handleQuickCapture}
-        />
+        {/* Conditionally render header - hide for fullscreen pages like My Desk Living Board */}
+        {!isFullscreenPage && (
+          <Header
+            isMobile={isMobile}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            setActiveTab={setActiveTab}
+            activeTab={activeTab}
+            onQuickCapture={handleQuickCapture}
+          />
+        )}
 
-        <div className="pt-32 px-4 md:px-8 pb-8 transition-all duration-300">
-          <div className="max-w-[1920px] mx-auto">
+        <div className={`transition-all duration-300 ${isFullscreenPage ? '' : 'pt-32 px-4 md:px-8 pb-8'}`}>
+          <div className={isFullscreenPage ? '' : 'max-w-[1920px] mx-auto'}>
             {renderContent()}
           </div>
         </div>
@@ -272,6 +282,9 @@ function AppContent() {
         {/* Global Chat Layer */}
         <GlobalChatLayer />
         <BranchIndicator />
+
+        {/* AI Assistant Floating Widget */}
+        <AiAssistant />
 
         <ConnectionStatus />
         {process.env.NODE_ENV === 'development' && <DatabaseSetup />}

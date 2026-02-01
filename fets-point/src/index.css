@@ -16,6 +16,7 @@
 @import './styles/branch-themes.css';
 @import './styles/incident-manager-premium.css';
 @import './styles/incident-playground.css';
+@import './styles/raise-a-case.css'; /* New colorful Raise A Case styling */
 @import './styles/mobile.css'; /* Mobile optimizations */
 /* @import './styles/index.css'; */
 

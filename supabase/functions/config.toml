@@ -1,0 +1,8 @@
+# Supabase Edge Functions Configuration
+# See: https://supabase.com/docs/guides/functions/config
+
+[fets-api]
+# Verify JWT is disabled since we use custom API key auth
+verify_jwt = false
+# Import map for Deno
+import_map = "./import_map.json"

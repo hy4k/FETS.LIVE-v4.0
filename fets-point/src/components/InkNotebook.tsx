@@ -274,28 +274,31 @@ function NotebookSection({
               }} 
             />
         </div>
-        {entries.map((entry, idx) => (
-          <motion.div
-            key={entry.id || `entry-${idx}`}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="relative py-2 border-b"
-            style={{ 
-              borderColor: idx % 3 === 0 ? theme.line.replace('0.2', '0.4').replace('0.15', '0.35') : theme.line, 
-              borderStyle: idx % 3 === 0 ? 'solid' : 'dashed',
-              minHeight: SECTION_SPACING[section]
-            }}
-          >
-            <EditableEntry 
-              entry={entry}
-              theme={theme}
-              sectionSpacing={SECTION_SPACING[section]}
-              isOwner={entry.author_id === currentUserId}
-              onUpdate={onUpdateEntry}
-              onDelete={onDeleteEntry}
-            />
-          </motion.div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {entries.map((entry, idx) => (
+            <motion.div
+              key={entry.id || `entry-${section}-${idx}`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="relative py-2 border-b"
+              style={{
+                borderColor: idx % 3 === 0 ? theme.line.replace('0.2', '0.4').replace('0.15', '0.35') : theme.line,
+                borderStyle: idx % 3 === 0 ? 'solid' : 'dashed',
+                minHeight: SECTION_SPACING[section]
+              }}
+            >
+              <EditableEntry
+                entry={entry}
+                theme={theme}
+                sectionSpacing={SECTION_SPACING[section]}
+                isOwner={entry.author_id === currentUserId}
+                onUpdate={onUpdateEntry}
+                onDelete={onDeleteEntry}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
         
         {/* Active Line - In-line typing */}
         <div 
@@ -550,6 +553,7 @@ export function InkNotebook() {
             <div className="flex-1 flex flex-col min-h-0 relative z-10 rounded-b-[32px] overflow-visible">
                 <AnimatePresence>
                 <NotebookSection
+                    key="section-now"
                     section="now"
                     entries={getEntriesBySection('now')}
                     onAddEntry={handleAddEntry}
@@ -560,6 +564,7 @@ export function InkNotebook() {
                     onFocus={() => setFocusedSection('now')}
                 />
                 <NotebookSection
+                    key="section-next"
                     section="next"
                     entries={getEntriesBySection('next')}
                     onAddEntry={handleAddEntry}
@@ -570,6 +575,7 @@ export function InkNotebook() {
                     onFocus={() => setFocusedSection('next')}
                 />
                 <NotebookSection
+                    key="section-later"
                     section="later"
                     entries={getEntriesBySection('later')}
                     onAddEntry={handleAddEntry}

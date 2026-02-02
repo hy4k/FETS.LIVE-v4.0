@@ -29,10 +29,23 @@ const addStaff = async (newStaffData: Omit<StaffProfile, 'id' | 'created_at'> & 
     body: newStaffData,
   })
 
+  // Log for debugging
+  console.log('Create staff user response:', { data, error })
+
   if (error) {
-    // The function might return a specific error message in the response body
+    // Edge Function invocation error
     throw new Error(data?.error || error.message)
   }
+
+  // Check if the function returned an error in its response body
+  if (data?.error) {
+    throw new Error(data.error)
+  }
+
+  if (!data?.success) {
+    throw new Error('Failed to create staff user - unknown error')
+  }
+
   return data
 }
 

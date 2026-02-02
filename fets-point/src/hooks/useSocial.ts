@@ -51,6 +51,7 @@ export const useSocialPosts = () => {
             user:staff_profiles!social_post_comments_author_id_fkey(full_name, avatar_url)
           )
         `)
+        .or('is_archived.is.null,is_archived.eq.false')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -206,25 +207,49 @@ export const useAddComment = () => {
   });
 };
 
-// Delete a post
-export const useDeletePost = () => {
+// Update a post (edit)
+export const useUpdatePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (post_id: string) => {
+    mutationFn: async ({ post_id, content, image_url }: { post_id: string; content: string; image_url?: string }) => {
       const { error } = await supabase
         .from('social_posts' as any)
-        .delete()
+        .update({ content, image_url, updated_at: new Date().toISOString() })
         .eq('id', post_id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['social-posts'] });
-      toast.success('Post deleted');
+      toast.success('Post updated! ✏️');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete post');
+      toast.error(error.message || 'Failed to update post');
+    },
+  });
+};
+
+// Delete a post (soft-delete by archiving)
+export const useDeletePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (post_id: string) => {
+      // Soft delete by setting is_archived to true
+      const { error } = await supabase
+        .from('social_posts' as any)
+        .update({ is_archived: true, archived_at: new Date().toISOString() })
+        .eq('id', post_id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['social-posts'] });
+      toast.success('Post archived 🗂️');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to archive post');
     },
   });
 };

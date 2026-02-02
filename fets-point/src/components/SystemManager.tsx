@@ -536,6 +536,7 @@ const SystemManager = () => {
         const payload = {
             branch_location: activeBranch,
             system_type: newSystem.type,
+            category_name: newSystem.category_name || (newSystem.type === 'peripheral' ? newSystem.it_item_type : 'Systems'),
             name: newSystem.name,
             ip_address: newSystem.ip,
             specs: newSystem.specs,
@@ -776,7 +777,9 @@ const SystemManager = () => {
     const filteredSystems = systems.filter(sys => {
         const matchesSearch = sys.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             sys.ip_address?.includes(searchTerm);
-        const matchesCategory = activeCategory === 'all' || sys.category_name === activeCategory;
+        // Default systems without category_name to 'Systems' for backwards compatibility
+        const effectiveCategory = sys.category_name || 'Systems';
+        const matchesCategory = activeCategory === 'all' || effectiveCategory === activeCategory;
         return sys.branch_location === activeBranch && matchesCategory && matchesSearch;
     }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 

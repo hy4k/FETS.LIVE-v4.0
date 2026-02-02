@@ -11,10 +11,10 @@ interface ProfilePictureUploadProps {
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function ProfilePictureUpload({ 
-  currentAvatarUrl, 
-  staffId, 
-  staffName, 
+export function ProfilePictureUpload({
+  currentAvatarUrl,
+  staffId,
+  staffName,
   onAvatarUpdate,
   size = 'md'
 }: ProfilePictureUploadProps) {
@@ -23,7 +23,7 @@ export function ProfilePictureUpload({
 
   const sizeClasses = {
     sm: 'w-12 h-12',
-    md: 'w-20 h-20', 
+    md: 'w-20 h-20',
     lg: 'w-32 h-32'
   }
 
@@ -60,35 +60,52 @@ export function ProfilePictureUpload({
       const fileName = `${staffId}-${Date.now()}.${fileExt}`
       const filePath = `avatars/${fileName}`
 
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        })
+      // Try multiple buckets for upload
+      const bucketsToTry = ['profile-pictures', 'avatars', 'public', 'attachments']
+      let successBucket = ''
+      let publicUrl = ''
 
-      if (uploadError) throw uploadError
+      for (const bucketName of bucketsToTry) {
+        console.log(`📸 Trying to upload profile picture to bucket: ${bucketName}`)
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          })
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(filePath)
-      
+        if (!uploadError) {
+          successBucket = bucketName
+          const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath)
+          publicUrl = data.publicUrl
+          console.log(`✅ Upload successful to bucket: ${bucketName}`)
+          break
+        } else {
+          console.log(`❌ Bucket ${bucketName} failed:`, uploadError.message)
+        }
+      }
+
+      if (!successBucket || !publicUrl) {
+        throw new Error('All storage buckets failed. Please ensure a storage bucket exists in Supabase.')
+      }
+
       // Update staff profile
       const { error: updateError } = await supabase
         .from('staff_profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', staffId)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('❌ Profile update failed:', updateError)
+        throw updateError
+      }
 
       onAvatarUpdate(publicUrl)
       setPreviewUrl(null) // Clear preview since we have real URL now
       toast.success('Profile picture updated successfully')
     } catch (error: any) {
       console.error('Error uploading avatar:', error)
-      toast.error('Failed to upload profile picture')
+      toast.error(error.message || 'Failed to upload profile picture')
       setPreviewUrl(null)
     } finally {
       setUploading(false)
@@ -103,13 +120,13 @@ export function ProfilePictureUpload({
         const urlParts = currentAvatarUrl.split('/')
         const fileName = urlParts[urlParts.length - 1]
         const filePath = `avatars/${fileName}`
-        
+
         // Delete from storage (don't throw error if file doesn't exist)
         await supabase.storage
           .from('profile-pictures')
           .remove([filePath])
       }
-      
+
       // Update staff profile to remove avatar
       const { error } = await supabase
         .from('staff_profiles')
@@ -137,7 +154,7 @@ export function ProfilePictureUpload({
           alt={`${staffName}'s profile`}
           className="w-full h-full object-cover"
         />
-        
+
         {uploading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
@@ -157,7 +174,7 @@ export function ProfilePictureUpload({
               disabled={uploading}
             />
           </label>
-          
+
           {(currentAvatarUrl || previewUrl) && (
             <button
               onClick={handleRemoveAvatar}

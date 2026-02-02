@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, MapPin, Calendar, Shield, Award, 
-  MessageSquare, Zap, Activity, CheckCircle2, AlertCircle,
-  Menu, ArrowLeft, Plus, X, Heart, Star, Lock, Eye, Key,
-  Lightbulb, Coins, Trophy, Briefcase, Phone, Globe, HelpCircle,
-  Share2, Bookmark, Flame, Target, Send, Camera, Info, Trash2
+import {
+    Users, MapPin, Calendar, Shield, Award,
+    MessageSquare, Zap, Activity, CheckCircle2, AlertCircle,
+    Menu, ArrowLeft, Plus, X, Heart, Star, Lock, Eye, Key,
+    Lightbulb, Coins, Trophy, Briefcase, Phone, Globe, HelpCircle,
+    Share2, Bookmark, Flame, Target, Send, Camera, Info, Trash2, Edit3, MoreVertical
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBranch } from '../hooks/useBranch';
-import { useSocialPosts, useCreatePost, useToggleLike, useAddComment } from '../hooks/useSocial';
+import { useSocialPosts, useCreatePost, useToggleLike, useAddComment, useUpdatePost, useDeletePost } from '../hooks/useSocial';
 import { useVaultEntries, useCreateVaultEntry, useDeleteVaultEntry } from '../hooks/useVault';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -20,80 +20,80 @@ import { supabase } from '../lib/supabase';
 type PulseType = 'Challenge' | 'Task' | 'Appreciation' | 'Idea';
 
 interface PulsePost {
-  id: string;
-  author_id: string;
-  user_id?: string;
-  content: string;
-  post_type: PulseType;
-  image_url?: string;
-  target_user_id?: string;
-  reward_amount?: number;
-  challenge_status?: string;
-  branch_location: string;
-  created_at: string;
-  user?: {
-    full_name: string;
-    avatar_url?: string;
-    role?: string;
-  };
-  likes?: any[];
-  comments?: any[];
-  _count?: {
-    likes: number;
-    comments: number;
-  };
+    id: string;
+    author_id: string;
+    user_id?: string;
+    content: string;
+    post_type: PulseType;
+    image_url?: string;
+    target_user_id?: string;
+    reward_amount?: number;
+    challenge_status?: string;
+    branch_location: string;
+    created_at: string;
+    user?: {
+        full_name: string;
+        avatar_url?: string;
+        role?: string;
+    };
+    likes?: any[];
+    comments?: any[];
+    _count?: {
+        likes: number;
+        comments: number;
+    };
 }
 
 // --- Helpers ---
 
 const getPulseTheme = (type: PulseType) => {
-  switch (type) {
-    case 'Challenge': return { 
-      bg: 'bg-amber-50', 
-      border: 'border-amber-200', 
-      accent: 'bg-amber-500', 
-      text: 'text-amber-900',
-      shadow: 'shadow-amber-100',
-      icon: Target,
-      color: '#F59E0B'
-    };
-    case 'Task': return { 
-      bg: 'bg-rose-50', 
-      border: 'border-rose-200', 
-      accent: 'bg-rose-600', 
-      text: 'text-rose-900',
-      shadow: 'shadow-rose-100',
-      icon: Shield,
-      color: '#E11D48'
-    };
-    case 'Appreciation': return { 
-      bg: 'bg-emerald-50', 
-      border: 'border-emerald-200', 
-      accent: 'bg-emerald-500', 
-      text: 'text-emerald-900',
-      shadow: 'shadow-emerald-100',
-      icon: Heart,
-      color: '#10B981'
-    };
-    case 'Idea': return { 
-      bg: 'bg-indigo-50', 
-      border: 'border-indigo-200', 
-      accent: 'bg-indigo-500', 
-      text: 'text-indigo-900',
-      shadow: 'shadow-indigo-100',
-      icon: Lightbulb,
-      color: '#6366F1'
-    };
-    default: return {
-      bg: 'bg-slate-50',
-      border: 'border-slate-200',
-      accent: 'bg-slate-500',
-      text: 'text-slate-900',
-      shadow: 'shadow-slate-100',
-      icon: Info,
-      color: '#64748B'
-    };
-  }
+    switch (type) {
+        case 'Challenge': return {
+            bg: 'bg-amber-50',
+            border: 'border-amber-200',
+            accent: 'bg-amber-500',
+            text: 'text-amber-900',
+            shadow: 'shadow-amber-100',
+            icon: Target,
+            color: '#F59E0B'
+        };
+        case 'Task': return {
+            bg: 'bg-rose-50',
+            border: 'border-rose-200',
+            accent: 'bg-rose-600',
+            text: 'text-rose-900',
+            shadow: 'shadow-rose-100',
+            icon: Shield,
+            color: '#E11D48'
+        };
+        case 'Appreciation': return {
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-200',
+            accent: 'bg-emerald-500',
+            text: 'text-emerald-900',
+            shadow: 'shadow-emerald-100',
+            icon: Heart,
+            color: '#10B981'
+        };
+        case 'Idea': return {
+            bg: 'bg-indigo-50',
+            border: 'border-indigo-200',
+            accent: 'bg-indigo-500',
+            text: 'text-indigo-900',
+            shadow: 'shadow-indigo-100',
+            icon: Lightbulb,
+            color: '#6366F1'
+        };
+        default: return {
+            bg: 'bg-slate-50',
+            border: 'border-slate-200',
+            accent: 'bg-slate-500',
+            text: 'text-slate-900',
+            shadow: 'shadow-slate-100',
+            icon: Info,
+            color: '#64748B'
+        };
+    }
 };
 
 // --- Modals ---
@@ -119,19 +119,7 @@ const CreatePostModal = ({ onClose, onSuccess, profile, activeBranch }: { onClos
         if (!content.trim()) return;
 
         try {
-            await createPost.mutateAsync({
-                content: content.trim(),
-                user_id: profile?.user_id, // For social_posts.user_id (auth user)
-                post_type: type,
-                branch_location: activeBranch || 'global',
-                // Additional fields handled by custom hook if we update it, or we add them here
-            } as any);
-            
-            // Note: Since useCreatePost in useSocial.ts might not have target_user_id yet, 
-            // we might need to update the hook or do a manual insert if needed.
-            // But let's assume we updated the table and we can pass them.
-            // Actually, I'll update the hook call if I can, or just use supabase.insert here for full control.
-            
+            // Use direct insert with all fields including challenge-specific fields
             const { error } = await supabase.from('social_posts').insert({
                 content: content.trim(),
                 author_id: profile?.id,
@@ -155,7 +143,7 @@ const CreatePostModal = ({ onClose, onSuccess, profile, activeBranch }: { onClos
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100"
@@ -202,7 +190,7 @@ const CreatePostModal = ({ onClose, onSuccess, profile, activeBranch }: { onClos
                     </div>
 
                     {type === 'Challenge' && (
-                        <motion.div 
+                        <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             className="space-y-4 pt-4 border-t border-slate-100"
@@ -210,7 +198,7 @@ const CreatePostModal = ({ onClose, onSuccess, profile, activeBranch }: { onClos
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Target Fetsian</label>
-                                    <select 
+                                    <select
                                         value={targetUser}
                                         onChange={(e) => setTargetUser(e.target.value)}
                                         className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-amber-500"
@@ -221,7 +209,7 @@ const CreatePostModal = ({ onClose, onSuccess, profile, activeBranch }: { onClos
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Reward Amount (FC)</label>
-                                    <input 
+                                    <input
                                         type="number"
                                         value={reward}
                                         onChange={(e) => setReward(parseInt(e.target.value))}
@@ -263,7 +251,7 @@ const CreateVaultModal = ({ onClose, onSuccess, profile }: { onClose: () => void
         try {
             await createVault.mutateAsync({
                 title: title.trim(),
-                user_id: profile?.id,
+                user_id: profile?.user_id, // CRITICAL FIX: Use auth user_id, not staff profile id
                 category,
                 username: category === 'Credential' ? username : null,
                 password: category === 'Credential' ? password : null,
@@ -281,7 +269,7 @@ const CreateVaultModal = ({ onClose, onSuccess, profile }: { onClose: () => void
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100"
@@ -298,7 +286,7 @@ const CreateVaultModal = ({ onClose, onSuccess, profile }: { onClose: () => void
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Category</label>
-                            <select 
+                            <select
                                 value={category}
                                 onChange={(e: any) => setCategory(e.target.value)}
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-[#75A78F]"
@@ -323,7 +311,7 @@ const CreateVaultModal = ({ onClose, onSuccess, profile }: { onClose: () => void
 
                     {category === 'Credential' && (
                         <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                             <div>
+                            <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Username</label>
                                 <input
                                     value={username}
@@ -388,22 +376,22 @@ const CreateVaultModal = ({ onClose, onSuccess, profile }: { onClose: () => void
 
 const IdentitySection = ({ profile, activeBranch }: { profile: any, activeBranch: string }) => {
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col lg:flex-row items-center justify-between py-12 px-8 mb-12 rounded-[3rem] bg-[#75A78F] shadow-[0_32px_64px_-16px_rgba(117,167,143,0.3)] relative overflow-hidden"
         >
             {/* Background Texture */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none" 
-                 style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }} />
-            
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }} />
+
             <div className="flex flex-col md:flex-row items-center gap-12 relative z-10 w-full">
                 {/* Profile Photo - CIRCULAR LEFT */}
                 <div className="relative group shrink-0">
                     <div className="w-40 h-40 rounded-full p-1.5 bg-white/20 backdrop-blur-md shadow-2xl overflow-hidden ring-1 ring-white/30 group-hover:ring-white/60 transition-all duration-700">
                         <div className="w-full h-full rounded-full overflow-hidden bg-slate-100/50 relative">
-                             {profile?.avatar_url ? (
+                            {profile?.avatar_url ? (
                                 <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="flex items-center justify-center h-full text-white">
@@ -414,7 +402,7 @@ const IdentitySection = ({ profile, activeBranch }: { profile: any, activeBranch
                     </div>
                     {/* Sage Pulse */}
                     <div className="absolute inset-[-10px] border-2 border-white/20 rounded-full animate-ping opacity-30 pointer-events-none" />
-                    
+
                     {/* Live Indicator */}
                     <div className="absolute bottom-4 right-4 z-20 w-6 h-6 bg-emerald-400 border-4 border-[#75A78F] rounded-full shadow-lg" title="Active Sessions" />
                 </div>
@@ -427,23 +415,23 @@ const IdentitySection = ({ profile, activeBranch }: { profile: any, activeBranch
                         <span className="text-white/30">•</span>
                         <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
-                    
+
                     <h1 className="text-5xl lg:text-7xl font-bold text-white tracking-tight leading-none font-[Outfit]">
-                        Welcome back,<br/>
+                        Welcome back,<br />
                         <span className="text-slate-900/80">
                             {profile?.full_name?.split(' ')[0] || 'Fetsian'}.
                         </span>
                     </h1>
-                    
+
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
-                         <div className="px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-                             <MapPin size={14} />
-                             {activeBranch}
-                         </div>
-                         <div className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 shadow-xl">
+                        <div className="px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <MapPin size={14} />
+                            {activeBranch}
+                        </div>
+                        <div className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-full text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 shadow-xl">
                             <Coins size={14} />
                             {(profile?.fets_cash || 0).toLocaleString()} FETS CASH
-                         </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -463,7 +451,7 @@ const VaultSection = ({ userId, onAdd }: { userId?: string, onAdd: () => void })
     };
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
@@ -472,16 +460,16 @@ const VaultSection = ({ userId, onAdd }: { userId?: string, onAdd: () => void })
         >
             <div className="bg-white rounded-[4rem] p-12 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] border border-slate-100">
                 <div className="flex justify-between items-center mb-12">
-                     <div className="space-y-1">
+                    <div className="space-y-1">
                         <h2 className="text-4xl font-black text-slate-900 font-[Outfit]">F-Vault</h2>
                         <div className="w-12 h-1.5 bg-[#75A78F] rounded-full" />
-                     </div>
-                     <button 
+                    </div>
+                    <button
                         onClick={onAdd}
                         className="flex items-center gap-2 px-8 py-4 bg-[#75A78F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl hover:shadow-[0_20px_40px_rgba(117,167,143,0.4)] hover:-translate-y-1 transition-all"
-                     >
+                    >
                         <Plus size={18} /> Add New Hub Item
-                     </button>
+                    </button>
                 </div>
 
                 {isLoading ? (
@@ -500,9 +488,9 @@ const VaultSection = ({ userId, onAdd }: { userId?: string, onAdd: () => void })
                             >
                                 <div className="flex items-center gap-6">
                                     <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#75A78F] group-hover:scale-110 transition-transform shadow-sm">
-                                        {item.category === 'Credential' ? <Lock size={24} /> : 
-                                         item.category === 'Contact' ? <Phone size={24} /> : 
-                                         item.category === 'Link' ? <Globe size={24} /> : <HelpCircle size={24} />}
+                                        {item.category === 'Credential' ? <Lock size={24} /> :
+                                            item.category === 'Contact' ? <Phone size={24} /> :
+                                                item.category === 'Link' ? <Globe size={24} /> : <HelpCircle size={24} />}
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{item.category}</span>
@@ -512,7 +500,7 @@ const VaultSection = ({ userId, onAdd }: { userId?: string, onAdd: () => void })
                                         {item.notes && <p className="text-xs text-slate-400 italic mt-2 line-clamp-1">{item.notes}</p>}
                                     </div>
                                 </div>
-                                <button 
+                                <button
                                     onClick={(e) => handleDelete(e, item.id)}
                                     className="p-3 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
                                 >
@@ -536,8 +524,18 @@ const PulsePostCard = ({ post, profile }: { post: PulsePost, profile: any }) => 
     const theme = getPulseTheme(post.post_type);
     const Icon = theme.icon;
     const toggleLike = useToggleLike();
+    const updatePost = useUpdatePost();
+    const deletePost = useDeletePost();
     const [targetName, setTargetName] = useState('...');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState(post.content);
+    const [showMenu, setShowMenu] = useState(false);
     const isLiked = post.likes?.some(l => l.user_id === profile?.user_id);
+
+    // Check if current user can edit/delete this post
+    const isOwner = post.author_id === profile?.id || post.user_id === profile?.user_id;
+    const isAdmin = profile?.role === 'super_admin' || profile?.role === 'roster_manager';
+    const canManage = isOwner || isAdmin;
 
     useEffect(() => {
         if (post.target_user_id) {
@@ -545,6 +543,25 @@ const PulsePostCard = ({ post, profile }: { post: PulsePost, profile: any }) => 
                 .then(({ data }) => setTargetName(data?.full_name || 'Unknown'));
         }
     }, [post.target_user_id]);
+
+    const handleEdit = async () => {
+        if (!editContent.trim()) return;
+        try {
+            await updatePost.mutateAsync({ post_id: post.id, content: editContent.trim() });
+            setIsEditing(false);
+        } catch (err) {
+            // Error handled by hook
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to archive this post? It will be hidden from all sections.')) return;
+        try {
+            await deletePost.mutateAsync(post.id);
+        } catch (err) {
+            // Error handled by hook
+        }
+    };
 
     return (
         <motion.div
@@ -554,7 +571,7 @@ const PulsePostCard = ({ post, profile }: { post: PulsePost, profile: any }) => 
             className={`w-full max-w-2xl mx-auto mb-12 p-8 rounded-[2.5rem] bg-white border-2 ${theme.border} shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] hover:shadow-2xl transition-all duration-500 relative group overflow-visible`}
         >
             {/* Type Indicator Orb */}
-            <div 
+            <div
                 className={`absolute -left-4 top-10 w-10 h-10 rounded-full ${theme.accent} shadow-2xl flex items-center justify-center text-white z-20 group-hover:scale-125 transition-transform border-4 border-white`}
                 style={{ backgroundColor: theme.color }}
             >
@@ -578,42 +595,109 @@ const PulsePostCard = ({ post, profile }: { post: PulsePost, profile: any }) => 
                         </div>
                     </div>
                 </div>
-                <div 
-                    className={`px-4 py-1.5 rounded-full text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-lg`}
-                    style={{ backgroundColor: theme.color }}
-                >
-                    {post.post_type}
+                <div className="flex items-center gap-2">
+                    <div
+                        className={`px-4 py-1.5 rounded-full text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-lg`}
+                        style={{ backgroundColor: theme.color }}
+                    >
+                        {post.post_type}
+                    </div>
+
+                    {/* Edit/Delete Menu (visible only to owner/admin) */}
+                    {canManage && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowMenu(!showMenu)}
+                                className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showMenu && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                                        className="absolute right-0 top-12 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-30 min-w-[140px]"
+                                    >
+                                        <button
+                                            onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                                            className="w-full px-4 py-3 text-left flex items-center gap-3 text-slate-600 hover:bg-slate-50 transition-colors text-sm font-bold"
+                                        >
+                                            <Edit3 size={14} />
+                                            Edit Post
+                                        </button>
+                                        <button
+                                            onClick={() => { handleDelete(); setShowMenu(false); }}
+                                            className="w-full px-4 py-3 text-left flex items-center gap-3 text-rose-500 hover:bg-rose-50 transition-colors text-sm font-bold"
+                                        >
+                                            <Trash2 size={14} />
+                                            Delete
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <div className={`text-xl font-medium ${post.post_type === 'Task' ? 'text-rose-900' : 'text-slate-800'} leading-relaxed mb-8 font-[Outfit]`}>
-                {post.content}
-            </div>
+            {/* Content - Editable or Static */}
+            {isEditing ? (
+                <div className="mb-8 space-y-4">
+                    <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-lg font-medium text-slate-800 outline-none focus:border-[#75A78F] resize-none"
+                        rows={4}
+                    />
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            onClick={() => { setIsEditing(false); setEditContent(post.content); }}
+                            className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-xl font-bold text-sm transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleEdit}
+                            disabled={updatePost.isPending}
+                            className="px-6 py-2 bg-[#75A78F] text-white rounded-xl font-bold text-sm hover:bg-[#6a9880] transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {updatePost.isPending ? 'Saving...' : <><Edit3 size={14} /> Save</>}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className={`text-xl font-medium ${post.post_type === 'Task' ? 'text-rose-900' : 'text-slate-800'} leading-relaxed mb-8 font-[Outfit]`}>
+                    {post.content}
+                </div>
+            )}
 
             {post.post_type === 'Challenge' && (
-                 <div className="bg-amber-100/50 rounded-3xl p-6 border-2 border-amber-200 mb-8 flex items-center justify-between shadow-inner">
-                     <div className="flex items-center gap-4">
-                         <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-lg">
-                             <Target size={20} />
-                         </div>
-                         <div>
-                             <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest block">Bounty Target</span>
-                             <span className="font-bold text-amber-900">{targetName}</span>
-                         </div>
-                     </div>
-                     <div className="text-center bg-white px-4 py-2 rounded-2xl shadow-sm border border-amber-100">
-                         <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">Reward</span>
-                         <div className="flex items-center gap-1.5 text-xl font-black text-slate-900 leading-none">
-                             <Coins size={18} className="text-amber-500" />
-                             {post.reward_amount}
-                         </div>
-                     </div>
-                 </div>
+                <div className="bg-amber-100/50 rounded-3xl p-6 border-2 border-amber-200 mb-8 flex items-center justify-between shadow-inner">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-lg">
+                            <Target size={20} />
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest block">Bounty Target</span>
+                            <span className="font-bold text-amber-900">{targetName}</span>
+                        </div>
+                    </div>
+                    <div className="text-center bg-white px-4 py-2 rounded-2xl shadow-sm border border-amber-100">
+                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">Reward</span>
+                        <div className="flex items-center gap-1.5 text-xl font-black text-slate-900 leading-none">
+                            <Coins size={18} className="text-amber-500" />
+                            {post.reward_amount}
+                        </div>
+                    </div>
+                </div>
             )}
 
             <div className="flex items-center justify-between pt-8 border-t border-slate-50">
                 <div className="flex items-center gap-8">
-                    <button 
+                    <button
                         onClick={() => toggleLike.mutate({ post_id: post.id, user_id: profile?.user_id, isLiked: !!isLiked })}
                         className={`flex items-center gap-2 transition-colors group/btn ${isLiked ? 'text-rose-500 font-bold' : 'text-slate-400 hover:text-rose-500'}`}
                     >
@@ -623,7 +707,7 @@ const PulsePostCard = ({ post, profile }: { post: PulsePost, profile: any }) => 
                         <span className="text-xs font-black">{post._count?.likes || 0}</span>
                     </button>
                     <button className="flex items-center gap-2 text-slate-400 hover:text-[#75A78F] transition-colors group/btn">
-                         <div className="p-2 rounded-xl group-hover/btn:bg-[#75A78F]/10 transition-colors">
+                        <div className="p-2 rounded-xl group-hover/btn:bg-[#75A78F]/10 transition-colors">
                             <MessageSquare size={18} />
                         </div>
                         <span className="text-xs font-black">{post._count?.comments || 0}</span>
@@ -652,7 +736,7 @@ const PulseSection = ({ profile, activeBranch, onAdd }: { profile: any, activeBr
     const { data: posts, isLoading, refetch } = useSocialPosts();
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="max-w-4xl mx-auto px-4"
@@ -662,7 +746,7 @@ const PulseSection = ({ profile, activeBranch, onAdd }: { profile: any, activeBr
                     <Activity size={12} className="animate-pulse" />
                     <span>Live Operational Stream</span>
                 </div>
-                
+
                 {/* Custom Filter Tabs */}
                 <div className="flex gap-3 overflow-x-auto pb-4 max-w-full no-scrollbar">
                     {['All', 'Challenge', 'Task', 'Appreciation', 'Idea'].map((f) => (
@@ -671,8 +755,8 @@ const PulseSection = ({ profile, activeBranch, onAdd }: { profile: any, activeBr
                             onClick={() => setFilter(f as any)}
                             className={`
                                 relative px-8 py-3 rounded-3xl text-xs font-black uppercase tracking-[0.15em] transition-all duration-500
-                                ${filter === f 
-                                    ? 'bg-[#75A78F] text-white shadow-[0_10px_20px_-5px_rgba(117,167,143,0.5)] translate-y-[-2px]' 
+                                ${filter === f
+                                    ? 'bg-[#75A78F] text-white shadow-[0_10px_20px_-5px_rgba(117,167,143,0.5)] translate-y-[-2px]'
                                     : 'bg-white text-slate-400 border border-slate-200 hover:border-[#75A78F]'
                                 }
                             `}
@@ -695,7 +779,7 @@ const PulseSection = ({ profile, activeBranch, onAdd }: { profile: any, activeBr
             </div>
 
             {/* Awesome Floating Action Button */}
-            <motion.button 
+            <motion.button
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onAdd}
@@ -719,7 +803,7 @@ const WallSection = ({ profile }: { profile: any }) => {
     }, [profile]);
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -727,8 +811,8 @@ const WallSection = ({ profile }: { profile: any }) => {
         >
             <div className="bg-slate-900 rounded-[5rem] p-16 shadow-[0_64px_128px_-32px_rgba(0,0,0,0.5)] border border-slate-800">
                 <div className="text-center mb-20 space-y-4">
-                     <h2 className="text-5xl font-black text-white font-[Outfit]">The Impact Wall</h2>
-                     <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">Official Recognitions & Certifications</p>
+                    <h2 className="text-5xl font-black text-white font-[Outfit]">The Impact Wall</h2>
+                    <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-xs">Official Recognitions & Certifications</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -762,124 +846,124 @@ const WallSection = ({ profile }: { profile: any }) => {
 // --- Main Page Component ---
 
 export function MyDeskLivingBoard({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { user, profile } = useAuth();
-  const { activeBranch } = useBranch();
-  const [activeSection, setActiveSection] = useState<string | null>('pulse');
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [showVaultModal, setShowVaultModal] = useState(false);
+    const { user, profile } = useAuth();
+    const { activeBranch } = useBranch();
+    const [activeSection, setActiveSection] = useState<string | null>('pulse');
+    const [showPostModal, setShowPostModal] = useState(false);
+    const [showVaultModal, setShowVaultModal] = useState(false);
 
-  return (
-    <div className="min-h-screen bg-[#FDFDFD] relative overflow-x-hidden pt-6 pb-20 selection:bg-[#75A78F]/30 selection:text-[#75A78F] font-sans">
-      
-      {/* Dynamic Background Pattern */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(#75A78F 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-        
-        {/* Glow Spheres */}
-        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#75A78F]/10 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-50/20 blur-[100px] rounded-full" />
-      </div>
+    return (
+        <div className="min-h-screen bg-[#FDFDFD] relative overflow-x-hidden pt-6 pb-20 selection:bg-[#75A78F]/30 selection:text-[#75A78F] font-sans">
 
-      {/* Floating Back Button */}
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="fixed top-8 left-8 z-50"
-      >
-        <button 
-          onClick={() => onNavigate?.('command-center')}
-          className="flex items-center justify-center w-12 h-12 bg-white border-2 border-slate-100 shadow-xl rounded-2xl text-slate-400 hover:text-[#75A78F] hover:border-[#75A78F] transition-all duration-500 scale-100 hover:scale-110 active:scale-90"
-        >
-          <ArrowLeft size={20} />
-        </button>
-      </motion.div>
+            {/* Dynamic Background Pattern */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(#75A78F 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 md:px-12 pt-16">
-        
-        {/* Section A: The Header / Identity */}
-        <IdentitySection profile={profile} activeBranch={activeBranch || 'Global'} />
-
-        {/* Section B: The Menu Dock */}
-        <div className="flex justify-center mb-16 sticky top-6 z-40">
-            <div className="bg-slate-900 border border-slate-800 p-2 rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex gap-2">
-                {[
-                    { id: 'pulse', label: 'F-Pulse', icon: Activity, desc: 'Live Stream' },
-                    { id: 'vault', label: 'F-Vault', icon: Lock, desc: 'Access Hub' },
-                    { id: 'wall', label: 'F-Wall', icon: Award, desc: 'Impact Wall' },
-                ].map((menu) => {
-                    const isActive = activeSection === menu.id;
-                    const Icon = menu.icon;
-                    return (
-                        <button
-                            key={menu.id}
-                            onClick={() => setActiveSection(menu.id)}
-                            className={`
-                                relative px-8 py-4 rounded-3xl flex flex-col items-center gap-0.5 transition-all duration-500 min-w-[140px]
-                                ${isActive 
-                                    ? 'bg-[#75A78F] text-white shadow-2xl scale-110 -translate-y-2' 
-                                    : 'hover:bg-slate-800 text-slate-500 hover:text-slate-300'
-                                }
-                            `}
-                        >
-                            <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500'} />
-                            <span className="font-black uppercase tracking-widest text-[10px] mt-1">{menu.label}</span>
-                            <span className={`text-[8px] font-bold uppercase opacity-50 ${isActive ? 'block' : 'hidden'}`}>{menu.desc}</span>
-                        </button>
-                    )
-                })}
+                {/* Glow Spheres */}
+                <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#75A78F]/10 blur-[150px] rounded-full" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-50/20 blur-[100px] rounded-full" />
             </div>
-        </div>
 
-        {/* Section C: Dynamic Content Switcher */}
-        <div className="min-h-[600px] mt-20">
-            <AnimatePresence mode="wait">
-                {activeSection === 'pulse' && (
-                    <PulseSection 
-                        key="pulse" 
-                        profile={profile} 
-                        activeBranch={activeBranch || 'Global'} 
-                        onAdd={() => setShowPostModal(true)}
+            {/* Floating Back Button */}
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="fixed top-8 left-8 z-50"
+            >
+                <button
+                    onClick={() => onNavigate?.('command-center')}
+                    className="flex items-center justify-center w-12 h-12 bg-white border-2 border-slate-100 shadow-xl rounded-2xl text-slate-400 hover:text-[#75A78F] hover:border-[#75A78F] transition-all duration-500 scale-100 hover:scale-110 active:scale-90"
+                >
+                    <ArrowLeft size={20} />
+                </button>
+            </motion.div>
+
+            <div className="relative z-10 max-w-[1400px] mx-auto px-6 md:px-12 pt-16">
+
+                {/* Section A: The Header / Identity */}
+                <IdentitySection profile={profile} activeBranch={activeBranch || 'Global'} />
+
+                {/* Section B: The Menu Dock */}
+                <div className="flex justify-center mb-16 sticky top-6 z-40">
+                    <div className="bg-slate-900 border border-slate-800 p-2 rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex gap-2">
+                        {[
+                            { id: 'pulse', label: 'F-Pulse', icon: Activity, desc: 'Live Stream' },
+                            { id: 'vault', label: 'F-Vault', icon: Lock, desc: 'Access Hub' },
+                            { id: 'wall', label: 'F-Wall', icon: Award, desc: 'Impact Wall' },
+                        ].map((menu) => {
+                            const isActive = activeSection === menu.id;
+                            const Icon = menu.icon;
+                            return (
+                                <button
+                                    key={menu.id}
+                                    onClick={() => setActiveSection(menu.id)}
+                                    className={`
+                                relative px-8 py-4 rounded-3xl flex flex-col items-center gap-0.5 transition-all duration-500 min-w-[140px]
+                                ${isActive
+                                            ? 'bg-[#75A78F] text-white shadow-2xl scale-110 -translate-y-2'
+                                            : 'hover:bg-slate-800 text-slate-500 hover:text-slate-300'
+                                        }
+                            `}
+                                >
+                                    <Icon size={20} className={isActive ? 'text-white' : 'text-slate-500'} />
+                                    <span className="font-black uppercase tracking-widest text-[10px] mt-1">{menu.label}</span>
+                                    <span className={`text-[8px] font-bold uppercase opacity-50 ${isActive ? 'block' : 'hidden'}`}>{menu.desc}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Section C: Dynamic Content Switcher */}
+                <div className="min-h-[600px] mt-20">
+                    <AnimatePresence mode="wait">
+                        {activeSection === 'pulse' && (
+                            <PulseSection
+                                key="pulse"
+                                profile={profile}
+                                activeBranch={activeBranch || 'Global'}
+                                onAdd={() => setShowPostModal(true)}
+                            />
+                        )}
+                        {activeSection === 'vault' && (
+                            <VaultSection
+                                key="vault"
+                                userId={profile?.user_id}
+                                onAdd={() => setShowVaultModal(true)}
+                            />
+                        )}
+                        {activeSection === 'wall' && (
+                            <WallSection
+                                key="wall"
+                                profile={profile}
+                            />
+                        )}
+                    </AnimatePresence>
+                </div>
+
+            </div>
+
+            {/* Modals */}
+            <AnimatePresence>
+                {showPostModal && (
+                    <CreatePostModal
+                        onClose={() => setShowPostModal(false)}
+                        onSuccess={() => { }} // Hook handles invalidation
+                        profile={profile}
+                        activeBranch={activeBranch || 'Global'}
                     />
                 )}
-                {activeSection === 'vault' && (
-                    <VaultSection 
-                        key="vault" 
-                        userId={profile?.id} 
-                        onAdd={() => setShowVaultModal(true)}
-                    />
-                )}
-                {activeSection === 'wall' && (
-                    <WallSection 
-                        key="wall" 
+                {showVaultModal && (
+                    <CreateVaultModal
+                        onClose={() => setShowVaultModal(false)}
+                        onSuccess={() => { }} // Hook handles invalidation
                         profile={profile}
                     />
                 )}
             </AnimatePresence>
         </div>
-
-      </div>
-
-      {/* Modals */}
-      <AnimatePresence>
-          {showPostModal && (
-              <CreatePostModal 
-                  onClose={() => setShowPostModal(false)}
-                  onSuccess={() => {}} // Hook handles invalidation
-                  profile={profile}
-                  activeBranch={activeBranch || 'Global'}
-              />
-          )}
-          {showVaultModal && (
-              <CreateVaultModal 
-                  onClose={() => setShowVaultModal(false)}
-                  onSuccess={() => {}} // Hook handles invalidation
-                  profile={profile}
-              />
-          )}
-      </AnimatePresence>
-    </div>
-  );
+    );
 }
 
 export default MyDeskLivingBoard;

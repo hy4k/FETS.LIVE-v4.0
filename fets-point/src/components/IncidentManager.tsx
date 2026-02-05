@@ -5,7 +5,7 @@ import {
     Monitor, MessageSquare, ChevronRight, Activity, Filter, Eye,
     Calendar, Users, UserX, Globe, Building, Wrench, X, Hash,
     Phone, CheckSquare, StickyNote, Settings, Check, Wifi,
-    ClipboardCheck, Package, UserCog, Briefcase, Building2
+    ClipboardCheck, Package, UserCog, Briefcase, Building2, Edit3
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
@@ -91,6 +91,8 @@ export default function IncidentManager() {
     const [inputValue, setInputValue] = useState('')
     // For specialized inputs
     const [inputData, setInputData] = useState<any>({})
+    const [editMode, setEditMode] = useState(false)
+    const [editData, setEditData] = useState({ title: '', description: '' })
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -137,12 +139,43 @@ export default function IncidentManager() {
     }
 
     useEffect(() => {
-        if (selectedId) fetchComments(selectedId)
+        if (selectedId) {
+            fetchComments(selectedId)
+            setEditMode(false)
+        }
     }, [selectedId])
+
+    useEffect(() => {
+        if (activeIncident && !editMode) {
+            setEditData({ title: activeIncident.title, description: activeIncident.description })
+        }
+    }, [activeIncident, editMode])
 
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
 
     // --- Actions ---
+    const handleEditCase = async (id: string, updates: Partial<Incident>) => {
+        const { error } = await supabase.from('incidents').update(updates).eq('id', id)
+        if (error) {
+            toast.error('Failed to update case')
+        } else {
+            toast.success('Case updated')
+            loadIncidents()
+        }
+    }
+
+    const handleDeleteCase = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this case?')) return
+        const { error } = await supabase.from('incidents').delete().eq('id', id)
+        if (error) {
+            toast.error('Failed to delete case')
+        } else {
+            toast.success('Case deleted')
+            if (selectedId === id) setSelectedId(null)
+            loadIncidents()
+        }
+    }
+
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault()
         if (!activeIncident || !profile) return
@@ -223,12 +256,11 @@ export default function IncidentManager() {
             description: caseData.description,
             category: caseData.category,
             status: 'open',
-            user_id: profile?.user_id, // CRITICAL FIX: Use auth user_id, not staff profile id
-            reporter: profile?.full_name || 'Admin',
+            severity: 'minor',
+            user_id: profile?.id,
+            reporter: profile?.full_name || 'Staff',
             branch_location: activeBranch === 'global' ? 'calicut' : activeBranch,
-            metadata: Object.keys(metadata).length > 0 ? metadata : null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            metadata: Object.keys(metadata).length > 0 ? metadata : null
         })
 
         if (error) {
@@ -348,39 +380,31 @@ export default function IncidentManager() {
 
             {/* ========== MAIN CONTENT AREA ========== */}
             <div className="rac-main-layout">
-                {/* LEFT MENU - Colorful Category Filter */}
+                {/* LEFT MENU - Sidebar showing Case IDs */}
                 <div className="rac-sidebar">
                     <div className="rac-filter-title">
-                        <Filter className="w-4 h-4" />
-                        <span>Categories</span>
+                        <Activity className="w-4 h-4" />
+                        <span>Active Cases</span>
                     </div>
                     <div className="rac-category-list">
-                        {SOURCES.map((s, idx) => {
-                            const colors = [
-                                'from-violet-500 to-purple-600',
-                                'from-blue-500 to-cyan-500',
-                                'from-emerald-500 to-teal-500',
-                                'from-orange-500 to-amber-500',
-                                'from-rose-500 to-pink-500',
-                                'from-indigo-500 to-blue-500',
-                                'from-fuchsia-500 to-pink-500',
-                                'from-cyan-500 to-blue-500',
-                                'from-lime-500 to-green-500',
-                                'from-amber-500 to-orange-500',
-                            ]
-                            const isActive = filterSource === s.id
+                        {incidents.slice(0, 15).map((inc) => {
+                            const isActive = selectedId === inc.id
+                            const categoryColors = getCategoryColor(inc.category)
                             return (
                                 <motion.button
-                                    key={s.id}
+                                    key={inc.id}
                                     whileHover={{ x: 4 }}
                                     whileTap={{ scale: 0.98 }}
                                     className={`rac-category-item ${isActive ? 'active' : ''}`}
-                                    onClick={() => setFilterSource(s.id)}
+                                    onClick={() => setSelectedId(inc.id)}
                                 >
-                                    <div className={`rac-category-icon bg-gradient-to-br ${colors[idx % colors.length]}`}>
-                                        <s.icon className="w-4 h-4 text-white" />
+                                    <div
+                                        className="rac-category-icon"
+                                        style={{ background: categoryColors.color }}
+                                    >
+                                        <Hash className="w-4 h-4 text-white" />
                                     </div>
-                                    <span className="rac-category-label">{s.label}</span>
+                                    <span className="rac-category-label">CASE-{inc.id.slice(0, 6).toUpperCase()}</span>
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeIndicator"
@@ -390,6 +414,9 @@ export default function IncidentManager() {
                                 </motion.button>
                             )
                         })}
+                        {incidents.length === 0 && (
+                            <div className="p-4 text-xs text-gray-400 italic">No active cases</div>
+                        )}
                     </div>
                 </div>
 
@@ -449,7 +476,7 @@ export default function IncidentManager() {
                                             <div className="rac-status-dot" style={{ background: statusConfig?.color }} />
                                             {statusConfig?.label}
                                         </div>
-                                        <span className="rac-case-id">#{inc.id.slice(0, 6)}</span>
+                                        <span className="rac-case-id">CASE-{inc.id.slice(0, 6).toUpperCase()}</span>
                                     </div>
                                 </motion.div>
                             )
@@ -487,7 +514,24 @@ export default function IncidentManager() {
                                                     >
                                                         {activeCategoryConfig?.label || activeIncident.category}
                                                     </div>
-                                                    <h2 className="rac-case-title-large">{activeIncident.title}</h2>
+                                                    {editMode ? (
+                                                        <input
+                                                            value={editData.title}
+                                                            onChange={e => setEditData({ ...editData, title: e.target.value })}
+                                                            className="rac-case-title-input"
+                                                            style={{
+                                                                fontSize: '1.25rem',
+                                                                fontWeight: 'bold',
+                                                                border: 'none',
+                                                                borderBottom: '2px solid var(--deep-gold)',
+                                                                background: 'transparent',
+                                                                width: '100%',
+                                                                outline: 'none'
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <h2 className="rac-case-title-large">{activeIncident.title}</h2>
+                                                    )}
                                                     <div className="rac-case-meta-row">
                                                         <span className="rac-meta-tag">
                                                             <User className="w-3 h-3" />
@@ -501,20 +545,58 @@ export default function IncidentManager() {
                                                 </div>
                                             </div>
 
-                                            <select
-                                                className="rac-status-dropdown"
-                                                value={activeDisplayStatus}
-                                                onChange={(e) => handleStatusUpdate(e.target.value)}
-                                                style={{
-                                                    background: activeStatusConfig?.bg,
-                                                    color: activeStatusConfig?.color,
-                                                    borderColor: activeStatusConfig?.color
-                                                }}
-                                            >
-                                                {STATUS_OPTIONS.map(o => (
-                                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                                ))}
-                                            </select>
+                                            <div className="flex items-center gap-2">
+                                                {editMode ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                handleEditCase(activeIncident.id, editData)
+                                                                setEditMode(false)
+                                                            }}
+                                                            className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs font-bold"
+                                                        >
+                                                            SAVE
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditMode(false)}
+                                                            className="px-3 py-1 bg-gray-200 text-gray-600 rounded-lg text-xs font-bold"
+                                                        >
+                                                            CANCEL
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setEditMode(true)}
+                                                        className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+                                                        title="Edit Case"
+                                                    >
+                                                        <Edit3 className="w-5 h-5" />
+                                                    </button>
+                                                )}
+
+                                                <select
+                                                    className="rac-status-dropdown"
+                                                    value={activeDisplayStatus}
+                                                    onChange={(e) => handleStatusUpdate(e.target.value)}
+                                                    style={{
+                                                        background: activeStatusConfig?.bg,
+                                                        color: activeStatusConfig?.color,
+                                                        borderColor: activeStatusConfig?.color
+                                                    }}
+                                                >
+                                                    {STATUS_OPTIONS.map(o => (
+                                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                                    ))}
+                                                </select>
+
+                                                <button
+                                                    onClick={() => handleDeleteCase(activeIncident.id)}
+                                                    className="p-2 text-gray-400 hover:text-rose-500 transition-colors"
+                                                    title="Delete Case"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -555,7 +637,15 @@ export default function IncidentManager() {
                                             <div className="ip-widget-card" style={{ borderLeft: '4px solid #334155' }}>
                                                 <div className="ip-widget-header">INITIAL REPORT</div>
                                                 <div className="p-4 text-sm leading-relaxed whitespace-pre-wrap">
-                                                    {activeIncident.description}
+                                                    {editMode ? (
+                                                        <textarea
+                                                            value={editData.description}
+                                                            onChange={e => setEditData({ ...editData, description: e.target.value })}
+                                                            className="ip-description-textarea"
+                                                        />
+                                                    ) : (
+                                                        activeIncident.description
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

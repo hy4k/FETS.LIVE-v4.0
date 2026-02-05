@@ -4,7 +4,8 @@ import {
   BookOpen, Fingerprint, Pen, Star, Lock, Sparkles,
   Plus, Trash2, Edit3, Check, X, Calendar, Clock,
   Bookmark, Heart, Flag, Tag, Search, ChevronRight,
-  BookMarked, Feather, Crown, Gem, Award
+  BookMarked, Feather, Crown, Gem, Award, Brain,
+  AlertCircle, Activity, CheckCircle as LucideCheckCircle
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
@@ -17,7 +18,7 @@ interface SlateEntry {
   user_id: string
   title: string
   content: string
-  category: 'note' | 'idea' | 'task' | 'reflection' | 'dream' | 'memo' | 'journal' | 'quote'
+  category: 'note' | 'strategy' | 'intel'
   is_starred: boolean
   is_pinned: boolean
   mood?: string
@@ -47,22 +48,17 @@ const COLORS = {
 
 // --- Enhanced Category Varieties ---
 const CATEGORY_CONFIG = {
-  note: { icon: Pen, color: 'from-amber-400 to-yellow-500', label: 'Note', accent: COLORS.tuscanYellow },
-  idea: { icon: Sparkles, color: 'from-violet-400 to-purple-500', label: 'Idea', accent: COLORS.amethyst },
-  task: { icon: Flag, color: 'from-emerald-400 to-green-500', label: 'Task', accent: COLORS.emerald },
-  reflection: { icon: Heart, color: 'from-rose-400 to-pink-500', label: 'Reflection', accent: COLORS.coral },
-  dream: { icon: Star, color: 'from-blue-400 to-indigo-500', label: 'Dream', accent: COLORS.sapphire },
-  memo: { icon: Bookmark, color: 'from-orange-400 to-amber-500', label: 'Memo', accent: COLORS.deepGold },
-  journal: { icon: BookMarked, color: 'from-teal-400 to-cyan-500', label: 'Journal', accent: COLORS.teal },
-  quote: { icon: Feather, color: 'from-slate-400 to-gray-500', label: 'Quote', accent: COLORS.slate }
+  note: { icon: Pen, color: 'from-amber-400 to-yellow-500', label: 'Start', accent: COLORS.tuscanYellow },
+  strategy: { icon: Brain, color: 'from-indigo-400 to-blue-500', label: 'Strategy', accent: COLORS.sapphire },
+  intel: { icon: Sparkles, color: 'from-purple-400 to-pink-500', label: 'Intel', accent: COLORS.amethyst }
 }
 
 // --- Book Cover Component ---
-const BookCover = ({ 
-  userName, 
-  onOpen, 
-  isAuthenticated 
-}: { 
+const BookCover = ({
+  userName,
+  onOpen,
+  isAuthenticated
+}: {
   userName: string
   onOpen: () => void
   isAuthenticated: boolean
@@ -91,10 +87,10 @@ const BookCover = ({
     >
       {/* Book Shadow */}
       <div className="absolute inset-0 translate-x-4 translate-y-4 bg-black/20 rounded-lg blur-xl" />
-      
+
       {/* Book Cover */}
       <motion.div
-        animate={{ 
+        animate={{
           rotateY: isHovered ? -5 : 0,
           scale: isHovered ? 1.02 : 1
         }}
@@ -106,7 +102,7 @@ const BookCover = ({
         }}
       >
         {/* Leather Texture Overlay */}
-        <div 
+        <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
@@ -114,7 +110,7 @@ const BookCover = ({
         />
 
         {/* Gold Spine */}
-        <div 
+        <div
           className="absolute left-0 top-0 bottom-0 w-8"
           style={{
             background: `linear-gradient(90deg, ${COLORS.bronze} 0%, ${COLORS.tuscanYellow} 50%, ${COLORS.bronze} 100%)`,
@@ -125,7 +121,7 @@ const BookCover = ({
         {/* Decorative Corner Ornaments */}
         <div className="absolute top-4 left-12 right-4 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
         <div className="absolute bottom-4 left-12 right-4 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-        
+
         {/* Corner Flourishes */}
         <div className="absolute top-6 right-6">
           <Crown size={24} className="text-amber-400/60" />
@@ -136,7 +132,7 @@ const BookCover = ({
 
         {/* Main Content */}
         <div className="relative z-10 flex flex-col items-center justify-between h-full min-h-[500px] p-8 pl-12">
-          
+
           {/* Top Badge */}
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-400/10 border border-amber-400/30">
@@ -147,16 +143,16 @@ const BookCover = ({
 
           {/* Center: Title & Name */}
           <div className="text-center space-y-6">
-            <motion.h1 
+            <motion.h1
               className="text-5xl md:text-6xl font-serif text-amber-100 tracking-wider"
-              style={{ 
+              style={{
                 fontFamily: "'Cinzel Decorative', 'Times New Roman', serif",
                 textShadow: '2px 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(212,175,55,0.3)'
               }}
             >
               SLATE
             </motion.h1>
-            
+
             <div className="flex items-center justify-center gap-4">
               <div className="h-px w-12 bg-gradient-to-r from-transparent to-amber-400/50" />
               <Feather size={16} className="text-amber-400/70" />
@@ -165,9 +161,9 @@ const BookCover = ({
 
             {/* User Name in Imperial Style */}
             <div className="relative">
-              <p 
+              <p
                 className="text-2xl md:text-3xl text-amber-200/90 tracking-widest uppercase"
-                style={{ 
+                style={{
                   fontFamily: "'Cinzel', 'Times New Roman', serif",
                   textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
                 }}
@@ -195,21 +191,20 @@ const BookCover = ({
                 ${isScanning ? 'border-emerald-400 shadow-[0_0_40px_rgba(80,200,120,0.4)]' : ''}
               `}>
                 <motion.div
-                  animate={isScanning ? { 
+                  animate={isScanning ? {
                     scale: [1, 1.2, 1],
                     opacity: [1, 0.5, 1]
                   } : {}}
                   transition={{ repeat: Infinity, duration: 0.8 }}
                 >
-                  <Fingerprint 
-                    size={48} 
-                    className={`transition-colors duration-300 ${
-                      isScanning ? 'text-emerald-400' : 'text-amber-400/70 group-hover:text-amber-300'
-                    }`} 
+                  <Fingerprint
+                    size={48}
+                    className={`transition-colors duration-300 ${isScanning ? 'text-emerald-400' : 'text-amber-400/70 group-hover:text-amber-300'
+                      }`}
                   />
                 </motion.div>
               </div>
-              
+
               {/* Scanning Ring */}
               {isScanning && (
                 <motion.div
@@ -220,7 +215,7 @@ const BookCover = ({
                 />
               )}
             </motion.button>
-            
+
             <p className="mt-4 text-xs text-amber-400/60 uppercase tracking-[0.2em]">
               {isScanning ? 'Authenticating...' : 'Touch to Unlock'}
             </p>
@@ -275,7 +270,7 @@ const EntryEditor = ({
         }}
       >
         {/* Header */}
-        <div 
+        <div
           className="px-6 py-4 flex items-center justify-between"
           style={{ background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)` }}
         >
@@ -303,8 +298,8 @@ const EntryEditor = ({
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold
                     transition-all duration-300
-                    ${category === key 
-                      ? `bg-gradient-to-r ${config.color} text-white shadow-lg` 
+                    ${category === key
+                      ? `bg-gradient-to-r ${config.color} text-white shadow-lg`
                       : 'bg-white/50 text-slate-600 hover:bg-white/80 border border-slate-200'
                     }
                   `}
@@ -327,7 +322,7 @@ const EntryEditor = ({
           />
 
           {/* Content with Notebook Lines */}
-          <div 
+          <div
             className="relative rounded-xl overflow-hidden border border-amber-200"
             style={{
               background: `linear-gradient(to bottom, transparent 31px, rgba(180,140,100,0.2) 31px)`,
@@ -337,16 +332,16 @@ const EntryEditor = ({
           >
             {/* Red Margin Line */}
             <div className="absolute left-8 top-0 bottom-0 w-[2px] bg-rose-300/40" />
-            
+
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your thoughts here..."
               rows={10}
               className="w-full pl-12 pr-4 py-4 bg-transparent resize-none focus:outline-none text-slate-700 leading-8"
-              style={{ 
-                fontFamily: "'Caveat', cursive",
-                fontSize: '18px',
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '15px',
                 lineHeight: '32px'
               }}
             />
@@ -371,6 +366,31 @@ const EntryEditor = ({
               </span>
             </button>
           </div>
+
+          {/* Smart Tool: Action Extractor */}
+          <div className="mt-4 p-4 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Sparkles size={18} className="text-indigo-600" />
+              <div>
+                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Action Extractor</p>
+                <p className="text-[10px] text-indigo-700/70 italic">Extract tasks from your note content automatically</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const lines = content.split('\n');
+                const tasks = lines.filter(l => l.trim().startsWith('- [ ]') || l.trim().startsWith('TODO:'));
+                if (tasks.length > 0) {
+                  toast.success(`Extracted ${tasks.length} actions!`);
+                } else {
+                  toast('No clear actions found. Use "- [ ]" or "TODO:"', { icon: 'ℹ️' });
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors"
+            >
+              Scan & Extract
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -382,12 +402,14 @@ const EntryCard = ({
   entry,
   onEdit,
   onDelete,
-  onToggleStar
+  onToggleStar,
+  smartFeatures
 }: {
   entry: SlateEntry
   onEdit: () => void
   onDelete: () => void
   onToggleStar: () => void
+  smartFeatures?: React.ReactNode
 }) => {
   const config = CATEGORY_CONFIG[entry.category]
   const Icon = config.icon
@@ -404,7 +426,7 @@ const EntryCard = ({
     >
       {/* Category Stripe */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.color}`} />
-      
+
       {/* Pinned Badge */}
       {entry.is_pinned && (
         <div className="absolute top-3 right-3">
@@ -415,13 +437,13 @@ const EntryCard = ({
       <div className="p-5">
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
-          <div 
+          <div
             className={`p-2 rounded-lg bg-gradient-to-br ${config.color} shadow-md`}
           >
             <Icon size={16} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 
+            <h3
               className="font-bold text-slate-800 truncate"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
@@ -434,33 +456,40 @@ const EntryCard = ({
         </div>
 
         {/* Content Preview */}
-        <p 
+        <p
           className="text-slate-600 text-sm line-clamp-3 mb-4"
-          style={{ fontFamily: "'Caveat', cursive", fontSize: '16px' }}
+          style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px' }}
         >
           {entry.content}
         </p>
+
+        {/* Smart Features Area */}
+        {smartFeatures && (
+          <div className="mt-4 border-t border-amber-100 pt-3">
+            {smartFeatures}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200">
           <span className={`text-xs font-bold uppercase tracking-wider`} style={{ color: config.accent }}>
             {config.label}
           </span>
-          
+
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button 
+            <button
               onClick={onToggleStar}
               className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors"
             >
               <Star size={14} className={entry.is_starred ? 'text-amber-500 fill-amber-500' : 'text-slate-400'} />
             </button>
-            <button 
+            <button
               onClick={onEdit}
               className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
             >
               <Edit3 size={14} className="text-blue-500" />
             </button>
-            <button 
+            <button
               onClick={onDelete}
               className="p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
             >
@@ -476,7 +505,7 @@ const EntryCard = ({
 // --- Main Slate Component ---
 export function Slate() {
   const { profile, user } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(true) // Always open
   const [entries, setEntries] = useState<SlateEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
@@ -577,56 +606,30 @@ export function Slate() {
   const filteredEntries = entries.filter(e => {
     if (filterCategory !== 'all' && e.category !== filterCategory) return false
     if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !e.content.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      !e.content.toLowerCase().includes(searchQuery.toLowerCase())) return false
     return true
   })
 
   const starredCount = entries.filter(e => e.is_starred).length
 
-  // If book is closed, show the cover
-  if (!isOpen) {
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{
-          background: `linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)`
-        }}
-      >
-        {/* Ambient Particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-amber-400/30 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.3, 0.8, 0.3],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
+  // --- Smart Features ---
+  const extractActions = (content: string) => {
+    const lines = content.split('\n')
+    const actions = lines
+      .filter(line => line.trim().startsWith('- [ ]') || line.trim().startsWith('TODO:'))
+      .map(line => line.replace('- [ ]', '').replace('TODO:', '').trim())
+    return actions.slice(0, 3) // Only show top 3
+  }
 
-        <BookCover
-          userName={profile?.full_name || 'Guest'}
-          onOpen={() => setIsOpen(true)}
-          isAuthenticated={!!user}
-        />
-      </div>
-    )
+  const extractCaseLinks = (content: string) => {
+    const caseRegex = /#case-([a-zA-Z0-9-]+)/gi
+    const matches = Array.from(content.matchAll(caseRegex))
+    return [...new Set(matches.map(m => m[1]))] // Unique case IDs
   }
 
   // Open book view
   return (
-    <div 
+    <div
       className="min-h-screen p-6 pt-28"
       style={{
         background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.cream} 50%, ${COLORS.ivory} 100%)`
@@ -660,7 +663,7 @@ export function Slate() {
                 <BookOpen size={24} className="text-amber-400" />
               </button>
               <div>
-                <h1 
+                <h1
                   className="text-3xl font-bold text-slate-800 tracking-wider"
                   style={{ fontFamily: "'Cinzel Decorative', serif" }}
                 >
@@ -709,11 +712,10 @@ export function Slate() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFilterCategory('all')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                filterCategory === 'all' 
-                  ? 'bg-slate-800 text-white' 
-                  : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${filterCategory === 'all'
+                ? 'bg-slate-800 text-white'
+                : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
+                }`}
             >
               All
             </button>
@@ -723,11 +725,10 @@ export function Slate() {
                 <button
                   key={key}
                   onClick={() => setFilterCategory(key)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all ${
-                    filterCategory === key 
-                      ? `bg-gradient-to-r ${config.color} text-white shadow-md` 
-                      : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all ${filterCategory === key
+                    ? `bg-gradient-to-r ${config.color} text-white shadow-md`
+                    : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
+                    }`}
                 >
                   <Icon size={14} />
                   {config.label}
@@ -754,8 +755,8 @@ export function Slate() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div 
-                className="w-16 h-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin mx-auto mb-4" 
+              <div
+                className="w-16 h-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin mx-auto mb-4"
               />
               <p className="text-slate-500">Loading your entries...</p>
             </div>
@@ -766,7 +767,7 @@ export function Slate() {
             animate={{ opacity: 1 }}
             className="text-center py-20"
           >
-            <div 
+            <div
               className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
               style={{ background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.ivory} 100%)` }}
             >
@@ -793,18 +794,47 @@ export function Slate() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence>
-              {filteredEntries.map(entry => (
-                <EntryCard
-                  key={entry.id}
-                  entry={entry}
-                  onEdit={() => {
-                    setEditingEntry(entry)
-                    setShowEditor(true)
-                  }}
-                  onDelete={() => deleteEntry(entry.id)}
-                  onToggleStar={() => toggleStar(entry)}
-                />
-              ))}
+              {filteredEntries.map(entry => {
+                const actions = extractActions(entry.content)
+                const caseLinks = extractCaseLinks(entry.content)
+
+                return (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    onEdit={() => {
+                      setEditingEntry(entry)
+                      setShowEditor(true)
+                    }}
+                    onDelete={() => deleteEntry(entry.id)}
+                    onToggleStar={() => toggleStar(entry)}
+                    smartFeatures={
+                      (actions.length > 0 || caseLinks.length > 0) ? (
+                        <div className="flex flex-col gap-2">
+                          {actions.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {actions.map((action, i) => (
+                                <span key={i} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-bold flex items-center gap-1">
+                                  <Sparkles size={8} /> {action}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {caseLinks.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {caseLinks.map((caseId, i) => (
+                                <span key={i} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold flex items-center gap-1 border border-emerald-100">
+                                  <AlertCircle size={8} /> CASE: {caseId}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null
+                    }
+                  />
+                )
+              })}
             </AnimatePresence>
           </motion.div>
         )}

@@ -9,8 +9,6 @@ import {
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useBranch } from '../hooks/useBranch';
-import { useUnreadCount } from '../hooks/useNotifications';
-import NotificationPanel from './iCloud/NotificationPanel';
 import { canSwitchBranches, formatBranchName, getAvailableBranches } from '../utils/authUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,8 +43,6 @@ const AnimatedLabel = ({ label }: { label: string }) => {
 export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, setActiveTab, activeTab, onQuickCapture }: HeaderProps = {}) {
   const { profile, signOut } = useAuth();
   const { activeBranch, setActiveBranch } = useBranch();
-  const unreadCount = useUnreadCount();
-  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
 
   // Branch Switcher State
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -96,8 +92,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
   });
 
   const secondRowItems = [
-    { id: 'slate', label: 'SLATE', icon: BookOpen },
-    { id: 'incident-log', label: 'INCIDENT LOG', icon: AlertCircle },
+    { id: 'incident-log', label: 'RAISE A CASE', icon: AlertCircle },
     { id: 'checklist-management', label: 'CHECKLIST', icon: ClipboardList },
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
@@ -266,7 +261,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <Menu size={20} />
               </button>
             )}
-            
+
             {/* Logo - Both Mobile and Desktop in normal flow */}
             <div className="flex flex-col items-start">
               <FetsLogo />
@@ -292,16 +287,16 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
           {/* RIGHT: COMMAND CONTROLS (Pills) */}
           <div className="flex items-center gap-3 md:gap-4 shrink-0">
 
-            {/* Pulse (Notifications) */}
+            {/* Slate Action */}
             <button
-              onClick={() => setShowNotificationPanel(!showNotificationPanel)}
+              onClick={() => setActiveTab && setActiveTab('slate')}
               className="fets-pill-control relative"
+              title="Open Slate"
             >
               <div className="relative">
-                <Bell className="w-4 h-4 opacity-70" />
-                {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
+                <BookOpen className="w-4 h-4 opacity-70" />
               </div>
-              <span className="text-xs uppercase tracking-wider hidden sm:inline">Pulse</span>
+              <span className="text-xs uppercase tracking-wider hidden sm:inline">Slate</span>
             </button>
 
             {/* EXIT Button (Desktop) */}
@@ -432,9 +427,6 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
         )}
 
         <AnimatePresence>
-          {showNotificationPanel && (
-            <NotificationPanel onClose={() => setShowNotificationPanel(false)} />
-          )}
         </AnimatePresence>
       </div>
 

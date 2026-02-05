@@ -125,18 +125,13 @@ const StatusBadge = ({ status, theme }: { status: string, theme: any }) => {
             dotStyle: { backgroundColor: theme.primary },
             icon: CheckCircle2
         },
-        maintenance: {
-            style: { color: '#7D5A50', backgroundColor: `${theme.bg}`, borderColor: `${theme.accent}40` },
-            dotStyle: { backgroundColor: theme.accent },
-            icon: Settings
-        },
         fault: {
-            style: { color: '#874345', backgroundColor: `${theme.accent}20`, borderColor: `${theme.accent}40` },
-            dotStyle: { backgroundColor: theme.accent },
+            style: { color: '#874345', backgroundColor: '#f43f5e20', borderColor: '#f43f5e40' },
+            dotStyle: { backgroundColor: '#f43f5e' },
             icon: AlertTriangle
         }
     }
-    const config = configs[status as keyof typeof configs] || configs.operational
+    const config = (configs as any)[status] || configs.operational
     return (
         <div style={config.style} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border backdrop-blur-sm shadow-sm transition-all duration-300`}>
             <div style={config.dotStyle} className={`w-1.5 h-1.5 rounded-full ${status === 'fault' ? 'animate-pulse' : ''}`} />
@@ -196,13 +191,6 @@ const SystemGridCard: React.FC<SystemGridCardProps> = ({
 
     const theme = branchThemes[activeBranch.toLowerCase()] || branchThemes['default'];
 
-    // Visual Hierarchy Config
-    const scaleClasses = {
-        server: 'md:scale-110 z-20',
-        admin: 'md:scale-100 z-10',
-        workstation: 'md:scale-90 z-0',
-        default: 'scale-100'
-    }
     const sizeClasses = {
         server: 'w-[280px] min-h-[160px]',
         admin: 'w-[240px] min-h-[140px]',
@@ -213,38 +201,57 @@ const SystemGridCard: React.FC<SystemGridCardProps> = ({
     const cardStyle = isExpanded
         ? { backgroundColor: '#fff', borderColor: theme.primary, boxShadow: `0 0 0 8px ${theme.primary}10` }
         : isTransferredOut
-            ? {} // handled by className for simplicity or could be inline
+            ? {}
             : isRental
                 ? { backgroundColor: theme.bg, borderColor: theme.accent }
                 : isPeripheral
                     ? { backgroundColor: '#fff', borderColor: theme.secondary }
-                    : { backgroundColor: variant === 'server' ? '#fff' : theme.bg, borderColor: variant === 'server' ? theme.primary : '#fff' };
+                    : { backgroundColor: '#fff', borderColor: theme.primary };
 
     return (
-        <div key={sys.id} className={`relative transition-all duration-500 h-full ${variant !== 'default' ? scaleClasses[variant] : ''} ${isExpanded ? 'z-[100]' : ''}`}>
+        <div key={sys.id} className={`relative transition-all duration-500 h-full ${isExpanded ? 'z-[100]' : ''}`}>
             <motion.div
-                whileHover={isTransferredOut ? { scale: 1.02 } : { y: -5, scale: variant === 'server' ? 1.05 : 1.02 }}
+                whileHover={isTransferredOut ? { scale: 1.02 } : { y: -5, scale: 1.02 }}
                 style={!isTransferredOut ? cardStyle : undefined}
-                className={`p-6 rounded-[2rem] border-4 cursor-pointer shadow-xl flex flex-col items-center text-center gap-3 transition-all h-full ${sizeClasses[variant]} ${isTransferredOut
+                className={`p-5 rounded-[2rem] border-4 cursor-pointer shadow-lg flex flex-col items-center text-center gap-2 transition-all h-full ${sizeClasses[variant]} ${isTransferredOut
                     ? 'bg-slate-100/40 border-slate-200 grayscale opacity-40 hover:opacity-80'
                     : 'hover:shadow-2xl'
                     }`}
                 onClick={() => toggleCard(sys.id)}
             >
-                <div style={!isTransferredOut && sys.status === 'operational' ? { backgroundColor: theme.primary } : { backgroundColor: theme.accent }} className={`w-3.5 h-3.5 rounded-full shadow-lg transition-colors duration-500`} />
-                <div className="flex flex-col overflow-hidden w-full">
-                    <span className={`font-black text-black uppercase tracking-wider truncate px-1 transition-all ${variant === 'server' ? 'text-sm' : 'text-xs'}`}>
+                {/* Status Dot */}
+                <div style={!isTransferredOut && sys.status === 'operational' ? { backgroundColor: theme.primary } : { backgroundColor: '#f43f5e' }} className={`w-3 h-3 rounded-full shadow-md`} />
+
+                <div className="flex flex-col w-full">
+                    <span className="font-black text-black uppercase tracking-wider text-sm truncate">
                         {isPeripheral ? (sys.it_item_type || sys.name) : sys.name}
                     </span>
-                    <span className="text-[8px] font-black text-slate-900 uppercase tracking-tighter opacity-60">
-                        {isTransferredOut
-                            ? `AT ${sys.branch_location.toUpperCase()}`
-                            : isPeripheral
-                                ? 'IT EQUIPMENT'
-                                : (sys.ip_address || 'ONLINE')
-                        }
-                    </span>
+
+                    {!isPeripheral && !isTransferredOut && (
+                        <div className="mt-2 space-y-0.5">
+                            <div className="text-[9px] font-bold text-slate-500 flex justify-center gap-2 uppercase">
+                                <span>{sys.specs.cpu || 'N/A'}</span>
+                                <span className="opacity-30">|</span>
+                                <span>{sys.specs.ram || 'N/A'}</span>
+                            </div>
+                            <div className="text-[9px] font-black text-slate-900 uppercase">
+                                {sys.specs.os || 'OS N/A'}
+                            </div>
+                            {sys.last_os_update && (
+                                <div className="text-[8px] font-bold text-blue-600 uppercase mt-1">
+                                    Last Update: {format(new Date(sys.last_os_update), 'dd MMM yy')}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {isTransferredOut && (
+                        <span className="text-[8px] font-black text-slate-900 uppercase tracking-tighter opacity-60 mt-1">
+                            AT {sys.branch_location.toUpperCase()}
+                        </span>
+                    )}
                 </div>
+
                 {isTransferredOut && (
                     <div className="mt-1 px-2 py-0.5 bg-slate-200 rounded-full text-[7px] font-black text-slate-900 uppercase">TRANSFERRED</div>
                 )}
@@ -260,107 +267,57 @@ const SystemGridCard: React.FC<SystemGridCardProps> = ({
                         animate={{ opacity: 1, y: 20, scale: 1, x: '-50%' }}
                         exit={{ opacity: 0, y: 10, scale: 0.9, x: '-50%' }}
                         style={{ borderColor: `${theme.primary}20` }}
-                        className="absolute top-full left-1/2 z-[50] w-[340px] bg-white rounded-[2.5rem] p-8 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] border-2 backdrop-blur-xl"
+                        className="absolute top-full left-1/2 z-[50] w-[320px] bg-white rounded-[2.5rem] p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] border-2 backdrop-blur-xl"
                     >
-                        <div className="flex flex-col gap-6">
-                            <div style={{ borderColor: theme.bg }} className="flex justify-between items-center pb-5 border-b-2">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black text-black uppercase tracking-widest leading-tight">
-                                        {isTransferredOut
-                                            ? `LOCATED AT ${sys.branch_location.toUpperCase()}`
-                                            : (isPeripheral ? (sys.it_item_type || 'IT ITEM') : sys.ip_address || 'OPERATIONAL SYSTEM')
-                                        }
-                                    </span>
-                                    <span className="text-[8px] font-bold text-slate-900 uppercase mt-0.5">
-                                        {isTransferredOut ? 'REMOTE LINK ACTIVE' : `Sync: ${format(new Date(sys.last_checked || Date.now()), 'HH:mm | dd MMM')}`}
-                                    </span>
-                                </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-between items-center pb-3 border-b">
+                                <span className="text-xs font-black text-black uppercase tracking-widest leading-tight">
+                                    {isPeripheral ? (sys.it_item_type || 'PERIPHERAL') : 'SYSTEM DETAILS'}
+                                </span>
                                 <StatusBadge status={sys.status} theme={theme} />
                             </div>
 
-                            {isRental && (
-                                <div className="flex items-center gap-3 p-4 bg-[#FFB6B9]/10 border-2 border-[#FFB6B9]/20 rounded-2xl">
-                                    <CalendarRange size={20} className="text-[#FFB6B9]" />
-                                    <div className="flex flex-col">
-                                        <span className="text-[8px] font-black text-black uppercase">Active Rental Period</span>
-                                        <span className="text-[10px] font-bold text-black">
-                                            {sys.rent_start_date ? format(new Date(sys.rent_start_date), 'dd MMM yy') : 'Start'} - {sys.rent_end_date ? format(new Date(sys.rent_end_date), 'dd MMM yy') : 'End'}
-                                        </span>
+                            {!isPeripheral && (
+                                <div className="grid grid-cols-1 gap-2">
+                                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <span className="block text-[8px] font-black text-slate-400 uppercase mb-1">Processor / Memory</span>
+                                        <span className="text-[10px] font-bold text-black uppercase block">{sys.specs.cpu || 'N/A'} - {sys.specs.ram || 'N/A'}</span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <span className="block text-[8px] font-black text-slate-400 uppercase mb-1">OS Environment</span>
+                                        <span className="text-[10px] font-bold text-black uppercase block">{sys.specs.os || 'Windows 11'}</span>
+                                    </div>
+                                    <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100">
+                                        <span className="block text-[8px] font-black text-blue-400 uppercase mb-1">Last Windows Update</span>
+                                        <span className="text-[10px] font-bold text-blue-600">{sys.last_os_update ? format(new Date(sys.last_os_update), 'dd MMM yy') : 'STABLE'}</span>
                                     </div>
                                 </div>
                             )}
 
-                            {isPeripheral ? (
-                                <div className="p-4 bg-white rounded-3xl border-2 border-[#BBDED6] shadow-md flex justify-between items-center">
-                                    <div className="flex flex-col">
-                                        <span className="block text-[8px] font-black text-black uppercase mb-1">Equipment Category</span>
-                                        <span className="text-[10px] font-bold text-black uppercase">{sys.it_item_type || 'IT ITEM'}</span>
-                                    </div>
-                                    <div style={{ backgroundColor: `${theme.secondary}20` }} className="p-2 rounded-xl">
-                                        <SystemIcon type="peripheral" itemType={sys.it_item_type} color={theme.dark} />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div style={{ backgroundColor: `${theme.bg}40` }} className="p-3 rounded-2xl border border-white">
-                                        <span className="block text-[8px] font-black text-black uppercase mb-1">Processor</span>
-                                        <span className="text-[10px] font-bold text-black truncate block">{sys.specs.cpu || 'N/A'}</span>
-                                    </div>
-                                    <div style={{ backgroundColor: `${theme.bg}40` }} className="p-3 rounded-2xl border border-white">
-                                        <span className="block text-[8px] font-black text-black uppercase mb-1">Memory</span>
-                                        <span className="text-[10px] font-bold text-black">{sys.specs.ram || 'N/A'}</span>
-                                    </div>
-                                    <div style={{ backgroundColor: `${theme.bg}40` }} className="p-3 rounded-2xl border border-white">
-                                        <span className="block text-[8px] font-black text-black uppercase mb-1">OS Environment</span>
-                                        <span className="text-[10px] font-bold text-black truncate block">{sys.specs.os || 'Windows 11'}</span>
-                                    </div>
-                                    <div style={{ backgroundColor: `${theme.bg}40` }} className="p-3 rounded-2xl border border-white">
-                                        <span className="block text-[8px] font-black text-black uppercase mb-1">Last Update</span>
-                                        <span className="text-[10px] font-bold text-black">{sys.last_os_update ? format(new Date(sys.last_os_update), 'dd MMM yy') : 'STABLE'}</span>
-                                    </div>
+                            {isPeripheral && (
+                                <div className="p-4 bg-white rounded-2xl border-2 border-slate-100 flex justify-between items-center">
+                                    <span className="text-xs font-bold text-black uppercase">{sys.it_item_type || 'IT ITEM'}</span>
+                                    <SystemIcon type="peripheral" itemType={sys.it_item_type} color={theme.dark} />
                                 </div>
                             )}
 
-                            <div style={{ backgroundColor: `${theme.bg}40` }} className="p-3 rounded-2xl border border-white">
-                                <span className="block text-[8px] font-black text-black uppercase mb-1">System Serial</span>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-mono text-black font-bold tracking-wider">{sys.specs.serial_number || 'NO_SERIAL_LOGGED'}</span>
-                                    <button onClick={(e) => { e.stopPropagation(); copyToClipboard(sys.specs.serial_number) }} style={{ color: theme.primary }} className="hover:scale-125 transition-transform"><List size={12} /></button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <div style={{ backgroundColor: theme.primary }} className="h-1.5 w-1.5 rounded-full" />
-                                    <span className="text-[9px] font-black text-black uppercase tracking-widest">Support Links</span>
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {(sys.supported_clients || []).length > 0 ? (
-                                        sys.supported_clients.map((c: string) => (
-                                            <span key={c} style={{ backgroundColor: `${theme.secondary}20`, borderColor: theme.secondary }} className="px-2 py-1 border rounded-lg text-[8px] font-black text-black uppercase tracking-tighter">{c}</span>
-                                        ))
-                                    ) : (
-                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">No Clients Connected</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div style={{ borderColor: theme.bg }} className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t">
-                                <button onClick={(e) => { e.stopPropagation(); handleEditSystemOpen(sys); }} style={{ backgroundColor: theme.bg }} className="p-3 text-black rounded-xl hover:text-white transition-all flex items-center justify-center gap-2 group/btn border border-white/50 shadow-sm hover:scale-105" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primary} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg}>
-                                    <Edit2 size={14} strokeWidth={3} className="group-hover/btn:rotate-12 transition-transform" />
-                                    <span className="text-[9px] font-black uppercase">Edit</span>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <button onClick={(e) => { e.stopPropagation(); handleEditSystemOpen(sys); }} className="p-2.5 bg-slate-100 text-slate-900 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 group border border-slate-200">
+                                    <Edit2 size={12} strokeWidth={3} />
+                                    <span className="text-[9px] font-black uppercase">Edit Info</span>
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); setShowManageModal(sys); }} style={{ backgroundColor: theme.bg }} className="p-3 text-black rounded-xl hover:text-white transition-all flex items-center justify-center gap-2 group/btn border border-white/50 shadow-sm hover:scale-105" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primary} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.bg}>
-                                    <Settings size={14} strokeWidth={3} className="group-hover/btn:rotate-90 transition-transform duration-500" />
+                                <button onClick={(e) => { e.stopPropagation(); setShowManageModal(sys); }} className="p-2.5 bg-slate-100 text-slate-900 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 group border border-slate-200">
+                                    <Settings size={12} strokeWidth={3} />
                                     <span className="text-[9px] font-black uppercase">Manage</span>
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); setShowTransferModal(sys); setTargetBranch(sys.branch_location); }} style={{ backgroundColor: theme.secondary }} className="p-3 text-black rounded-xl hover:text-white transition-all flex items-center justify-center gap-2 col-span-2 shadow-sm border border-white/50 hover:scale-105" onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primary} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.secondary}>
-                                    <ArrowRightLeft size={14} strokeWidth={3} />
+                                <button onClick={(e) => { e.stopPropagation(); setShowTransferModal(sys); setTargetBranch(sys.branch_location); }} className="p-2.5 bg-teal-50 text-teal-700 rounded-xl hover:bg-teal-100 transition-all flex items-center justify-center gap-2 col-span-2 border border-teal-100">
+                                    <ArrowRightLeft size={12} strokeWidth={3} />
                                     <span className="text-[9px] font-black uppercase">Transfer Branch</span>
                                 </button>
                             </div>
-                            <button onClick={() => handleDeleteSystem(sys.id, sys.name)} className="w-full py-2 hover:bg-[#FFB6B9]/10 text-red-600 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all">
-                                Delete System From Registry
+
+                            <button onClick={() => handleDeleteSystem(sys.id, sys.name)} className="w-full py-2 hover:bg-rose-50 text-rose-500 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all">
+                                Remove From Registry
                             </button>
                         </div>
                     </motion.div>
@@ -838,30 +795,6 @@ const SystemManager = () => {
                                         setNewSystem({
                                             id: undefined,
                                             name: '',
-                                            type: 'workstation' as any,
-                                            ip: '',
-                                            specs: { cpu: '', ram: '', os: 'Windows 11', serial_number: '' },
-                                            last_os_update: null,
-                                            installed_software: [],
-                                            supported_clients: [],
-                                            it_item_type: '',
-                                            rent_start_date: '',
-                                            rent_end_date: '',
-                                            category_name: ''
-                                        });
-                                        setShowAddModal(true);
-                                    }}
-                                    style={{ backgroundColor: theme.primary, borderColor: theme.dark }}
-                                    className="flex items-center gap-3 px-6 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:brightness-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] transition-all active:scale-95 border-b-4"
-                                >
-                                    <Plus size={18} strokeWidth={3} />
-                                    Add System
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setNewSystem({
-                                            id: undefined,
-                                            name: '',
                                             type: 'peripheral' as any,
                                             ip: '',
                                             specs: { cpu: 'N/A', ram: 'N/A', os: 'N/A', serial_number: '' },
@@ -877,31 +810,32 @@ const SystemManager = () => {
                                     }}
                                     className="flex items-center gap-3 px-6 py-4 bg-white text-black border-2 border-[#BBDED6] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#BBDED6]/10 transition-all active:scale-95 shadow-sm"
                                 >
-                                    <Printer size={18} strokeWidth={2.5} />
-                                    Add IT Item
+                                    <PlusCircle size={18} strokeWidth={2.5} />
+                                    Add Peripheral Item
                                 </button>
                                 <button
                                     onClick={() => {
                                         setNewSystem({
                                             id: undefined,
                                             name: '',
-                                            type: 'rented' as any,
+                                            type: 'workstation' as any,
                                             ip: '',
-                                            specs: { cpu: '', ram: '', os: 'Windows', serial_number: '' },
+                                            specs: { cpu: '', ram: '', os: 'Windows 11', serial_number: '' },
                                             last_os_update: null,
                                             installed_software: [],
                                             supported_clients: [],
                                             it_item_type: '',
-                                            rent_start_date: format(new Date(), 'yyyy-MM-dd'),
-                                            rent_end_date: format(new Date(), 'yyyy-MM-dd'),
-                                            category_name: ''
+                                            rent_start_date: '',
+                                            rent_end_date: '',
+                                            category_name: 'Systems'
                                         });
                                         setShowAddModal(true);
                                     }}
-                                    className="flex items-center gap-3 px-6 py-4 bg-[#FAE3D9] text-black rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#FFB6B9]/40 transition-all active:scale-95 shadow-sm border border-white/50"
+                                    style={{ backgroundColor: theme.primary, borderColor: theme.dark }}
+                                    className="flex items-center gap-3 px-6 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:brightness-105 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] transition-all active:scale-95 border-b-4"
                                 >
-                                    <CalendarRange size={18} strokeWidth={2.5} />
-                                    Add Rented System
+                                    <Monitor size={18} strokeWidth={3} />
+                                    Add Computer System
                                 </button>
                             </div>
                         )}
@@ -1247,8 +1181,8 @@ const SystemManager = () => {
 
                                             <div className="space-y-3">
                                                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-2">System Type</label>
-                                                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                                                    {['workstation', 'server', 'admin', 'peripheral', 'rented'].map(type => (
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    {['workstation', 'server', 'admin'].map(type => (
                                                         <button
                                                             key={type}
                                                             type="button"
@@ -1259,7 +1193,7 @@ const SystemManager = () => {
                                                                 }`}
                                                         >
                                                             <div className={`${newSystem.type === type ? 'text-white' : 'text-black'}`}>
-                                                                <SystemIcon type={type} itemType={type === 'peripheral' ? (newSystem.it_item_type || 'Package') : undefined} />
+                                                                <SystemIcon type={type} />
                                                             </div>
                                                             <span className="text-[8px] font-black uppercase tracking-widest">{type}</span>
                                                         </button>
@@ -1362,25 +1296,7 @@ const SystemManager = () => {
                                                     />
                                                 </div>
                                                 <div className="col-span-2 space-y-3">
-                                                    <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-2">System Serial Number</label>
-                                                    <div className="flex gap-3">
-                                                        <input
-                                                            placeholder="GENERATE SERIAL"
-                                                            value={newSystem.specs.serial_number}
-                                                            readOnly
-                                                            className="flex-1 px-6 py-4 bg-[#FAE3D9]/60 border-2 border-[#BBDED6] rounded-2xl outline-none text-sm font-black text-black font-mono tracking-[0.1em] cursor-default shadow-inner"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={generateSerial}
-                                                            className="px-6 py-4 bg-[#61C0BF] text-white rounded-2xl font-black text-xs uppercase hover:brightness-105 active:scale-95 transition-all shadow-lg shadow-[#61C0BF]/20 border-b-4 border-[#4A9695]"
-                                                        >
-                                                            GENERATE
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-2 space-y-3">
-                                                    <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-2">Last System Update</label>
+                                                    <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-2">Last Windows Update</label>
                                                     <input
                                                         type="date"
                                                         value={newSystem.last_os_update || ''}
@@ -1457,23 +1373,20 @@ const SystemManager = () => {
                                                     <div className="h-1.5 w-1.5 rounded-full bg-[#61C0BF]" />
                                                     System Status
                                                 </h4>
-                                                <div className="space-y-3">
-                                                    {['operational', 'maintenance', 'fault'].map(status => (
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {['operational', 'fault'].map(status => (
                                                         <button
                                                             key={status}
                                                             onClick={() => updateStatus(showManageModal.id, status, `Manual Toggle: ${status.toUpperCase()}`)}
-                                                            className={`w-full p-4 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest flex items-center justify-between transition-all duration-300 ${showManageModal.status === status
-                                                                ? (status === 'operational' ? 'bg-[#61C0BF] border-[#4A9695] text-white shadow-lg' :
-                                                                    status === 'maintenance' ? 'bg-[#FFB6B9] border-[#D98B8E] text-white shadow-lg' :
-                                                                        'bg-[#874345] border-[#5E2F31] text-white shadow-lg')
-                                                                : 'bg-white border-[#BBDED6]/40 text-black hover:border-[#61C0BF] hover:bg-[#BBDED6]/10'
+                                                            className={`p-6 rounded-[2rem] border-4 transition-all duration-300 flex flex-col items-center gap-3 ${showManageModal.status === status
+                                                                ? status === 'operational'
+                                                                    ? 'bg-[#61C0BF] border-[#4A9695] text-white shadow-xl shadow-[#61C0BF]/20 scale-105'
+                                                                    : 'bg-rose-500 border-rose-700 text-white shadow-xl shadow-rose-500/20 scale-105'
+                                                                : 'bg-white border-[#BBDED6] text-black hover:border-[#61C0BF]/50'
                                                                 }`}
                                                         >
-                                                            <span>{status}</span>
-                                                            {showManageModal.status === status ? <Check size={16} strokeWidth={4} /> : (
-                                                                status === 'maintenance' ? <Settings size={16} /> :
-                                                                    status === 'fault' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />
-                                                            )}
+                                                            <div className={`w-3 h-3 rounded-full ${status === 'operational' ? 'bg-white' : 'bg-white blink-fast'}`} />
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{status}</span>
                                                         </button>
                                                     ))}
                                                 </div>
@@ -1510,112 +1423,65 @@ const SystemManager = () => {
                                                 <div className="flex items-center justify-between mb-8">
                                                     <h4 className="text-[10px] font-black text-black uppercase tracking-[0.25em] flex items-center gap-2">
                                                         <div className="h-1.5 w-1.5 rounded-full bg-[#61C0BF]" />
-                                                        Software List
+                                                        Update Registry
                                                     </h4>
-                                                    <div className="flex gap-2">
-                                                        <select
-                                                            value={selectedClientForSW}
-                                                            onChange={(e) => setSelectedClientForSW(e.target.value)}
-                                                            className="px-4 py-2.5 bg-[#FAE3D9] border-2 border-[#BBDED6] rounded-xl text-[10px] font-black uppercase text-black outline-none focus:border-[#61C0BF] shadow-sm appearance-none pr-8 relative"
-                                                        >
-                                                            <option value="">CLIENT...</option>
-                                                            {clients.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                                                        </select>
-                                                        <select
-                                                            value={softEntry.name}
-                                                            onChange={(e) => setSoftEntry({ ...softEntry, client: selectedClientForSW, name: e.target.value, install_date: new Date().toISOString() })}
-                                                            disabled={!selectedClientForSW}
-                                                            className="px-4 py-2.5 bg-[#FAE3D9] border-2 border-[#BBDED6] rounded-xl text-[10px] font-black uppercase text-black outline-none min-w-[120px] focus:border-[#61C0BF] shadow-sm disabled:opacity-30"
-                                                        >
-                                                            <option value="">SOFTWARE...</option>
-                                                            {clients.find(c => c.name === selectedClientForSW)?.softwares?.map((sw: string) => (
-                                                                <option key={sw} value={sw}>{sw}</option>
-                                                            ))}
-                                                        </select>
-                                                        <button
-                                                            onClick={() => addSoftwareToDraft(false, showManageModal)}
-                                                            disabled={!softEntry.name}
-                                                            className="p-3 bg-[#61C0BF] text-white rounded-xl shadow-lg hover:rotate-90 transition-all active:scale-90 disabled:opacity-30"
-                                                        >
-                                                            <Plus size={18} strokeWidth={4} />
-                                                        </button>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-6">
+                                                    <div className="p-6 bg-white border-2 border-[#BBDED6] rounded-[2rem] shadow-sm space-y-4">
+                                                        <div className="space-y-2">
+                                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Windows Update</label>
+                                                            <div className="flex gap-3">
+                                                                <input
+                                                                    type="date"
+                                                                    defaultValue={showManageModal.last_os_update || ''}
+                                                                    onChange={(e) => setShowManageModal({ ...showManageModal, last_os_update: e.target.value })}
+                                                                    className="flex-1 p-4 bg-slate-50 border-2 border-[#BBDED6] rounded-xl text-sm font-bold outline-none focus:border-[#61C0BF]"
+                                                                />
+                                                                <button
+                                                                    onClick={() => updateStatus(showManageModal.id, showManageModal.status, `SYSTEM UPDATE: ${showManageModal.last_os_update}`)}
+                                                                    className="px-8 bg-[#61C0BF] text-white rounded-xl text-[10px] font-black uppercase hover:brightness-105 transition-all shadow-md active:scale-95"
+                                                                >
+                                                                    Log Update
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[250px] overflow-y-auto pr-3 custom-scrollbar">
-                                                    {(showManageModal.installed_software || []).map((sw, idx) => (
-                                                        <motion.div
-                                                            key={idx}
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            className="flex items-center justify-between p-4 bg-[#FAE3D9]/30 border-2 border-[#BBDED6]/30 rounded-2xl shadow-sm group hover:border-[#61C0BF] hover:shadow-md hover:bg-white transition-all duration-300"
-                                                        >
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-xl bg-[#61C0BF]/10 flex items-center justify-center text-[#61C0BF] group-hover:bg-[#61C0BF] group-hover:text-white transition-colors duration-500">
-                                                                    <Terminal size={18} strokeWidth={2.5} />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-xs font-black text-black uppercase tracking-tight">{sw.name}</p>
-                                                                    <p className="text-[9px] font-black text-black uppercase tracking-[0.2em]">{sw.client}</p>
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                className="text-[#FFB6B9] p-2 hover:bg-[#FFB6B9]/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                                                onClick={() => {
-                                                                    const updated = {
-                                                                        ...showManageModal,
-                                                                        installed_software: showManageModal.installed_software.filter((_, i) => i !== idx)
-                                                                    }
-                                                                    setShowManageModal(updated)
-                                                                    handleUpdateSystem(updated)
-                                                                }}
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                        </motion.div>
-                                                    ))}
-                                                    {(showManageModal.installed_software || []).length === 0 && (
-                                                        <div className="col-span-full py-12 text-center border-4 border-dashed border-[#BBDED6]/20 rounded-3xl bg-[#BBDED6]/5">
-                                                            <Network size={40} className="mx-auto mb-3 text-[#BBDED6]/40" />
-                                                            <p className="text-[10px] font-black text-black uppercase tracking-[0.25em]">No Software Installed</p>
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </div>
+                                        </div>
 
-                                            <div className="p-8 rounded-[2.5rem] bg-[#2D3748] border-2 border-[#61C0BF]/20 shadow-2xl relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-gradient-to-br from-[#61C0BF]/5 to-transparent pointer-events-none" />
-                                                <h4 className="text-[10px] font-black text-[#61C0BF] uppercase tracking-[0.25em] mb-6 flex items-center gap-2">
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-[#61C0BF] animate-pulse" />
-                                                    Activity History
-                                                </h4>
-                                                <div className="space-y-3 h-[250px] overflow-y-auto pr-4 custom-scrollbar relative z-10">
-                                                    {systemLogs.map(log => (
-                                                        <div key={log.id} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors group">
-                                                            <div className="text-[#61C0BF] font-black text-[9px] uppercase tracking-tighter bg-[#61C0BF]/10 px-2 py-1 rounded-md self-start">
-                                                                {format(new Date(log.created_at), 'HH:mm:ss')}
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${log.log_type === 'fault' ? 'bg-[#FFB6B9]/20 text-[#FFB6B9]' :
-                                                                        log.log_type === 'status_change' ? 'bg-[#61C0BF]/20 text-[#61C0BF]' :
-                                                                            'bg-[#BBDED6]/20 text-[#BBDED6]'
-                                                                        }`}>
-                                                                        {log.log_type}
-                                                                    </span>
-                                                                    <div className="h-px flex-1 bg-white/5" />
-                                                                </div>
-                                                                <p className="text-white/80 text-[11px] font-bold leading-relaxed">{log.description}</p>
-                                                            </div>
+                                        <div className="p-8 rounded-[2.5rem] bg-[#2D3748] border-2 border-[#61C0BF]/20 shadow-2xl relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-[#61C0BF]/5 to-transparent pointer-events-none" />
+                                            <h4 className="text-[10px] font-black text-[#61C0BF] uppercase tracking-[0.25em] mb-6 flex items-center gap-2">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-[#61C0BF] animate-pulse" />
+                                                Activity History
+                                            </h4>
+                                            <div className="space-y-3 h-[250px] overflow-y-auto pr-4 custom-scrollbar relative z-10">
+                                                {systemLogs.map(log => (
+                                                    <div key={log.id} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors group">
+                                                        <div className="text-[#61C0BF] font-black text-[9px] uppercase tracking-tighter bg-[#61C0BF]/10 px-2 py-1 rounded-md self-start">
+                                                            {format(new Date(log.created_at), 'HH:mm:ss')}
                                                         </div>
-                                                    ))}
-                                                    {systemLogs.length === 0 && (
-                                                        <div className="h-full flex flex-col items-center justify-center opacity-20">
-                                                            <Terminal size={48} className="text-[#61C0BF] mb-4" />
-                                                            <p className="text-[10px] uppercase font-black tracking-[0.4em] text-[#61C0BF]">Signal Void</p>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${log.log_type === 'fault' ? 'bg-[#FFB6B9]/20 text-[#FFB6B9]' :
+                                                                    log.log_type === 'status_change' ? 'bg-[#61C0BF]/20 text-[#61C0BF]' :
+                                                                        'bg-[#BBDED6]/20 text-[#BBDED6]'
+                                                                    }`}>
+                                                                    {log.log_type}
+                                                                </span>
+                                                                <div className="h-px flex-1 bg-white/5" />
+                                                            </div>
+                                                            <p className="text-white/80 text-[11px] font-bold leading-relaxed">{log.description}</p>
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                ))}
+                                                {systemLogs.length === 0 && (
+                                                    <div className="h-full flex flex-col items-center justify-center opacity-20">
+                                                        <Terminal size={48} className="text-[#61C0BF] mb-4" />
+                                                        <p className="text-[10px] uppercase font-black tracking-[0.4em] text-[#61C0BF]">Signal Void</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1624,8 +1490,8 @@ const SystemManager = () => {
                         </div>
                     )
                 }
-            </AnimatePresence >
-        </div >
+            </AnimatePresence>
+        </div>
     )
 }
 

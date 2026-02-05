@@ -45,7 +45,7 @@ const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistM
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
-const IncidentLogPage = lazy(() => import('./components/IncidentLogPage').then(module => ({ default: module.IncidentLogPage })))
+const RaiseACasePage = lazy(() => import('./components/RaiseACasePage').then(module => ({ default: module.RaiseACasePage })))
 const Slate = lazy(() => import('./components/Slate').then(module => ({ default: module.Slate })))
 const FetsOmniAI = lazy(() => import('./components/FetsOmniAI').then(module => ({ default: module.FetsOmniAI })))
 
@@ -226,7 +226,7 @@ function AppContent() {
       'my-desk': { component: <MyDesk onNavigate={setActiveTab} />, name: 'My Desk' },
       'staff-management': { component: <StaffManagement />, name: 'Staff Management' },
       'fets-intelligence': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS Intelligence' },
-      'incident-log': { component: <IncidentLogPage />, name: 'Incident Log' },
+      'incident-log': { component: <RaiseACasePage />, name: 'Raise A Case' },
       'system-manager': { component: <SystemManager />, name: 'System Manager' },
       'news-manager': { component: <NewsManager />, name: 'News Manager' },
       'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },

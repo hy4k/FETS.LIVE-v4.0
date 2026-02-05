@@ -640,3 +640,43 @@
   background: linear-gradient(180deg, #c4b5fd 0%, #f9a8d4 100%);
   border-radius: 3px;
 }
+
+/* Edit Mode Styles */
+.rac-case-title-input {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #f0fdfa;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.rac-case-title-input:focus {
+  border-color: #dc2626;
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.ip-description-textarea {
+  width: 100%;
+  min-height: 100px;
+  background: rgba(15, 23, 42, 0.3);
+  color: #e2e8f0;
+  border: 1px solid rgba(45, 80, 85, 0.5);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.ip-description-textarea:focus {
+  border-color: #5eead4;
+  background: rgba(15, 23, 42, 0.5);
+  box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.1);
+}

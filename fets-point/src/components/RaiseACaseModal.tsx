@@ -169,9 +169,8 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
               {[1, 2, 3].map((s) => (
                 <div
                   key={s}
-                  className={`h-1.5 flex-1 rounded-full transition-colors ${
-                    s <= step ? 'bg-white' : 'bg-white/30'
-                  }`}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? 'bg-white' : 'bg-white/30'
+                    }`}
                 />
               ))}
             </div>
@@ -189,7 +188,7 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
                   exit={{ opacity: 0, x: 20 }}
                   className="grid grid-cols-3 gap-3"
                 >
-                  {CASE_CATEGORIES.map((category) => (
+                  {CASE_CATEGORIES.filter(c => !['staff', 'vendor'].includes(c.id)).map((category) => (
                     <CategoryCard
                       key={category.id}
                       category={category}

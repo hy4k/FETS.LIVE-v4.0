@@ -6,7 +6,7 @@ import IncidentManager from './IncidentManager'
  * The IncidentManager now contains the full colorful UI with brand header.
  * Theme: Mystical teal with red accents
  */
-export function IncidentLogPage() {
+export function RaiseACasePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 font-['Montserrat']">
       <IncidentManager />
@@ -14,4 +14,4 @@ export function IncidentLogPage() {
   )
 }
 
-export default IncidentLogPage
+export default RaiseACasePage

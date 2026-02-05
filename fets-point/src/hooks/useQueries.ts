@@ -32,7 +32,7 @@ import {
 import { handleError, handleSuccess } from '../utils/errorHandler'
 
 // Enhanced candidates query with real-time integration
-export const useCandidates = (filters?: { date?: string; status?: string; branch_location?: string }) => {
+export const useCandidates = (filters?: { date?: string; startDate?: string; endDate?: string; status?: string; branch_location?: string }) => {
   return useQuery<any[], Error>({
     queryKey: ['candidates', filters],
     queryFn: async () => {
@@ -44,6 +44,22 @@ export const useCandidates = (filters?: { date?: string; status?: string; branch
     gcTime: 300000, // 5 minutes cache time
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+  })
+}
+
+export const useTotalCandidatesCount = (branch?: string) => {
+  return useQuery<number, Error>({
+    queryKey: ['candidates', 'count', branch],
+    queryFn: async () => {
+      let query = supabase.from('candidates').select('*', { count: 'exact', head: true })
+      if (branch && branch !== 'global') {
+        query = query.eq('branch_location', branch)
+      }
+      const { count, error } = await query
+      if (error) throw error
+      return count || 0
+    },
+    staleTime: 60000,
   })
 }
 

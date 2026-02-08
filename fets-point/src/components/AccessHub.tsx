@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Shield, Key, Lock, Eye, EyeOff, Copy, ExternalLink, Search,
-    Plus, X, Minus, Globe, Server, Fingerprint, 
+    Plus, X, Minus, Globe, Server, Fingerprint,
     ChevronRight, Layers, Database, Building2, Save
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -61,9 +61,9 @@ const AccessHubPopup: React.FC<AccessHubPopupProps> = ({ entry, onClose, zIndex 
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ 
-                opacity: 1, 
-                scale: 1, 
+            animate={{
+                opacity: 1,
+                scale: 1,
                 y: 0,
                 height: isMinimized ? 56 : 'auto',
                 maxHeight: isMinimized ? 56 : '80vh'
@@ -187,9 +187,9 @@ const AccessHubPopup: React.FC<AccessHubPopupProps> = ({ entry, onClose, zIndex 
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Links</span>
                             </div>
                             {entry.url && (
-                                <a 
-                                    href={entry.url} 
-                                    target="_blank" 
+                                <a
+                                    href={entry.url}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium group"
                                 >
@@ -403,8 +403,117 @@ const AddEntryModal: React.FC<{ onClose: () => void; onSuccess: () => void; user
     )
 }
 
+// View All Vault Modal (Emerald Design)
+const ViewAllVaultModal: React.FC<{ entries: VaultEntry[]; onClose: () => void; onEntryClick: (entry: VaultEntry) => void }> = ({ entries, onClose, onEntryClick }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filtered = entries.filter(e =>
+        e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const categoryIcons: Record<string, React.ReactNode> = {
+        'Corporate': <Building2 size={16} />,
+        'Financial': <Layers size={16} />,
+        'Personal': <Fingerprint size={16} />,
+        'Emergency': <Shield size={16} />,
+        'General': <Server size={16} />
+    };
+
+    return (
+        <div className="fixed inset-0 z-[3500] flex items-center justify-center p-6 bg-emerald-950/40 backdrop-blur-md" onClick={onClose}>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={e => e.stopPropagation()}
+                className="w-full max-w-5xl bg-[#F0FDF4] rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/50 relative"
+            >
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-300/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+                {/* Header */}
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 px-8 py-6 flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner border border-white/10">
+                            <Shield size={24} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">F-Vault Secure</h2>
+                            <p className="text-emerald-100/80 text-[10px] font-bold uppercase tracking-widest">Full Credential Repository</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Search Bar */}
+                <div className="px-8 py-6 border-b border-emerald-100 bg-white/50 relative z-10">
+                    <div className="relative">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search your secure vault..."
+                            autoFocus
+                            className="w-full bg-white border border-emerald-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-emerald-900 placeholder:text-emerald-300/70 outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 transition-all shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Grid */}
+                <div className="flex-1 overflow-y-auto p-8 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filtered.map(entry => (
+                            <motion.button
+                                key={entry.id}
+                                whileHover={{ scale: 1.02, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => onEntryClick(entry)}
+                                className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all group text-left relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-emerald-100 transition-colors" />
+
+                                <div className="flex items-start justify-between mb-3 relative">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors shadow-sm">
+                                        {categoryIcons[entry.category] || <Shield size={18} />}
+                                    </div>
+                                    {entry.category === 'Corporate' && <Building2 size={14} className="text-emerald-200" />}
+                                </div>
+
+                                <h3 className="font-bold text-slate-800 text-sm mb-1 truncate group-hover:text-emerald-700 transition-colors">{entry.title}</h3>
+                                <p className="text-xs text-slate-400 font-mono truncate mb-3">{entry.username || '****'}</p>
+
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-400 uppercase tracking-wider group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                        {entry.category}
+                                    </span>
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
+
+                    {filtered.length === 0 && (
+                        <div className="text-center py-20 opacity-50">
+                            <Search size={48} className="mx-auto mb-4 text-emerald-300" />
+                            <p className="text-emerald-800 font-bold">No credentials found</p>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
+
 // Main Access Hub Widget Component
-export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
+export function AccessHub({ readOnly = false, variant = 'default' }: { readOnly?: boolean; variant?: 'default' | 'emerald' }) {
     const { user } = useAuth()
     const [entries, setEntries] = useState<VaultEntry[]>([])
     const [loading, setLoading] = useState(true)
@@ -412,6 +521,7 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
     const [activePopup, setActivePopup] = useState<VaultEntry | null>(null)
     const [hoveredId, setHoveredId] = useState<string | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
+    const [showViewAll, setShowViewAll] = useState(false)
 
     const fetchEntries = React.useCallback(async () => {
         if (!user?.id) return
@@ -457,7 +567,16 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
         'General': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' }
     }
 
-    const neuCard = "bg-[var(--dashboard-bg, #EEF2F9)] rounded-3xl shadow-[9px_9px_16px_var(--neu-dark-shadow,rgb(209,217,230)),-9px_-9px_16px_var(--neu-light-shadow,rgba(255,255,255,0.8))] border border-white/50"
+    const containerClass = variant === 'emerald'
+        ? "bg-gradient-to-br from-[#F0FDF4] to-[#ECFDF5] border-2 border-emerald-100 shadow-[0_20px_50px_-12px_rgba(16,185,129,0.25)] ring-4 ring-emerald-50/50"
+        : "bg-[var(--dashboard-bg, #EEF2F9)] rounded-3xl shadow-[9px_9px_16px_var(--neu-dark-shadow,rgb(209,217,230)),-9px_-9px_16px_var(--neu-light-shadow,rgba(255,255,255,0.8))] border border-white/50"
+
+    const headerIconClass = variant === 'emerald'
+        ? "bg-emerald-100 text-emerald-600 shadow-emerald-200/50"
+        : "bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg"
+
+    const headerTextClass = variant === 'emerald' ? "text-emerald-900" : "text-slate-800"
+    const subTextClass = variant === 'emerald' ? "text-emerald-600/70" : "text-slate-400"
 
     return (
         <>
@@ -465,20 +584,25 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className={`${neuCard} p-8 relative overflow-hidden`}
+                className={`${containerClass} p-8 relative overflow-hidden rounded-[2.5rem]`}
             >
+                {/* Decorative Emerald Glow */}
+                {variant === 'emerald' && (
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                )}
+
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg">
-                            <Lock size={24} className="text-white" />
+                <div className="flex items-center justify-between mb-8 relative z-10">
+                    <div className="flex items-center gap-5">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 duration-300 ${headerIconClass}`}>
+                            <Shield size={28} />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Access Hub</h3>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{entries.length} Secured Credentials</p>
+                            <h3 className={`text-2xl font-black uppercase tracking-tight leading-none mb-1 ${headerTextClass}`}>F-Vault</h3>
+                            <p className={`text-[10px] font-bold uppercase tracking-widest ${subTextClass}`}>{entries.length} Secured Credentials</p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                         {/* Add Button */}
                         {!readOnly && (
@@ -531,7 +655,7 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
                                 >
                                     {/* Background Gradient on Hover */}
                                     <div className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                                    
+
                                     {/* Content */}
                                     <div className="relative z-10">
                                         <div className="flex items-start justify-between mb-4">
@@ -542,11 +666,11 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
                                                 {entry.category}
                                             </span>
                                         </div>
-                                        
+
                                         <h4 className="text-sm font-bold text-slate-800 mb-1 truncate uppercase tracking-tight">
                                             {entry.title}
                                         </h4>
-                                        
+
                                         {entry.username && (
                                             <p className="text-xs text-slate-500 truncate font-mono">
                                                 {entry.username}
@@ -593,7 +717,10 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
                 {/* View More Link */}
                 {filteredEntries.length > 8 && (
                     <div className="mt-6 text-center">
-                        <button className="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto">
+                        <button
+                            onClick={() => setShowViewAll(true)}
+                            className="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto"
+                        >
                             View all {filteredEntries.length} credentials
                             <ChevronRight size={14} />
                         </button>
@@ -615,6 +742,7 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
             </AnimatePresence>
 
             {/* Add Modal */}
+            {/* Add Modal */}
             <AnimatePresence>
                 {showAddModal && user?.id && (
                     <AddEntryModal
@@ -624,6 +752,40 @@ export function AccessHub({ readOnly = false }: { readOnly?: boolean }) {
                     />
                 )}
             </AnimatePresence>
+
+            {/* View All Modal */}
+            <AnimatePresence>
+                {
+                    showViewAll && (
+                        <ViewAllVaultModal
+                            entries={entries}
+                            onClose={() => setShowViewAll(false)}
+                            onEntryClick={(entry) => {
+                                setActivePopup(entry);
+                                // Keep view all open? Or close it? Usually user wants to see details then go back.
+                                // But popup is top level z-index.
+                                // Let's close view all? Or keep it behind?
+                                // If we keep it behind, we need z-index management.
+                                // activePopup zIndex defaults to 3000. ViewAll is 3500. 
+                                // So we should pass zIndex to popup or make ViewAll lower.
+                                // Or simpler: Open popup ON TOP of ViewAll.
+                                // Let's make ViewAll z-3500 and Popup z-4000.
+                                // But AccessHubPopup has default z=3000. We can pass zIndex prop.
+                            }}
+                        />
+                    )
+                }
+                {/* Re-render activePopup with higher z-index if ViewAll is open */}
+                {
+                    activePopup && showViewAll && (
+                        <AccessHubPopup
+                            entry={activePopup}
+                            onClose={() => setActivePopup(null)}
+                            zIndex={4000}
+                        />
+                    )
+                }
+            </AnimatePresence >
         </>
     )
 }

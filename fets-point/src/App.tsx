@@ -143,7 +143,7 @@ function AppContent() {
       if (activeTab === 'my-desk') return <MobileMyDesk setActiveTab={setActiveTab} />;
       if (activeTab === 'mobile-ai-chat') return <MobileAiChat />;
       if (activeTab === 'incident-log') return <MobileIncidentManager />;
-      if (activeTab === 'access-hub') return <AccessHubPage readOnly={true} />;
+      if (activeTab === 'access-hub') return <AccessHubPage />;
       if (activeTab === 'user-management') return <UserManagement />;
       if (activeTab === 'profile') return <FetsProfilePage />;
       if (activeTab === 'checklist-management') return <ChecklistManagement currentUser={profile} />;
@@ -155,7 +155,7 @@ function AppContent() {
 
     const routeComponents: { [key: string]: { component: JSX.Element; name: string } } = {
       'command-center': { component: <CommandCentre onNavigate={setActiveTab} onAiQuery={(q: string) => { setAiQuery(q); setActiveTab('fets-intelligence'); }} />, name: 'Command Centre' },
-      'access-hub': { component: <AccessHubPage readOnly={true} />, name: 'Access Hub' },
+      'access-hub': { component: <AccessHubPage />, name: 'F-Vault' },
       'dashboard': { component: <Dashboard onNavigate={setActiveTab} />, name: 'Dashboard' },
       'candidate-tracker': { component: <CandidateTracker />, name: 'Candidate Tracker' },
       'fets-roster': { component: <FetsRoster />, name: 'FETS Roster' },

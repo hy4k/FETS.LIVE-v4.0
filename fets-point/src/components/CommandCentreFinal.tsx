@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule } from '../hooks/useCommandCentre'
 import { useNews } from '../hooks/useNewsManager'
 import { AccessHub } from './AccessHub'
-import { TeamPresence } from './TeamPresence'
+import { ExternalLink } from 'lucide-react'
 import { MobileHome } from './MobileHome'
 import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
@@ -225,7 +225,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-10"
+                    className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-10 mt-20"
                 >
                     {/* Left: Command Branding */}
                     <div className="flex flex-col">
@@ -285,7 +285,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                             {activeBranch}
                                         </span>
                                     </div>
-                                    
+
                                     <div className={`flex flex-col gap-2 relative min-h-[60px] ${activeBranch === 'global' ? 'max-h-[300px] overflow-y-auto pr-2 custom-scrollbar' : ''}`}>
                                         {!dashboardData?.todaysExams || dashboardData.todaysExams.length === 0 ? (
                                             <div className="text-xs text-slate-400 italic flex items-center gap-2 mt-2">
@@ -307,21 +307,21 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                                 // 3. Exam Name Logic
                                                 let displayExam = exam.exam_name || displayClient; // Fallback to client if no exam name
                                                 const upperExam = displayExam.toUpperCase();
-                                                
+
                                                 // Specific overrides
                                                 if (upperExam.includes('CMA US')) displayExam = 'CMA';
                                                 else if (upperExam.includes('CELPIP')) displayExam = 'CELPIP';
                                                 else if (displayClient === 'PEARSON') {
-                                                   // General Pearson rule: < 8 chars keep, else truncate/select
-                                                   if (displayExam.length > 8) {
-                                                       if (displayExam.includes(' ')) {
-                                                           // Multiple words: Take first word
-                                                           displayExam = displayExam.split(' ')[0];
-                                                       } else {
-                                                           // Single word > 8 chars: Take first 4 letters
-                                                          displayExam = displayExam.substring(0, 4);
-                                                       }
-                                                   }
+                                                    // General Pearson rule: < 8 chars keep, else truncate/select
+                                                    if (displayExam.length > 8) {
+                                                        if (displayExam.includes(' ')) {
+                                                            // Multiple words: Take first word
+                                                            displayExam = displayExam.split(' ')[0];
+                                                        } else {
+                                                            // Single word > 8 chars: Take first 4 letters
+                                                            displayExam = displayExam.substring(0, 4);
+                                                        }
+                                                    }
                                                 } else {
                                                     // Fallback for others: Shorten if too long
                                                     if (displayExam.length > 12) displayExam = displayExam.substring(0, 8) + '..';
@@ -367,11 +367,13 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
 
                 {/* AI Search Bar Removed as per request */}
 
+
+
                 {/* Main Grid Layout */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
 
-                    {/* LEFT COLUMN: Checklists -> Metrics -> Calendar */}
-                    <div className="xl:col-span-8 flex flex-col gap-8">
+                    {/* MAIN COLUMN: Checklists -> F-Vault */}
+                    <div className="col-span-1 md:col-span-1 xl:col-span-12 flex flex-col gap-8">
 
                         {/* 1. CHECKLIST (PROTOCOLS) - TITANIUM COMMAND PLATE */}
                         <motion.div
@@ -412,7 +414,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                             </span>
                                         </div>
                                         {todayStatus.pre !== 'Submitted' ? (
-                                            <button 
+                                            <button
                                                 onClick={() => handleOpenChecklist('pre_exam')}
                                                 className="text-[9px] font-black text-[#E19898] uppercase tracking-widest hover:text-[#D48686] transition-colors flex items-center gap-1 group/fn"
                                             >
@@ -445,7 +447,7 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                                             </span>
                                         </div>
                                         {todayStatus.post !== 'Submitted' ? (
-                                            <button 
+                                            <button
                                                 onClick={() => handleOpenChecklist('post_exam')}
                                                 className="text-[9px] font-black text-[#607D8B] uppercase tracking-widest hover:text-[#546E7A] transition-colors flex items-center gap-1 group/fn"
                                             >
@@ -460,72 +462,45 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                         </motion.div>
 
                         {/* 2. KEY METRICS ROW */}
-                        {/* 2. QUICK ACCESS HUB - ELEVATED ACCESS */}
+                        {/* 2. F-VAULT (Replacing Access Hub & Team) */}
+                        <AccessHub variant="emerald" />
+
+                        {/* 3. QUICK ACCESS LINKS */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className={`${neuCard} p-8 flex flex-col gap-6 relative overflow-hidden`}
+                            transition={{ delay: 0.4 }}
+                            className={`${neuCard} p-8`}
                         >
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className={`${neuInset} p-3 text-amber-500 rounded-xl`}>
-                                        <Sparkles size={22} className="animate-pulse" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">Critical Links</span>
-                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Quick Access</h3>
-                                    </div>
+                            <h3 className="text-xl font-black text-slate-700 mb-6 flex items-center gap-3 tracking-tight">
+                                <div className={`${neuInset} p-2 text-blue-500`}>
+                                    <ExternalLink size={20} />
                                 </div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden md:block">Verified Portals Only</div>
-                            </div>
+                                <span className="bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent uppercase text-sm font-black tracking-widest">Quick Links</span>
+                            </h3>
 
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 relative z-10">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[
-                                    { name: 'CELPIP', logo: 'client-logos/celpip.jpg', url: 'https://testcentreportal.paragontesting.ca/TestCentrePortal/Login' },
-                                    { name: 'PSI GPS', logo: 'client-logos/psi.png', url: 'https://gps.psiexams.com/login' },
-                                    { name: 'CMA US', logo: 'client-logos/cma_us.png', url: 'https://proscheduler.prometric.com/home' },
-                                    { name: 'Prometric', logo: 'client-logos/prometric.png', url: 'https://easyserve.prometric.com/my.policy' },
-                                    { name: 'Pearson VUE', logo: 'client-logos/pearson_vue.png', url: 'https://connect.pearsonvue.com/Connect/#/authenticate' }
-                                ].map((client) => (
+                                    { name: 'Pearson VUE', url: 'https://connect.pearsonvue.com/', image: '/client-logos/pearson.png' },
+                                    { name: 'Prometric', url: 'https://easyserve.prometric.com/', image: '/client-logos/prometric.png' },
+                                    { name: 'CMA US', url: 'https://proscheduler.prometric.com/', image: '/client-logos/cma_us.png' },
+                                    { name: 'PSI Exams', url: 'https://test-takers.psiexams.com/', image: '/client-logos/psi.png' }
+                                ].map((link) => (
                                     <a
-                                        key={client.name}
-                                        href={client.url}
+                                        key={link.name}
+                                        href={link.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`${neuBtn} p-6 flex items-center justify-center h-24 hover:scale-105 transition-all group overflow-hidden bg-white/40`}
-                                        title={`Launch ${client.name}`}
+                                        className={`${neuBtn} p-4 flex flex-col items-center justify-center gap-3 group hover:scale-105 transition-transform h-40`}
                                     >
-                                        <img
-                                            src={client.logo}
-                                            alt={client.name}
-                                            className="max-w-full max-h-full object-contain transition-all duration-500 group-hover:scale-110"
-                                        />
+                                        <div className="w-full h-24 flex items-center justify-center p-2">
+                                            <img src={link.image} alt={link.name} className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300 scale-125" />
+                                        </div>
                                     </a>
                                 ))}
                             </div>
-
-                            {/* Decorative Grid Pattern Overlay */}
-                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '16px 16px' }} />
                         </motion.div>
 
-                        {/* 2.5 ACCESS HUB - CREDENTIAL MANAGEMENT */}
-                        <AccessHub readOnly={true} />
-
-
-                        {/* 3.5 TEAM PRESENCE & FETS MEET */}
-                        <TeamPresence onFetsMeetClick={() => onNavigate?.('frame')} />
-
-                    </div>
-
-
-                    {/* RIGHT COLUMN: Team Chat / Info */}
-                    <div className="xl:col-span-4 flex flex-col gap-8">
-                        <div className={`${neuCard} p-8 flex-1 flex flex-col items-center justify-center text-center`}>
-                            <MessageSquare size={48} className="text-amber-500 mb-4 opacity-20" />
-                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">Team Communication</h3>
-                            <p className="text-sm text-slate-400 max-w-[280px]">Select a team member from the presence list below to start a secure encrypted session.</p>
-                        </div>
                     </div>
 
                 </div>

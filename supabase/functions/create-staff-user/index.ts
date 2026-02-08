@@ -33,7 +33,16 @@ serve(async (req: Request) => {
         const payload = await req.json()
         console.log('Received payload:', JSON.stringify(payload, null, 2))
 
-        const { email, password, full_name, role, department, base_centre, branch_location, ...rest } = payload
+        const {
+            email,
+            password,
+            full_name,
+            role = 'staff',
+            department = 'Operations',
+            base_centre,
+            branch_location,
+            ...rest
+        } = payload
 
         if (!email || !password || !full_name) {
             return new Response(

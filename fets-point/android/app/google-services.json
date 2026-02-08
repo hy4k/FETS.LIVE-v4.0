@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "521577465838",
+    "project_id": "fets-live",
+    "storage_bucket": "fets-live.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:521577465838:android:557b3bcdbad43452b5f0ff",
+        "android_client_info": {
+          "package_name": "FETS.LIVE"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbC4kKhu3wOUSK4nqvR4-_P7W7J0aUJ6Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:521577465838:android:af1578a25d0f22bdb5f0ff",
+        "android_client_info": {
+          "package_name": "com.fets.live"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbC4kKhu3wOUSK4nqvR4-_P7W7J0aUJ6Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

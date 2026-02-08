@@ -299,7 +299,7 @@ export function Login() {
         </AnimatePresence>
 
         {/* System Diagnostics (Dev Only) */}
-        {import.meta.env.DEV && (
+        {typeof window !== 'undefined' && (window as any).is_dev_mode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

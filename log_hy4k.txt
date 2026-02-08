@@ -1,0 +1,4 @@
+062ef72 Redesign System Manager, fix 409 Conflict in Incident Manager, and UI cleanup.
+d9734be feat: Add create-staff-user Edge Function for staff creation
+3dbbfea fix: Critical FK constraint fixes for F-Vault, Incidents, and System Manager
+f591273 feat: implement My Desk Living Board, fix F-Pulse and F-Vault, and cleanup Command Centre

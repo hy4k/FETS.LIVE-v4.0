@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight, Send, Building2, Phone, Briefcase } from 'lucide-react'
 import { CASE_CATEGORIES, CategoryConfig, FollowUpQuestion, getCategoryById } from '../config/caseCategories.config'
+import { useIsMobile } from '../hooks/use-mobile'
 
 interface RaiseACaseModalProps {
   isOpen: boolean
@@ -24,6 +25,7 @@ export interface CaseFormData {
 type Step = 1 | 2 | 3
 
 export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACaseModalProps) {
+  const isMobile = useIsMobile()
   const [step, setStep] = useState<Step>(1)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [followUpAnswers, setFollowUpAnswers] = useState<Record<string, string>>({})
@@ -139,18 +141,22 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
 
         {/* Modal */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 }}
+          animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+          exit={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className={`relative w-full overflow-hidden ${
+            isMobile 
+            ? 'h-full bg-slate-50 flex flex-col pt-safe' 
+            : 'max-w-2xl bg-white rounded-3xl shadow-2xl'
+          }`}
         >
           {/* Header */}
-          <div className="px-6 py-5 bg-gradient-to-r from-rose-500 to-amber-500 text-white">
+          <div className={`${isMobile ? 'px-6 pt-12 pb-8' : 'px-6 py-5'} bg-gradient-to-r from-rose-500 to-amber-500 text-white flex-none`}>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold">Raise A Case</h2>
-                <p className="text-white/80 text-sm mt-0.5">
+                <h2 className={isMobile ? "text-3xl font-black italic tracking-tighter uppercase" : "text-xl font-bold"}>Raise A Case</h2>
+                <p className="text-white/80 text-sm mt-0.5 font-bold uppercase tracking-widest text-[10px]">
                   {step === 1 && 'What is this case related to?'}
                   {step === 2 && `${categoryConfig?.label} - Tell us more`}
                   {step === 3 && 'Review and submit'}
@@ -158,18 +164,18 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                className={`p-2 hover:bg-white/20 rounded-full transition-colors ${isMobile ? 'bg-black/10' : ''}`}
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Step Indicator */}
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-2 mt-8">
               {[1, 2, 3].map((s) => (
                 <div
                   key={s}
-                  className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? 'bg-white' : 'bg-white/30'
+                  className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? 'bg-white' : 'bg-white/30'
                     }`}
                 />
               ))}
@@ -177,7 +183,7 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
           </div>
 
           {/* Content */}
-          <div className="p-6 max-h-[60vh] overflow-y-auto">
+          <div className={`p-6 overflow-y-auto flex-1 no-scrollbar ${isMobile ? 'pb-32' : 'max-h-[60vh]'}`}>
             <AnimatePresence mode="wait">
               {/* Step 1: Category Selection */}
               {step === 1 && (
@@ -186,12 +192,13 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="grid grid-cols-3 gap-3"
+                  className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-3'} gap-4`}
                 >
                   {CASE_CATEGORIES.filter(c => !['staff', 'vendor'].includes(c.id)).map((category) => (
                     <CategoryCard
                       key={category.id}
                       category={category}
+                      isMobile={isMobile}
                       onClick={() => handleCategorySelect(category.id)}
                     />
                   ))}
@@ -438,21 +445,21 @@ export default function RaiseACaseModal({ isOpen, onClose, onSubmit }: RaiseACas
 }
 
 // Category Card Component
-function CategoryCard({ category, onClick }: { category: CategoryConfig; onClick: () => void }) {
+function CategoryCard({ category, onClick, isMobile }: { category: CategoryConfig; onClick: () => void, isMobile?: boolean }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={isMobile ? {} : { scale: 1.02 }}
+      whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className="p-4 rounded-2xl border-2 border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50 transition-all group text-left"
+      className={`${isMobile ? 'p-6 rounded-[35px] shadow-sm' : 'p-4 rounded-2xl border-2'} border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50 transition-all group text-left flex flex-col items-center text-center`}
     >
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+        className={`${isMobile ? 'w-14 h-14 rounded-2xl mb-4 shadow-lg' : 'w-12 h-12 rounded-xl mb-3'} flex items-center justify-center transition-transform group-hover:scale-110`}
         style={{ backgroundColor: category.bgColor }}
       >
-        <category.icon size={24} style={{ color: category.color }} />
+        <category.icon size={isMobile ? 28 : 24} style={{ color: category.color }} />
       </div>
-      <h3 className="font-semibold text-gray-800 text-sm">{category.label}</h3>
+      <h3 className="font-black text-slate-800 text-[10px] uppercase tracking-widest leading-tight">{category.label}</h3>
     </motion.button>
   )
 }

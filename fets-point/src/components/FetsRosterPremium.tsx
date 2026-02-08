@@ -28,11 +28,13 @@ import { EnhancedQuickAddModal } from './EnhancedQuickAddModal'
 import { EnhancedRequestsModal } from './EnhancedRequestsModal'
 import { RosterListView } from './RosterListView'
 import { EnhancedAnalysisView } from './EnhancedAnalysisView'
+import { MobileRosterView } from './MobileRosterView'
 import { useAuth } from '../hooks/useAuth'
 import { useBranch } from '../hooks/useBranch'
 import { supabase } from '../lib/supabase'
 import { formatDateForIST } from '../utils/dateUtils'
 import { LeaveRequest, Schedule, StaffProfile, SHIFT_CODES, ShiftCode } from '../types/shared'
+import { useIsMobile } from '../hooks/use-mobile'
 
 import '../styles/glassmorphism.css'
 
@@ -41,6 +43,7 @@ type ViewMode = 'month' | 'list'
 export function FetsRosterPremium() {
   const { user, profile } = useAuth()
   const { activeBranch } = useBranch()
+  const isMobile = useIsMobile()
 
   // Core state
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -356,30 +359,32 @@ export function FetsRosterPremium() {
   }
 
   return (
-    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div className={`min-h-screen bg-[#e0e5ec] ${isMobile ? 'pt-8 pb-32 px-4' : '-mt-32 pt-56 px-6'}`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
       {/* Functional Notification Banner Spacer */}
-      <div className="h-6 -mx-8 -mt-8 mb-8"></div>
+      {!isMobile && <div className="h-6 -mx-8 -mt-8 mb-8"></div>}
 
-      <div className="max-w-[1800px] mx-auto px-6">
+      <div className="max-w-[1800px] mx-auto">
         {/* Executive Header - Neumorphic */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
+          className={`${isMobile ? 'mb-6' : 'mb-8'} flex flex-col md:flex-row justify-between items-start md:items-end gap-4`}
         >
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gold-gradient mb-2 uppercase">
+            <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl'} font-bold tracking-tight text-gold-gradient mb-2 uppercase italic`}>
               FETS Roster
             </h1>
-            <p className="text-lg text-gray-600 font-medium">
-              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Staff Scheduling & Management
+            <p className={`${isMobile ? 'text-sm' : 'text-lg'} text-gray-600 font-medium`}>
+              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Staff Scheduling
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
-              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
+          {!isMobile && (
+            <div className="text-right">
+              <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
+                {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          )}
         </motion.div>
 
         {/* Notification System */}
@@ -503,14 +508,24 @@ export function FetsRosterPremium() {
         </div>
 
         {/* Main Content - Dynamic Views */}
-        <div className="neomorphic-card p-6 min-h-[600px]">
+        <div className={isMobile ? "" : "neomorphic-card p-6 min-h-[600px]"}>
           {currentView === 'roster' && viewMode === 'month' && (
-            <MonthlyRosterTimeline
-              staffProfiles={filteredStaff}
-              schedules={schedules}
-              currentDate={currentDate}
-              onCellClick={handleCellClick}
-            />
+            isMobile ? (
+              <MobileRosterView
+                staffProfiles={filteredStaff}
+                schedules={schedules}
+                currentDate={currentDate}
+                onNavigate={navigateDate}
+                onCellClick={handleCellClick}
+              />
+            ) : (
+              <MonthlyRosterTimeline
+                staffProfiles={filteredStaff}
+                schedules={schedules}
+                currentDate={currentDate}
+                onCellClick={handleCellClick}
+              />
+            )
           )}
           {currentView === 'roster' && viewMode === 'list' && (
             <RosterListView

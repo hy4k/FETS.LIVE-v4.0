@@ -1,0 +1,13 @@
+commit d9734bee8b65c5fb0bfdddddacfa7c4c54481480
+Author: hy4k <mithun@fets.in>
+Date:   Mon Feb 2 18:09:20 2026 +0530
+
+    feat: Add create-staff-user Edge Function for staff creation
+    
+    - Created new create-staff-user Edge Function
+    - Function creates auth user and staff profile in single transaction
+    - Includes rollback on profile creation failure
+    - Sets default permissions based on role
+    - Improved error handling in useStaffManagement hook
+
+fets-point/src/hooks/useStaffManagement.ts

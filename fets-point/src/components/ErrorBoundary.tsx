@@ -100,29 +100,19 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
             </div>
             
-            {/* Development error details */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mb-6 p-4 bg-red-50 rounded-lg text-left border border-red-200">
-                <summary className="cursor-pointer font-medium text-red-800 hover:text-red-900">
-                  🔧 Development Error Details
-                </summary>
-                <div className="mt-3 space-y-2">
-                  <div>
-                    <p className="text-sm font-medium text-red-800">Error Message:</p>
-                    <p className="text-sm text-red-700 font-mono bg-red-100 p-2 rounded">
-                      {this.state.error.message}
-                    </p>
-                  </div>
-                  {this.state.error.stack && (
-                    <div>
-                      <p className="text-sm font-medium text-red-800">Stack Trace:</p>
-                      <pre className="text-xs text-red-700 bg-red-100 p-2 rounded overflow-auto max-h-32">
-                        {this.state.error.stack}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </details>
+            {/* Development error details - ALWAYS SHOW FOR DEBUGGING */}
+            {this.state.error && (
+              <div className="mb-6 p-4 bg-red-50 rounded-lg text-left border border-red-200">
+                <p className="text-sm font-medium text-red-800">Technical Details:</p>
+                <p className="text-xs text-red-700 font-mono bg-red-100 p-2 rounded break-words">
+                  {this.state.error.message}
+                </p>
+                {this.state.error.stack && (
+                  <pre className="mt-2 text-[8px] text-red-600 bg-red-50 p-2 rounded overflow-auto max-h-40">
+                    {this.state.error.stack.split('\n').slice(0, 5).join('\n')}
+                  </pre>
+                )}
+              </div>
             )}
             
             {/* Action buttons */}

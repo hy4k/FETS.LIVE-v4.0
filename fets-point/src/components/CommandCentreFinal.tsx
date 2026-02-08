@@ -12,8 +12,8 @@ import { toast } from 'react-hot-toast'
 import { useDashboardStats, useCandidateTrend, useUpcomingSchedule } from '../hooks/useCommandCentre'
 import { useNews } from '../hooks/useNewsManager'
 import { AccessHub } from './AccessHub'
-import { InkNotebook } from './InkNotebook'
 import { TeamPresence } from './TeamPresence'
+import { MobileHome } from './MobileHome'
 import { supabase } from '../lib/supabase'
 import { ChecklistFormModal } from './checklist/ChecklistFormModal'
 import { NotificationBanner } from './NotificationBanner'
@@ -519,16 +519,13 @@ export default function CommandCentre({ onNavigate, onAiQuery }: { onNavigate?: 
                     </div>
 
 
-                    {/* RIGHT COLUMN: Shared Notebook - FRAME */}
-                    <div className="xl:col-span-4 flex flex-col">
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.6 }}
-                            className="flex-1 min-h-[800px] flex flex-col"
-                        >
-                            <InkNotebook />
-                        </motion.div>
+                    {/* RIGHT COLUMN: Team Chat / Info */}
+                    <div className="xl:col-span-4 flex flex-col gap-8">
+                        <div className={`${neuCard} p-8 flex-1 flex flex-col items-center justify-center text-center`}>
+                            <MessageSquare size={48} className="text-amber-500 mb-4 opacity-20" />
+                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">Team Communication</h3>
+                            <p className="text-sm text-slate-400 max-w-[280px]">Select a team member from the presence list below to start a secure encrypted session.</p>
+                        </div>
                     </div>
 
                 </div>

@@ -139,6 +139,7 @@ After migrations complete:
 2. ✅ Test AI features in the application
 3. ✅ Check conversation history saves properly
 4. ✅ Verify knowledge base populates
+5. ⚠️ **IMPORTANT**: Run `NOTIFY pgrst, 'reload schema';` in SQL Editor if you see schema errors.
 
 ## Need Help?
 

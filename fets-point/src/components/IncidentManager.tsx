@@ -200,29 +200,22 @@ export default function IncidentManager() {
 
         const { error } = await supabase.from('incident_comments').insert({
             incident_id: activeIncident.id,
-            author_id: profile.user_id, // CRITICAL FIX: Use auth user_id
+            author_id: profile.id, // FIX: Use profile.id instead of user_id
             author_full_name: profile.full_name || 'Staff',
             body: payloadBody,
-            // note: we are overloading 'body' column. In a real migration we'd add 'type' and 'data' columns.
-            // For this specific 'playground' request without backend migration access, I'm embedding type in body JSON if needed
-            // Wait, 'incident_comments' table structure is fixed unless I used migration tool.
-            // I will assume text body. If it's special widget, I wrap it: 
-            // PREFIX: "WIDGET:TYPE:JSON"
         })
 
         if (payloadType !== 'text') {
-            // Since I can't easily change schema to add 'type' column, I'll use a prefix convention for this demo
-            // Re-doing the insert logic slightly to accommodate existing schema constraints safely
             await supabase.from('incident_comments').insert({
                 incident_id: activeIncident.id,
-                author_id: profile.user_id, // CRITICAL FIX: Use auth user_id
+                author_id: profile.id, // FIX: Use profile.id instead of user_id
                 author_full_name: profile.full_name || 'Staff',
                 body: `WIDGET:${payloadType}:${payloadBody}`
             })
         } else {
             await supabase.from('incident_comments').insert({
                 incident_id: activeIncident.id,
-                author_id: profile.user_id, // CRITICAL FIX: Use auth user_id
+                author_id: profile.id, // FIX: Use profile.id instead of user_id
                 author_full_name: profile.full_name || 'Staff',
                 body: inputValue
             })

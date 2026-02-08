@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     User, Mail, Phone, MapPin, Briefcase, Calendar,
-    Award, Shield, Hash, Globe, Star, Activity, Edit3, Save, Zap
+    Award, Shield, Hash, Globe, Star, Activity, Edit3, Save, Zap, Camera
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
@@ -16,10 +16,15 @@ export const FetsProfile = () => {
         tasksCompleted: 0
     });
 
-    // Bio Editing State
-    const [bio, setBio] = useState('');
+    const [bio, setBio] = useState(profile?.bio || '');
     const [isEditingBio, setIsEditingBio] = useState(false);
-    const [loadingBio, setLoadingBio] = useState(true);
+    const [loadingBio, setLoadingBio] = useState(false);
+
+    useEffect(() => {
+        if (profile?.bio) {
+            setBio(profile.bio);
+        }
+    }, [profile]);
 
 
     useEffect(() => {
@@ -48,6 +53,42 @@ export const FetsProfile = () => {
         }
     }
 
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !profile?.id) return;
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${profile.id}/${Math.random()}.${fileExt}`;
+
+            // 1. Upload to Storage (Using existing profile-pictures bucket)
+            const { error: uploadError } = await supabase.storage
+                .from('profile-pictures')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('profile-pictures')
+                .getPublicUrl(filePath);
+
+            // 3. Update Profile
+            const { error: updateError } = await supabase
+                .from('staff_profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', profile.id);
+
+            if (updateError) throw updateError;
+
+            toast.success('Avatar synchronized with cloud');
+            window.location.reload(); // Refresh to show new avatar
+        } catch (err: any) {
+            console.error(err);
+            toast.error(`Upload failed: ${err.message}`);
+        }
+    };
+
     const InfoRow = ({ icon: Icon, label, value, isLink = false }: any) => (
         <div className="flex items-center gap-4 py-3 border-b border-white/5 last:border-0 group">
             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-amber-500/20 group-hover:text-amber-500 transition-colors">
@@ -73,7 +114,7 @@ export const FetsProfile = () => {
                     {/* Background Glint */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-                    <div className="relative w-32 h-32 mb-6 group cursor-pointer">
+                    <div className="relative w-32 h-32 mb-6 group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
                         <div className="absolute inset-0 rounded-full border-2 border-dashed border-amber-500/30 animate-[spin_10s_linear_infinite]" />
                         <div className="w-full h-full rounded-full overflow-hidden border-4 border-black/50 shadow-2xl relative z-10">
                             <img
@@ -81,8 +122,18 @@ export const FetsProfile = () => {
                                 alt="Profile"
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera size={24} className="text-white" />
+                            </div>
                         </div>
                         <div className="absolute bottom-1 right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#09090b] z-20" />
+                        <input 
+                            type="file" 
+                            id="avatar-upload" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleAvatarChange}
+                        />
                     </div>
 
                     <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-1">{profile?.full_name}</h2>

@@ -30,11 +30,14 @@ const addStaff = async (newStaffData: Omit<StaffProfile, 'id' | 'created_at'> & 
   })
 
   // Log for debugging
-  console.log('Create staff user response:', { data, error })
+  if (error || data?.error) {
+    console.error('Create staff user error details:', JSON.stringify({ error, data }, null, 2))
+  }
 
   if (error) {
     // Edge Function invocation error
-    throw new Error(data?.error || error.message)
+    const errorDetails = error.context ? JSON.stringify(error.context) : error.message
+    throw new Error(`Edge Function error: ${errorDetails} || ${data?.error || 'No data error'}`)
   }
 
   // Check if the function returned an error in its response body
@@ -87,6 +90,9 @@ export const useStaffMutations = () => {
     onSuccess: () => {
       toast.success('Staff member added successfully!')
       queryClient.invalidateQueries({ queryKey: ['staff'] })
+      queryClient.invalidateQueries({ queryKey: ['profiles'] })
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] })
     },
     onError: (error) => {
       toast.error(`Failed to add staff: ${error.message}`)

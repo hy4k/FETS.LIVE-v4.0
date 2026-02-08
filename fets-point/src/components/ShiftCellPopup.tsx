@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { X, Trash2, Save } from 'lucide-react'
+import { X, Trash2, Save, ChevronLeft, Zap, Clock } from 'lucide-react'
 import { SHIFT_CODES } from '../types/shared'
+import { useIsMobile } from '../hooks/use-mobile'
 
 interface ShiftCellPopupProps {
   isOpen: boolean
@@ -34,6 +35,7 @@ export const ShiftCellPopup: React.FC<ShiftCellPopupProps> = ({
   staffName,
   date
 }) => {
+  const isMobile = useIsMobile()
   const [selectedShift, setSelectedShift] = useState(currentShift)
   const [overtimeHours, setOvertimeHours] = useState(currentOvertimeHours)
 
@@ -84,62 +86,68 @@ export const ShiftCellPopup: React.FC<ShiftCellPopupProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Glassmorphic backdrop */}
-      <div 
-        className="absolute inset-0 backdrop-blur-xl bg-black/30"
-        onClick={onClose}
-      />
+      {!isMobile && (
+        <div 
+          className="absolute inset-0 backdrop-blur-xl bg-black/30"
+          onClick={onClose}
+        />
+      )}
       
       {/* Popup container - Apple-style */}
-      <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden transform transition-all duration-300 scale-100">
+      <div className={`relative w-full overflow-hidden transform transition-all duration-300 scale-100 ${
+        isMobile 
+        ? 'h-full bg-white flex flex-col pt-safe' 
+        : 'max-w-lg bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30'
+      }`}>
         {/* Header */}
-        <div className="px-8 py-6 bg-gradient-to-r from-gray-50/90 to-gray-100/90 border-b border-gray-200/50">
+        <div className={`${isMobile ? 'px-6 pt-12 pb-6' : 'px-8 py-6'} bg-gradient-to-r from-gray-50/90 to-gray-100/90 border-b border-gray-200/50 flex-none`}>
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 tracking-wide">{staffName}</h3>
-              <p className="text-sm text-gray-600 mt-1 font-medium">
-                {new Date(date).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
+            <div className="flex items-center gap-4">
+               {isMobile && (
+                 <button onClick={onClose} className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
+                    <ChevronLeft size={24} />
+                 </button>
+               )}
+               <div>
+                  <h3 className="text-xl font-bold text-gray-900 tracking-wide uppercase italic tracking-tighter">{staffName}</h3>
+                  <p className="text-xs text-gray-600 font-bold uppercase tracking-widest">
+                    {new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </p>
+               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-3 hover:bg-gray-200/50 rounded-full transition-all duration-200 hover:scale-110"
-            >
-              <X className="h-6 w-6 text-gray-500" />
-            </button>
+            {!isMobile && (
+              <button
+                onClick={onClose}
+                className="p-3 hover:bg-gray-200/50 rounded-full transition-all duration-200 hover:scale-110"
+              >
+                <X className="h-6 w-6 text-gray-500" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-8 py-6 space-y-6">
+        <div className={`${isMobile ? 'px-6 py-8' : 'px-8 py-6'} space-y-8 flex-1 overflow-y-auto no-scrollbar`}>
           {/* Shift Selector Grid */}
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-4 tracking-wide uppercase">Select Shift Type</label>
-            <div className="grid grid-cols-3 gap-3">
+            <label className="block text-[10px] font-black text-slate-400 mb-6 tracking-[0.3em] uppercase italic">Personnel Allocation</label>
+            <div className="grid grid-cols-2 gap-4">
               {Object.entries(SHIFT_OPTIONS).map(([code, option]) => (
                 <button
                   key={code}
                   onClick={() => setSelectedShift(code)}
                   className={`
-                    p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-105
+                    p-6 rounded-[30px] border-2 transition-all duration-300
                     ${
                       selectedShift === code
-                        ? 'border-blue-400 shadow-xl scale-105 ring-4 ring-blue-100'
-                        : 'border-gray-200/50 hover:border-gray-300 shadow-sm hover:shadow-md'
+                        ? 'border-amber-400 bg-amber-50 shadow-xl shadow-amber-200'
+                        : 'border-slate-50 bg-slate-50 text-slate-400'
                     }
                   `}
-                  style={{
-                    background: selectedShift === code ? option.bgColor : 'rgb(249 250 251)',
-                    color: selectedShift === code ? option.textColor : '#374151'
-                  }}
                 >
-                  <div className="text-center">
-                    <div className="font-bold text-lg mb-1">{option.letter}</div>
-                    <div className="text-xs font-medium opacity-90">{option.name}</div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="font-black text-2xl tracking-tighter">{option.letter}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest opacity-60">{option.name}</div>
                   </div>
                 </button>
               ))}
@@ -148,7 +156,7 @@ export const ShiftCellPopup: React.FC<ShiftCellPopupProps> = ({
 
           {/* Overtime Hours */}
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-3 tracking-wide uppercase">Overtime Hours</label>
+            <label className="block text-[10px] font-black text-slate-400 mb-4 tracking-[0.3em] uppercase italic">Extra Operational Hours</label>
             <div className="relative">
               <input
                 type="number"
@@ -157,63 +165,55 @@ export const ShiftCellPopup: React.FC<ShiftCellPopupProps> = ({
                 step="0.5"
                 value={overtimeHours}
                 onChange={(e) => setOvertimeHours(parseFloat(e.target.value) || 0)}
-                className="w-full px-6 py-4 bg-gray-50/50 border-2 border-gray-200/50 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all duration-200 text-lg font-semibold"
+                className="w-full px-8 py-6 bg-slate-50 border-none rounded-[30px] focus:ring-4 focus:ring-amber-100 outline-none transition-all duration-200 text-2xl font-black text-slate-800 shadow-inner"
                 placeholder="0"
               />
-              <div className="absolute right-6 top-4 text-sm text-gray-500 font-medium">hours</div>
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 text-sm text-slate-300 font-black uppercase tracking-widest">hours</div>
             </div>
-            {overtimeHours > 0 && (selectedShift === 'D' || selectedShift === 'E') && (
-              <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200/50 rounded-xl">
-                <p className="text-sm text-purple-700 font-semibold">
-                  Will display as {selectedShift}+OT with pink background
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Live Preview */}
-          <div className="bg-gradient-to-r from-gray-50/80 to-blue-50/80 p-6 rounded-2xl border border-gray-200/50">
-            <div className="text-sm font-bold text-gray-700 mb-4 tracking-wide uppercase text-center">Preview</div>
-            <div className="flex justify-center">
+          <div className="bg-[#3E2723] p-8 rounded-[40px] shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+               <Zap size={100} className="text-white" />
+            </div>
+            <div className="text-[9px] font-black text-amber-500/50 mb-6 tracking-[0.4em] uppercase text-center">Protocol Preview</div>
+            <div className="flex flex-col items-center gap-4">
               <div 
-                className="w-20 h-20 rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                className="w-20 h-20 rounded-[25px] flex items-center justify-center font-black text-2xl shadow-2xl border-4 border-white/10"
                 style={{ 
                   background: preview.bg, 
                   color: preview.text,
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
                 }}
               >
                 {preview.display || '?'}
               </div>
+              {selectedShift && (
+                <p className="text-center text-sm text-white font-black uppercase tracking-widest">
+                  {SHIFT_OPTIONS[selectedShift as keyof typeof SHIFT_OPTIONS]?.name}
+                  {overtimeHours > 0 && <span className="text-amber-500 block mt-1">+{overtimeHours}H OVERTIME</span>}
+                </p>
+              )}
             </div>
-            {selectedShift && (
-              <p className="text-center text-sm text-gray-600 mt-3 font-medium">
-                {SHIFT_OPTIONS[selectedShift as keyof typeof SHIFT_OPTIONS]?.name}
-                {overtimeHours > 0 && ` + ${overtimeHours}h overtime`}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 bg-gradient-to-r from-gray-50/80 to-gray-100/80 border-t border-gray-200/50">
-          <div className="flex space-x-4">
-            {/* Delete Button */}
+        <div className={`${isMobile ? 'px-6 py-8 pb-12' : 'px-8 py-6'} bg-white border-t border-slate-50 flex-none`}>
+          <div className="flex gap-4">
             <button
               onClick={handleDelete}
-              className="flex-1 flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-700 font-bold rounded-2xl transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md border border-red-200/50"
+              className="w-14 h-14 flex items-center justify-center bg-rose-50 text-rose-500 rounded-2xl active:scale-90 transition-all shadow-sm border border-rose-100"
             >
-              <Trash2 className="h-5 w-5" />
-              <span>Clear Shift</span>
+              <Trash2 size={24} />
             </button>
             
-            {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex-1 flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-2xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+              className="flex-1 flex items-center justify-center gap-3 px-6 h-14 bg-[#F6C845] text-[#3E2723] font-black uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all shadow-xl shadow-amber-500/20"
             >
-              <Save className="h-5 w-5" />
-              <span>Save Shift</span>
+              <Save size={20} />
+              <span>Deploy Shift</span>
             </button>
           </div>
         </div>

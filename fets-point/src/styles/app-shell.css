@@ -1,0 +1,96 @@
+
+/* 
+  MOBILE APP SHELL OPTIMIZATIONS
+  Transforms the web feel into a native app experience
+*/
+
+:root {
+  /* Safe Area Insets for modern devices (Notch/Home Indicator) */
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
+}
+
+html, body {
+  /* Prevent scrolling of the entire page - we want fixed app feel */
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  
+  /* Disable system-level "pull to refresh" and "overscroll glow" */
+  overscroll-behavior: none;
+  
+  /* Disable touch selection of UI elements */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  
+  /* Disable the default grey highlight on tap in mobile safari/chrome */
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Ensure text looks smooth */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Allow selection only in specific input areas */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* App Header - Handle Notch */
+.pt-safe {
+  padding-top: max(var(--safe-area-inset-top), 20px);
+}
+
+.h-safe-top {
+  height: max(var(--safe-area-inset-top), 20px);
+}
+
+/* App Footer - Handle Home Indicator */
+.pb-safe {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Global scrollable areas within the app */
+.scroll-touch {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Hide for Firefox */
+}
+
+.scroll-touch::-webkit-scrollbar {
+  display: none; /* Hide for Chrome/Safari */
+}
+
+/* Button & Link Feedback */
+.active-press:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+  transition: transform 0.1s ease;
+}
+
+/* Smooth Transitions for Tab Switching */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Golden Theme Mobile Adjustments */
+.golden-theme {
+  background: #e0e5ec ! from-slate-50 to-slate-200;
+}
+
+/* Ensure images don't get dragged */
+img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}

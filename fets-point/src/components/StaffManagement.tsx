@@ -410,9 +410,19 @@ function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffModalProps) {
       return
     }
 
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long.')
+      return
+    }
+
     setSaving(true)
     try {
-      await onSuccess(formData as any)
+      const staffPayload = {
+        ...formData,
+        base_centre: formData.branch_assigned, // Alias for compatibility
+        branch_location: formData.branch_assigned // Alias for compatibility
+      }
+      await onSuccess(staffPayload as any)
       onClose()
     } catch (error: any) {
       // Error toast is already handled by the mutation hook

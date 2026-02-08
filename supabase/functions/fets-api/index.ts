@@ -19,7 +19,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-api-key, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-api-key, x-client-info, apikey, content-type, x-application',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
@@ -54,7 +54,7 @@ function getTodayIST(): string {
 function parsePath(url: URL): { endpoint: string; params: Record<string, string> } {
   const pathname = url.pathname.replace('/fets-api', '').replace(/^\/+|\/+$/g, '')
   const parts = pathname.split('/')
-  
+
   // Handle routes
   if (parts[0] === 'date' && parts[1]) {
     return { endpoint: 'date', params: { date: parts[1] } }
@@ -62,7 +62,7 @@ function parsePath(url: URL): { endpoint: string; params: Record<string, string>
   if (parts[0] === 'checklists' && parts[1] === 'status') {
     return { endpoint: 'checklists-status', params: {} }
   }
-  
+
   return { endpoint: parts[0] || 'info', params: {} }
 }
 
@@ -78,13 +78,13 @@ serve(async (req: Request) => {
   // Validate API key (except for info endpoint)
   if (endpoint !== 'info' && !validateApiKey(req)) {
     return new Response(
-      JSON.stringify({ 
-        error: 'Unauthorized', 
-        message: 'Invalid or missing API key. Include X-API-Key header.' 
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Invalid or missing API key. Include X-API-Key header.'
       }),
-      { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
@@ -137,9 +137,9 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('API Error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal Server Error', 
-        message: error.message ?? 'An unexpected error occurred' 
+      JSON.stringify({
+        error: 'Internal Server Error',
+        message: error.message ?? 'An unexpected error occurred'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -206,7 +206,7 @@ async function handleDateEndpoint(supabase: any, dateStr: string) {
       if (branch === 'calicut' || branch === 'cochin') {
         locations[branch].sessions.push(session)
         locations[branch].total_candidates += session.candidate_count || 0
-        
+
         const examKey = `${session.client_name}-${session.exam_name}`
         if (!locations[branch].exams[examKey]) {
           locations[branch].exams[examKey] = {
@@ -258,7 +258,7 @@ async function handleDateEndpoint(supabase: any, dateStr: string) {
 
 async function handleChecklistsEndpoint(supabase: any) {
   const today = getTodayIST()
-  
+
   // Fetch checklist instances for today
   const { data: instances, error: instancesError } = await supabase
     .from('checklist_instances')
@@ -280,17 +280,17 @@ async function handleChecklistsEndpoint(supabase: any) {
   // Calculate completion status
   const calculateCompletion = (checklists: any[]) => {
     if (checklists.length === 0) return { submitted: false, completion: 0, completed: 0, total: 0 }
-    
+
     let totalItems = 0
     let completedItems = 0
-    
+
     checklists.forEach((checklist: any) => {
       if (checklist.items) {
         totalItems += checklist.items.length
         completedItems += checklist.items.filter((item: any) => item.is_completed).length
       }
     })
-    
+
     return {
       submitted: checklists.length > 0,
       completion: totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,
@@ -306,7 +306,7 @@ async function handleChecklistsEndpoint(supabase: any) {
   locations.forEach(loc => {
     const locPreExam = preExamChecklists.filter((c: any) => c.branch_location?.toLowerCase() === loc)
     const locPostExam = postExamChecklists.filter((c: any) => c.branch_location?.toLowerCase() === loc)
-    
+
     byLocation[loc] = {
       pre_exam: calculateCompletion(locPreExam),
       post_exam: calculateCompletion(locPostExam)
@@ -354,7 +354,7 @@ async function handleChecklistsEndpoint(supabase: any) {
 async function handleUpcomingEndpoint(supabase: any) {
   const today = new Date()
   const dates: string[] = []
-  
+
   // Generate next 7 days
   for (let i = 0; i < 7; i++) {
     const date = new Date(today)

@@ -1,0 +1,467 @@
+/* ==========================================================================
+   PREMIUM DASHBOARD ENHANCEMENTS - COMPACT & MODERN
+   Space-optimized design with premium aesthetics
+   ========================================================================== */
+
+/* Compact KPI Section */
+.kpi-section {
+  margin-bottom: 32px !important;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px !important;
+}
+
+.kpi-card {
+  min-height: 120px !important;
+}
+
+.kpi-card .glass-card__content {
+  padding: 20px !important;
+  gap: 16px !important;
+}
+
+.kpi-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 10px !important;
+}
+
+/* Compact Timeline Section */
+.timeline-section {
+  margin-bottom: 32px !important;
+}
+
+.timeline-widget {
+  min-height: auto !important;
+  padding: 24px !important;
+}
+
+.timeline-header {
+  margin-bottom: 20px !important;
+  padding-bottom: 16px !important;
+}
+
+.timeline-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+}
+
+.timeline-title h2 {
+  font-size: 18px !important;
+  margin-bottom: 2px !important;
+}
+
+.timeline-title p {
+  font-size: 13px !important;
+}
+
+.timeline-day {
+  min-width: 200px !important;
+  padding: 18px !important;
+}
+
+/* Compact Workflow Section */
+.workflow-section {
+  margin-bottom: 32px !important;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.workflow-card {
+  padding: 20px !important;
+  border-radius: 12px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.workflow-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-accent);
+}
+
+.workflow-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.workflow-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.workflow-icon.incidents {
+  background: var(--color-error);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.workflow-icon.tasks {
+  background: var(--color-success);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.workflow-info {
+  flex: 1;
+}
+
+.workflow-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 2px 0;
+}
+
+.workflow-info p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.workflow-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.workflow-action:hover {
+  background: var(--color-border-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Compact Quick Actions */
+.quick-actions-section {
+  margin-bottom: 32px !important;
+}
+
+.quick-actions {
+  padding: 24px !important;
+  border-radius: 12px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions-header {
+  margin-bottom: 16px;
+}
+
+.quick-actions-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.quick-actions-header p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-accent);
+}
+
+.action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.action-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.action-description {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.action-arrow {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-button:hover .action-arrow {
+  opacity: 1;
+}
+
+.arrow-icon {
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid var(--color-text-secondary);
+  border-top: 2px solid var(--color-text-secondary);
+  transform: rotate(45deg);
+}
+
+/* Incident Stats Compact */
+.incident-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.stat-item.open .stat-value {
+  color: var(--color-error);
+}
+
+.stat-item.progress .stat-value {
+  color: var(--color-warning, #f59e0b);
+}
+
+.stat-item.resolved .stat-value {
+  color: var(--color-success);
+}
+
+/* Incident Chart Compact */
+.incident-chart {
+  margin-top: 12px;
+}
+
+.chart-container {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--color-border-light);
+}
+
+.chart-segment {
+  transition: all 0.3s ease;
+}
+
+.chart-segment.open {
+  background: var(--color-error);
+}
+
+.chart-segment.progress {
+  background: var(--color-warning, #f59e0b);
+}
+
+.chart-segment.resolved {
+  background: var(--color-success);
+}
+
+/* Tasks Progress Compact */
+.tasks-progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.progress-ring-container {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.progress-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.progress-percentage {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.progress-label {
+  display: block;
+  font-size: 9px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.task-breakdown {
+  flex: 1;
+}
+
+.task-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.overall-progress {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.create-task-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  border: none;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.create-task-btn:hover {
+  background: var(--color-accent-dark, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px !important;
+  }
+  
+  .kpi-card .glass-card__content {
+    padding: 16px !important;
+  }
+  
+  .timeline-widget {
+    padding: 20px !important;
+  }
+  
+  .workflow-card {
+    padding: 16px !important;
+  }
+  
+  .quick-actions {
+    padding: 20px !important;
+  }
+  
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dashboard Content Reduced Padding */
+.dashboard-content {
+  padding: 24px 20px 40px !important;
+}
+
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 20px 16px 32px !important;
+  }
+}

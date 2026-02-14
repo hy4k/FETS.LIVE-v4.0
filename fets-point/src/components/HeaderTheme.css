@@ -1,23 +1,18 @@
-/* HeaderTheme.css - Tuscan Sun Yellow Neumorphic Command Deck */
+/* HeaderTheme.css - Premium Neumorphic Command Deck */
 
 :root {
     --deck-bg: #F6C845;
-    /* Tuscan Sun Yellow */
     --deck-shadow-dark: 6px 6px 14px #C99E22;
-    /* Deep Amber Shadow */
     --deck-shadow-light: -6px -6px 14px #FFEA7A;
-    /* Soft Cream Highlight */
     --deck-shadow-inset: inset 4px 4px 8px #C99E22, inset -4px -4px 8px #FFEA7A;
     --deck-text: #4E342E;
-    /* Dark Chocolate Typography */
-    --deck-radius: 18px;
+    --deck-radius: 16px;
     --branch-tint: transparent;
 }
 
 /* Branch Specific Tints */
 body.branch-calicut {
     --deck-bg: #F6C845;
-    /* Original Tuscan Sun */
     --deck-shadow-dark: 6px 6px 14px #C99E22;
     --deck-shadow-light: -6px -6px 14px #FFEA7A;
     --branch-tint: rgba(246, 200, 69, 0.03);
@@ -25,7 +20,6 @@ body.branch-calicut {
 
 body.branch-cochin {
     --deck-bg: #FFC107;
-    /* Deep Amber / Vibrant Yellow */
     --deck-shadow-dark: 6px 6px 14px #D9A406;
     --deck-shadow-light: -6px -6px 14px #FFD54F;
     --branch-tint: rgba(255, 193, 7, 0.04);
@@ -33,7 +27,6 @@ body.branch-cochin {
 
 body.branch-kannur {
     --deck-bg: #FFD600;
-    /* Electric / Safety Yellow */
     --deck-shadow-dark: 6px 6px 14px #C9A900;
     --deck-shadow-light: -6px -6px 14px #FFE54D;
     --branch-tint: rgba(255, 214, 0, 0.04);
@@ -41,7 +34,6 @@ body.branch-kannur {
 
 body.branch-global {
     --deck-bg: #E0E5EC;
-    /* Classic Neumorphic Gray */
     --deck-shadow-dark: 9px 9px 16px #bec3c9;
     --deck-shadow-light: -9px -9px 16px #ffffff;
     --deck-text: #4a5568;
@@ -61,45 +53,68 @@ body::after {
 /* Command Deck Container with Smooth Transition */
 .fets-command-deck {
     background-color: var(--deck-bg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Neumorphic Module Button (Top Row) */
+/* Enhanced Neumorphic Module Button (Top Row) */
 .module-btn {
     position: relative;
-    padding: 14px 28px;
+    padding: 12px 24px;
     border-radius: var(--deck-radius);
     background: var(--deck-bg);
-    box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
+    box-shadow: 
+        4px 4px 10px rgba(201, 158, 34, 0.3),
+        -4px -4px 10px rgba(255, 234, 122, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     font-family: 'Rajdhani', sans-serif;
     font-weight: 800;
-    /* Increased weight */
-    font-size: 1.1rem;
-    /* Increased size */
+    font-size: 0.95rem;
     color: var(--deck-text);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    /* Increased spacing */
+    letter-spacing: 0.12em;
     border: none;
     white-space: nowrap;
-    /* Ensure one line */
+    overflow: hidden;
+}
+
+/* Icon glow effect */
+.module-btn svg {
+    filter: drop-shadow(0 2px 4px rgba(78, 52, 46, 0.2));
+    transition: all 0.3s ease;
 }
 
 .module-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: -8px -8px 20px #FFEA7A, 8px 8px 20px #C99E22;
+    transform: translateY(-2px);
+    box-shadow: 
+        6px 6px 14px rgba(201, 158, 34, 0.4),
+        -6px -6px 14px rgba(255, 234, 122, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.module-btn:hover svg {
+    filter: drop-shadow(0 3px 6px rgba(78, 52, 46, 0.3));
+    transform: scale(1.05);
 }
 
 .module-btn.active {
     box-shadow: var(--deck-shadow-inset);
     color: #000;
     transform: translateY(0.5px);
+    background: linear-gradient(135deg, 
+        rgba(201, 158, 34, 0.1) 0%, 
+        transparent 50%, 
+        rgba(255, 234, 122, 0.1) 100%);
+}
+
+.module-btn.active svg {
+    opacity: 1;
+    color: #000;
 }
 
 /* Character Animation */
@@ -114,14 +129,11 @@ body::after {
 }
 
 @keyframes char-bounce {
-
-    0%,
-    100% {
+    0%, 100% {
         transform: translateY(0);
     }
-
     50% {
-        transform: translateY(-4px);
+        transform: translateY(-3px);
         color: #000;
     }
 }
@@ -129,53 +141,81 @@ body::after {
 /* Utility Bar (Bottom Row - Recessed Slot) */
 .utility-deck {
     background-color: var(--deck-bg);
-    box-shadow: inset 0 20px 20px -10px rgba(0, 0, 0, 0.05);
-    padding: 4px 0;
+    box-shadow: inset 0 16px 20px -10px rgba(0, 0, 0, 0.04);
+    padding: 6px 0;
 }
 
+/* Enhanced Utility Buttons */
 .utility-btn {
-    padding: 10px 22px;
+    padding: 10px 20px;
     border-radius: 14px;
     background: var(--deck-bg);
-    box-shadow: -3px -3px 8px #FFEA7A, 3px 3px 8px #C99E22;
+    box-shadow: 
+        3px 3px 8px rgba(201, 158, 34, 0.25),
+        -3px -3px 8px rgba(255, 234, 122, 0.25),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
     font-family: 'Rajdhani', sans-serif;
     font-weight: 800;
-    /* Bolder */
-    font-size: 0.95rem;
-    /* Bigger */
+    font-size: 0.85rem;
     color: var(--deck-text);
-    transition: all 0.2s;
+    transition: all 0.25s ease;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-transform: uppercase;
-    opacity: 0.95;
+    opacity: 0.9;
     white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+}
+
+.utility-btn svg {
+    transition: all 0.3s ease;
 }
 
 .utility-btn:hover {
     opacity: 1;
-    transform: scale(1.02);
-    box-shadow: -4px -4px 10px #FFEA7A, 4px 4px 10px #C99E22;
+    transform: translateY(-1px);
+    box-shadow: 
+        4px 4px 10px rgba(201, 158, 34, 0.3),
+        -4px -4px 10px rgba(255, 234, 122, 0.35),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.utility-btn:hover svg {
+    opacity: 1;
+    transform: scale(1.08);
 }
 
 .utility-btn.active {
     box-shadow: inset 3px 3px 6px #C99E22, inset -3px -3px 6px #FFEA7A;
-    background: transparent;
+    background: linear-gradient(135deg, 
+        rgba(201, 158, 34, 0.08) 0%, 
+        transparent 50%, 
+        rgba(255, 234, 122, 0.08) 100%);
+    color: #000;
+}
+
+.utility-btn.active svg {
+    opacity: 1;
     color: #000;
 }
 
 /* Pill Controls (Right Side) */
 .fets-pill-control {
-    height: 44px;
-    padding: 0 20px;
-    border-radius: 22px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 20px;
     background: var(--deck-bg);
-    box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
+    box-shadow: 
+        3px 3px 8px rgba(201, 158, 34, 0.3),
+        -3px -3px 8px rgba(255, 234, 122, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.2s;
     color: var(--deck-text);
     font-family: 'Rajdhani', sans-serif;
@@ -185,13 +225,16 @@ body::after {
 }
 
 .fets-pill-control:hover {
-    box-shadow: -4px -4px 10px #FFEA7A, 4px 4px 10px #C99E22;
+    box-shadow: 
+        4px 4px 10px rgba(201, 158, 34, 0.35),
+        -4px -4px 10px rgba(255, 234, 122, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
     transform: translateY(-1px);
 }
 
 /* Exit Button */
 .exit-btn {
-    width: 44px;
+    width: 40px;
     padding: 0;
 }
 

@@ -195,7 +195,7 @@ function AppContent() {
         </div>
       )}
 
-      <div className={`flex-1 scroll-touch relative ${isFullscreenPage ? '' : (isMobile ? 'pt-0' : 'pt-4 px-4 md:px-8 pb-8')}`}>
+      <div className={`flex-1 scroll-touch relative overflow-y-auto ${isFullscreenPage ? '' : (isMobile ? 'pt-0' : 'pt-[200px] px-4 md:px-8 pb-8')}`}>
         {renderContent()}
       </div>
 

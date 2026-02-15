@@ -35,14 +35,25 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5174,
-      host: true
+      host: '0.0.0.0',
+      strictPort: false,
+      hmr: {
+        clientPort: 443,
+        protocol: 'wss',
+      },
+      // 👇 add this block
+      allowedHosts: [
+        'localhost',
+        '127.0.0.1',
+        '5174-i5v7qpe7tig7djj5rdfv8-0e616f0a.sandbox.novita.ai',
+      ],
     },
     preview: {
       port: 4173,
-      host: true
+      host: true,
     },
     optimizeDeps: {
       include: ['react', 'react-dom', '@supabase/supabase-js', '@tanstack/react-query'],
-    }
+    },
   }
 })

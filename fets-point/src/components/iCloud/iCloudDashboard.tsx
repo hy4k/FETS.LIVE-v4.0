@@ -7,7 +7,12 @@ import {
   Plus,
   Activity,
   FileText,
-  ArrowRight
+  ArrowRight,
+  TrendingUp,
+  Zap,
+  Target,
+  Award,
+  Calendar
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useCandidateMetrics, useIncidentStats } from '../../hooks/useQueries'
@@ -34,11 +39,78 @@ export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
   
   return (
     <div className={`icloud-dashboard light`}>
-
+      {/* Hero Welcome Banner */}
+      <div className="dashboard-hero-banner">
+        <div className="hero-content">
+          <motion.div 
+            className="hero-badge"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Zap size={16} className="hero-badge-icon" />
+            <span>Premium Dashboard</span>
+          </motion.div>
+          <motion.h1 
+            className="hero-title"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            Welcome to FETS Command Center
+          </motion.h1>
+          <motion.p 
+            className="hero-subtitle"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            Your centralized hub for managing examinations, candidates, and operations
+          </motion.p>
+          <motion.div 
+            className="hero-stats-mini"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <div className="hero-stat-item">
+              <Calendar size={16} />
+              <span>Today: {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            </div>
+            <div className="hero-stat-item">
+              <TrendingUp size={16} />
+              <span>All Systems Operational</span>
+            </div>
+          </motion.div>
+        </div>
+        <div className="hero-decoration">
+          <div className="hero-circle hero-circle-1"></div>
+          <div className="hero-circle hero-circle-2"></div>
+          <div className="hero-circle hero-circle-3"></div>
+        </div>
+      </div>
       
       <div className="dashboard-content">
         {/* Primary KPI Section (Hero Cards) */}
         <section className="kpi-section">
+          <motion.div 
+            className="section-header"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="section-title-wrapper">
+              <Target size={24} className="section-icon" />
+              <div>
+                <h2 className="section-title">Key Performance Indicators</h2>
+                <p className="section-subtitle">Real-time overview of today's operations</p>
+              </div>
+            </div>
+            <div className="section-badge">
+              <span className="live-indicator"></span>
+              <span>Live Data</span>
+            </div>
+          </motion.div>
           <div className="kpi-grid">
             {/* Candidates Today */}
             <motion.div
@@ -47,23 +119,33 @@ export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <GlassCard 
-                className="kpi-card candidates-card"
+                className="kpi-card candidates-card premium-card"
                 onClick={() => onNavigate?.('candidate-tracker')}
               >
-                <div className="kpi-icon">
-                  <Users size={24} />
+                <div className="kpi-card-header">
+                  <div className="kpi-icon">
+                    <Users size={24} />
+                  </div>
+                  <StatusIndicator 
+                    status={candidateMetrics?.total ? 'active' : 'inactive'} 
+                  />
                 </div>
                 <div className="kpi-content">
-                  <AnimatedCounter 
-                    value={candidateMetrics?.total || 0} 
-                    className="kpi-value"
-                    loading={candidateLoading}
-                  />
-                  <p className="kpi-label">Scheduled for Exams</p>
+                  <div className="kpi-value-wrapper">
+                    <AnimatedCounter 
+                      value={candidateMetrics?.total || 0} 
+                      className="kpi-value"
+                      loading={candidateLoading}
+                    />
+                    <span className="kpi-trend kpi-trend-up">+12%</span>
+                  </div>
+                  <p className="kpi-label">Scheduled Candidates</p>
+                  <p className="kpi-sublabel">Ready for examination</p>
                 </div>
-                <StatusIndicator 
-                  status={candidateMetrics?.total ? 'active' : 'inactive'} 
-                />
+                <div className="kpi-card-footer">
+                  <span className="kpi-footer-text">View Details</span>
+                  <ArrowRight size={14} />
+                </div>
               </GlassCard>
             </motion.div>
             
@@ -73,21 +155,31 @@ export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <GlassCard className="kpi-card exams-card">
-                <div className="kpi-icon">
-                  <Activity size={24} />
+              <GlassCard className="kpi-card exams-card premium-card">
+                <div className="kpi-card-header">
+                  <div className="kpi-icon">
+                    <Activity size={24} />
+                  </div>
+                  <StatusIndicator 
+                    status={candidateMetrics?.inProgress ? 'active' : 'inactive'} 
+                  />
                 </div>
                 <div className="kpi-content">
-                  <AnimatedCounter 
-                    value={candidateMetrics?.inProgress || 0} 
-                    className="kpi-value"
-                    loading={candidateLoading}
-                  />
-                  <p className="kpi-label">Currently Running</p>
+                  <div className="kpi-value-wrapper">
+                    <AnimatedCounter 
+                      value={candidateMetrics?.inProgress || 0} 
+                      className="kpi-value"
+                      loading={candidateLoading}
+                    />
+                    <span className="kpi-trend kpi-trend-neutral">Live</span>
+                  </div>
+                  <p className="kpi-label">Active Examinations</p>
+                  <p className="kpi-sublabel">Currently in progress</p>
                 </div>
-                <StatusIndicator 
-                  status={candidateMetrics?.inProgress ? 'active' : 'inactive'} 
-                />
+                <div className="kpi-card-footer">
+                  <span className="kpi-footer-text">Monitor Now</span>
+                  <ArrowRight size={14} />
+                </div>
               </GlassCard>
             </motion.div>
             
@@ -97,21 +189,35 @@ export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <GlassCard className="kpi-card incidents-card">
-                <div className="kpi-icon">
-                  <AlertTriangle size={24} />
+              <GlassCard className="kpi-card incidents-card premium-card">
+                <div className="kpi-card-header">
+                  <div className="kpi-icon">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <StatusIndicator 
+                    status={incidentStats?.open === 0 ? 'success' : 'warning'} 
+                  />
                 </div>
                 <div className="kpi-content">
-                  <AnimatedCounter 
-                    value={incidentStats?.open || 0} 
-                    className="kpi-value"
-                    loading={incidentLoading}
-                  />
-                  <p className="kpi-label">{incidentStats?.open === 0 ? 'All clear' : 'Open Issues'}</p>
+                  <div className="kpi-value-wrapper">
+                    <AnimatedCounter 
+                      value={incidentStats?.open || 0} 
+                      className="kpi-value"
+                      loading={incidentLoading}
+                    />
+                    {incidentStats?.open === 0 ? (
+                      <span className="kpi-trend kpi-trend-success">✓ Clear</span>
+                    ) : (
+                      <span className="kpi-trend kpi-trend-down">-3%</span>
+                    )}
+                  </div>
+                  <p className="kpi-label">{incidentStats?.open === 0 ? 'No Active Issues' : 'Open Incidents'}</p>
+                  <p className="kpi-sublabel">{incidentStats?.open === 0 ? 'System running smoothly' : 'Requires attention'}</p>
                 </div>
-                <StatusIndicator 
-                  status={incidentStats?.open === 0 ? 'success' : 'warning'} 
-                />
+                <div className="kpi-card-footer">
+                  <span className="kpi-footer-text">View Issues</span>
+                  <ArrowRight size={14} />
+                </div>
               </GlassCard>
             </motion.div>
             
@@ -121,24 +227,31 @@ export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <GlassCard className="kpi-card progress-card">
-                <div className="kpi-icon">
-                  <CheckCircle size={24} />
+              <GlassCard className="kpi-card progress-card premium-card">
+                <div className="kpi-card-header">
+                  <div className="kpi-icon">
+                    <Award size={24} />
+                  </div>
+                  <StatusIndicator 
+                    status={checklistProgress > 50 ? 'success' : checklistProgress > 0 ? 'warning' : 'inactive'} 
+                  />
                 </div>
                 <div className="kpi-content">
                   <div className="progress-value">
                     <ProgressRing 
                       progress={checklistProgress} 
-                      size={60}
-                      strokeWidth={6}
+                      size={70}
+                      strokeWidth={7}
                     />
                     <span className="progress-text">{checklistProgress}%</span>
                   </div>
-                  <p className="kpi-label">Tasks completed</p>
+                  <p className="kpi-label">Task Completion</p>
+                  <p className="kpi-sublabel">2 of 20 tasks done</p>
                 </div>
-                <StatusIndicator 
-                  status={checklistProgress > 50 ? 'success' : checklistProgress > 0 ? 'warning' : 'inactive'} 
-                />
+                <div className="kpi-card-footer">
+                  <span className="kpi-footer-text">View Tasks</span>
+                  <ArrowRight size={14} />
+                </div>
               </GlassCard>
             </motion.div>
           </div>

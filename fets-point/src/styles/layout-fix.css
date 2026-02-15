@@ -1,0 +1,40 @@
+/* ==========================================================================
+   LAYOUT FIX - Prevent Header Overlap
+   ========================================================================== */
+
+/* Add padding to prevent fixed header from covering content */
+.dashboard-content,
+.icloud-dashboard {
+  padding-top: 200px !important; /* Header height (176px) + spacing */
+}
+
+/* Mobile adjustments */
+@media (max-width: 1024px) {
+  .dashboard-content,
+  .icloud-dashboard {
+    padding-top: 100px !important; /* Less padding for mobile single-row header */
+  }
+}
+
+/* Ensure all page content has proper top spacing */
+.command-centre-container,
+.candidate-tracker-container,
+.fets-roster-container,
+.fets-calendar-container,
+.my-desk-container,
+.system-manager-container,
+.checklist-manager-container {
+  padding-top: 200px !important;
+}
+
+@media (max-width: 1024px) {
+  .command-centre-container,
+  .candidate-tracker-container,
+  .fets-roster-container,
+  .fets-calendar-container,
+  .my-desk-container,
+  .system-manager-container,
+  .checklist-manager-container {
+    padding-top: 100px !important;
+  }
+}

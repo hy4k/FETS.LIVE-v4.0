@@ -15,6 +15,7 @@
 @import './styles/icloud-components.css';
 @import './styles/premium-dashboard-enhancements.css';
 @import './styles/premium-visual-enhancements.css';
+@import './styles/layout-fix.css';
 @import './styles/branch-themes.css';
 @import './styles/incident-manager-premium.css';
 @import './styles/incident-playground.css';

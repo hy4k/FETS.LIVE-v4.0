@@ -72,7 +72,7 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
     { id: 'checklist-management', label: 'Manage Checks', icon: ClipboardList, color: 'text-blue-600', sub: 'Protocol Mgmt' },
     { id: 'lost-and-found', label: 'Lost & Found', icon: PackageSearch, color: 'text-rose-600', sub: 'Assets' },
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid, color: 'text-emerald-600', sub: 'Analytics' },
-    { id: 'mobile-ai-chat', label: 'FETS OMNI', icon: Brain, color: 'text-indigo-600', sub: 'AI Support' },
+    { id: 'mobile-ai-chat', label: 'FETS AI', icon: Brain, color: 'text-indigo-600', sub: 'AI Support' },
   ];
 
   return (
@@ -133,8 +133,8 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
                       key={b.id}
                       onClick={() => { setActiveBranch(b.id as any); setShowBranchPicker(false); }}
                       className={`w-full p-6 rounded-[30px] flex items-center justify-between border-2 transition-all ${activeBranch === b.id
-                          ? 'bg-amber-50 border-amber-500 shadow-lg shadow-amber-500/10'
-                          : 'bg-slate-50 border-transparent hover:bg-slate-100'
+                        ? 'bg-amber-50 border-amber-500 shadow-lg shadow-amber-500/10'
+                        : 'bg-slate-50 border-transparent hover:bg-slate-100'
                         }`}
                     >
                       <div className="flex items-center gap-4">
@@ -184,8 +184,8 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
               whileTap={{ scale: 0.94 }}
               onClick={() => onOpenChecklist('pre_exam')}
               className={`p-6 rounded-[40px] border-2 transition-all flex flex-col items-center text-center gap-5 ${todayStatus.pre === 'completed'
-                  ? 'bg-emerald-50 border-emerald-100 shadow-inner'
-                  : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
+                ? 'bg-emerald-50 border-emerald-100 shadow-inner'
+                : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
                 }`}
             >
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${todayStatus.pre === 'completed' ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 text-white shadow-blue-100'
@@ -207,8 +207,8 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
               whileTap={{ scale: 0.94 }}
               onClick={() => onOpenChecklist('post_exam')}
               className={`p-6 rounded-[40px] border-2 transition-all flex flex-col items-center text-center gap-5 ${todayStatus.post === 'completed'
-                  ? 'bg-emerald-50 border-emerald-100 shadow-inner'
-                  : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
+                ? 'bg-emerald-50 border-emerald-100 shadow-inner'
+                : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
                 }`}
             >
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${todayStatus.post === 'completed' ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-[#3E2723] text-white shadow-[#3E2723]/10'

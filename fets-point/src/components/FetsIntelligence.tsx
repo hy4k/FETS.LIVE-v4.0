@@ -1,26 +1,23 @@
 /**
- * FETS INTELLIGENCE - Redesigned for Maximum Readability
- * Clean, professional AI interface with excellent contrast
- * Version: 2.0 - Light Theme
+ * FETS AI - Premium Intelligence Dashboard
+ * Stunning, dynamic dark mode with glassmorphism
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Newspaper, Send, Bot, ChevronRight, Activity, Sparkles,
-  Zap, Brain, Lightbulb, MessageCircle, Wand2, Star,
-  Calendar, Users, FileText, AlertCircle, TrendingUp, Eye,
-  History, Save, BrainCircuit
+  Newspaper, Send, Sparkles, Activity,
+  FileText, TrendingUp, Search,
+  AlertCircle, Users, Calendar, BrainCircuit
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { toast } from 'react-hot-toast'
 import { askClaude } from '../lib/anthropic'
-import { conversationService, knowledgeService, contextBuilder } from '../lib/conversationService'
+import { conversationService, contextBuilder } from '../lib/conversationService'
 
 // Feature Components
 import { NewsManager } from './NewsManager'
 
-// --- Interfaces ---
 interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
@@ -28,7 +25,6 @@ interface ChatMessage {
   timestamp: Date
 }
 
-// --- MAIN PAGE ---
 interface FetsAIProps {
   initialTab?: string;
   initialQuery?: string;
@@ -56,7 +52,7 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
       setActiveTab('chat')
       setTimeout(() => {
         submitQuery(initialQuery)
-      }, 300)
+      }, 500)
     }
   }, [initialQuery, profile])
 
@@ -76,12 +72,13 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
 
     setMessages(prev => [...prev, userMsg])
     setLoading(true)
+    setQuery('') // clear input early
 
     const startTime = Date.now()
 
     try {
       // Build context with conversation history and knowledge
-      const context = await contextBuilder.buildContext(queryText)
+      await contextBuilder.buildContext(queryText)
 
       const response = await askClaude(userMsg.content, profile)
 
@@ -124,151 +121,122 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
     e?.preventDefault()
     if (!query.trim()) return
     await submitQuery(query)
-    setQuery('')
   }
 
-  // Navigation tabs - Enhanced for Super AI
+  // Navigation tabs - Enhanced for FETS AI
   const navTabs = [
-    { id: 'chat', label: 'AI Assistant', icon: Sparkles },
+    { id: 'chat', label: 'AI Nexus', icon: BrainCircuit },
     { id: 'news', label: 'Broadcasts', icon: Newspaper },
-    { id: 'exam-stats', label: 'Exam Stats', icon: TrendingUp },
-    { id: 'knowledge', label: 'Knowledge Base', icon: FileText },
+    { id: 'exam-stats', label: 'Telemetry', icon: Activity },
+    { id: 'knowledge', label: 'Data Vault', icon: FileText },
   ];
 
-  // Super AI Quick Prompts - Comprehensive temporal queries
+  // Quick Prompts
   const quickPrompts = [
     { text: "Show all exams conducted", icon: Calendar },
     { text: "How many candidates registered?", icon: Users },
-    { text: "Future exam schedule", icon: Eye },
+    { text: "Future exam schedule", icon: Calendar },
     { text: "Past incidents summary", icon: AlertCircle },
-    { text: "Total sessions ever conducted", icon: TrendingUp },
-    { text: "All vault documents", icon: FileText },
-    { text: "Staff roster history", icon: Users },
-    { text: "Branch performance stats", icon: Star }
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#0A0D14] text-slate-200 lg:p-4 md:p-8 p-4 relative overflow-y-auto flex flex-col items-center">
+      {/* Ambient background glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* --- HERO HEADER --- */}
+      <div className="max-w-[1400px] w-full z-10 flex flex-col h-full flex-1 md:mt-0 mt-14">
+
+        {/* --- HEADER --- */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="flex flex-col md:flex-row justify-between items-center mb-6 gap-6"
         >
-          {/* AI Icon */}
-          <div className="relative inline-block mb-6">
-            <div className="relative bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 p-6 rounded-3xl shadow-2xl">
-              <Brain size={48} className="text-white" />
-              <div className="absolute -top-2 -right-2">
-                <Sparkles size={20} className="text-yellow-400" />
+          {/* AI Branding */}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-emerald-400 blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full" />
+              <div className="w-16 h-16 bg-[#111621] border border-white/10 rounded-2xl flex items-center justify-center relative z-10 shadow-xl overflow-hidden">
+                <BrainCircuit size={32} className="text-emerald-400 transform group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
-              <div className="absolute -bottom-2 -left-2">
-                <Star size={16} className="text-blue-300" />
+            </div>
+
+            <div>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white m-0 leading-none">
+                FETS <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] italic">AI</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399] animate-pulse" />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-400/80">Intelligence Nexus</span>
               </div>
             </div>
           </div>
 
-          {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-3">
-            FETS <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI</span> <span className="text-yellow-600">OMNI</span>
-          </h1>
-
-          {/* Subtitle */}
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="h-px w-12 bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
-            <p className="text-xs font-bold text-purple-600 uppercase tracking-widest">
-              Powered by Claude AI
-            </p>
-            <div className="h-px w-12 bg-gradient-to-r from-transparent via-purple-300 to-transparent" />
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-2 bg-[#111621]/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 shadow-lg w-full md:w-auto overflow-x-auto">
+            {navTabs.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${isActive
+                      ? 'bg-slate-800 text-emerald-400 shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-emerald-500/20'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'
+                    }`}
+                >
+                  <Icon size={16} className={isActive ? "drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" : ""} />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
           </div>
-
-          <p className="text-gray-700 text-sm max-w-2xl mx-auto leading-relaxed font-medium">
-            Your <span className="text-yellow-600 font-bold">SUPER INTELLIGENT</span> assistant with complete temporal awareness.
-            Ask about <span className="text-blue-600 font-semibold">all exams</span>, <span className="text-blue-600 font-semibold">candidates</span>, <span className="text-blue-600 font-semibold">historical data</span>, and <span className="text-blue-600 font-semibold">future schedules</span>.
-          </p>
         </motion.div>
 
-        {/* --- NAVIGATION TABS --- */}
-        <div className="flex justify-center gap-3 mb-6 flex-wrap">
-          {navTabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wide transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
-                }`}
-              >
-                <Icon size={18} />
-                {tab.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* --- MAIN CONTENT AREA --- */}
+        {/* --- MAIN AREA --- */}
         <AnimatePresence mode="wait">
-
-          {/* AI CHAT TAB */}
           {activeTab === 'chat' && (
             <motion.div
               key="chat"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="flex-1 flex flex-col bg-[#111621]/60 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative mb-4"
             >
-              {/* Chat Header */}
-              <div className="px-6 md:px-8 py-5 bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                    <Wand2 size={22} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-white uppercase tracking-tight">Ask FETS OMNI</h2>
-                    <p className="text-xs text-blue-100 font-semibold">Temporal Intelligence - All Data Access</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-lg" />
-                  <span className="text-xs text-white font-bold uppercase tracking-wider">Live</span>
-                </div>
-              </div>
+              {/* Top Accent Line */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
 
-              {/* Messages Area */}
-              <div className="h-[55vh] overflow-y-auto p-6 bg-gray-50 space-y-4">
+              {/* Messages Container */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-6" style={{ minHeight: '400px' }}>
                 {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                    <div className="relative mb-6">
-                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-8 rounded-3xl shadow-xl">
-                        <Bot size={48} className="text-white" />
-                      </div>
+                  <div className="h-full flex flex-col items-center justify-center text-center px-4 mt-8 md:mt-0">
+                    <div className="w-24 h-24 bg-[#1A2234] border border-white/5 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl relative group cursor-default">
+                      <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-10 group-hover:opacity-30 transition-opacity duration-700 rounded-full" />
+                      <BrainCircuit size={48} className="text-emerald-400/80 group-hover:scale-110 group-hover:text-emerald-300 transition-all duration-500" />
                     </div>
 
-                    <h3 className="text-2xl font-black text-gray-900 mb-3">Hello! I'm FETS OMNI AI</h3>
-                    <p className="text-gray-600 text-sm max-w-md mb-8 font-medium">
-                      I have <span className="text-yellow-600 font-bold">complete temporal awareness</span>. Ask me anything about your data!
+                    <h3 className="text-2xl font-black text-white mb-2 tracking-tight">System Online</h3>
+                    <p className="text-slate-400 text-sm max-w-md mx-auto mb-10 font-medium tracking-wide leading-relaxed">
+                      FETS AI processes all operational telemetry, candidates, and historical incident logs. Enter a query below.
                     </p>
 
-                    {/* Quick Prompts */}
-                    <div className="grid grid-cols-2 gap-3 max-w-2xl w-full">
+                    {/* Prompts Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
                       {quickPrompts.map((prompt, idx) => {
                         const Icon = prompt.icon
                         return (
                           <button
                             key={idx}
                             onClick={() => { setQuery(prompt.text); submitQuery(prompt.text); }}
-                            className="flex items-center gap-3 p-4 bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
+                            className="flex items-center gap-4 p-4 bg-[#1A2234]/50 border border-white/5 hover:border-emerald-500/30 hover:bg-[#1A2234] rounded-2xl text-left transition-all duration-300 group"
                           >
-                            <div className="p-2 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg">
-                              <Icon size={16} className="text-blue-600" />
+                            <div className="p-2.5 bg-[#0A0D14] rounded-xl border border-white/5 group-hover:border-emerald-500/30 transition-colors">
+                              <Icon size={18} className="text-emerald-500" />
                             </div>
-                            <span className="text-xs font-bold text-gray-800">
+                            <span className="text-sm font-bold text-slate-300 group-hover:text-emerald-100 transition-colors">
                               {prompt.text}
                             </span>
                           </button>
@@ -284,28 +252,23 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
                       key={msg.id}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[85%] md:max-w-[75%] p-5 rounded-2xl shadow-md ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-                          : 'bg-white text-gray-900 border-2 border-gray-200'
-                      }`}>
+                      <div className={`max-w-[95%] md:max-w-[75%] p-5 rounded-3xl ${msg.role === 'user'
+                          ? 'bg-gradient-to-br from-emerald-600/90 to-emerald-800/90 text-white shadow-[0_10px_30px_rgba(4,120,87,0.2)] rounded-tr-sm backdrop-blur-md border border-emerald-400/20'
+                          : 'bg-[#1A2234]/80 text-slate-200 border border-white/10 rounded-tl-sm shadow-xl backdrop-blur-md'
+                        }`}>
                         {msg.role === 'assistant' && (
-                          <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-gray-100">
-                            <div className="p-1.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                              <Sparkles size={12} className="text-white" />
-                            </div>
-                            <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">
-                              FETS OMNI AI
+                          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/5">
+                            <Sparkles size={14} className="text-emerald-400" />
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]">
+                              FETS AI
                             </span>
                           </div>
                         )}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                        <p className="text-[14px] md:text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
                           {msg.content}
                         </p>
-                        <div className={`text-[10px] mt-3 font-bold uppercase flex items-center gap-2 ${
-                          msg.role === 'user' ? 'text-blue-100 justify-end' : 'text-gray-500'
-                        }`}>
-                          {msg.role === 'assistant' && <Activity size={10} />}
+                        <div className={`text-[10px] mt-4 font-bold uppercase flex items-center gap-2 ${msg.role === 'user' ? 'text-emerald-200/70 justify-end' : 'text-slate-500'
+                          }`}>
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
@@ -314,188 +277,104 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
                 )}
 
                 {loading && (
-                  <div className="flex justify-start">
-                    <div className="bg-white border-2 border-gray-200 px-6 py-4 rounded-2xl shadow-md flex gap-2 items-center">
-                      <div className="flex gap-1">
-                        <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                        <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                        <div className="w-2.5 h-2.5 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                    <div className="bg-[#1A2234]/80 border border-white/10 px-6 py-5 rounded-3xl rounded-tl-sm shadow-xl backdrop-blur-md flex items-center gap-4">
+                      <div className="flex gap-1.5">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce shadow-[0_0_8px_#34d399]" style={{ animationDelay: '0s' }} />
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce shadow-[0_0_8px_#34d399]" style={{ animationDelay: '0.15s' }} />
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce shadow-[0_0_8px_#34d399]" style={{ animationDelay: '0.3s' }} />
                       </div>
-                      <span className="text-xs text-gray-700 ml-2 font-semibold">FETS OMNI is analyzing...</span>
+                      <span className="text-[10px] text-emerald-400/80 font-bold uppercase tracking-widest">Processing</span>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
                 <div ref={chatEndRef} />
               </div>
 
               {/* Input Area */}
-              <div className="p-6 bg-white border-t-2 border-gray-200">
-                <form onSubmit={handleSend} className="flex gap-3">
+              <div className="p-4 md:p-6 bg-[#0A0D14]/80 border-t border-white/5 backdrop-blur-xl">
+                <form onSubmit={handleSend} className="relative flex items-center">
+                  <div className="absolute left-6 text-slate-500">
+                    <Search size={20} />
+                  </div>
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask about ANY past, present, or future content..."
+                    placeholder="Provide query parameters..."
                     disabled={loading}
-                    className="flex-1 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder-gray-500 rounded-xl px-5 py-4 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full bg-[#1A2234]/50 border border-white/10 text-white placeholder-slate-500 rounded-2xl pl-14 pr-20 py-5 font-medium focus:outline-none focus:border-emerald-500/50 focus:bg-[#1A2234] transition-all shadow-inner"
                   />
                   <button
                     type="submit"
                     disabled={!query.trim() || loading}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-bold"
+                    className="absolute right-3 bg-emerald-500 hover:bg-emerald-400 text-[#0A0D14] p-3 rounded-xl transition-all disabled:opacity-30 disabled:hover:bg-emerald-500 flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.2)] disabled:shadow-none"
                   >
-                    {loading ? (
-                      <Activity className="animate-spin" size={22} />
-                    ) : (
-                      <Send size={22} />
-                    )}
+                    {loading ? <Activity size={20} className="animate-spin" /> : <Send size={20} className="ml-1" />}
                   </button>
                 </form>
               </div>
             </motion.div>
           )}
 
-          {/* NEWS TAB */}
+          {/* Broadcasts Tab */}
           {activeTab === 'news' && (
             <motion.div
               key="news"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden"
+              className="flex-1 bg-[#111621]/60 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl mb-4"
             >
-              <div className="px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-4">
-                <div className="p-3 bg-white/20 rounded-xl text-white backdrop-blur-sm">
-                  <Newspaper size={24} />
-                </div>
-                <h2 className="text-xl font-bold text-white">Global Broadcasts</h2>
-              </div>
-              <div className="p-8 bg-gray-50">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+              <div className="p-4 md:p-8 h-full overflow-y-auto">
                 <NewsManager />
               </div>
             </motion.div>
           )}
 
-          {/* EXAM STATS TAB */}
+          {/* Stats Tab */}
           {activeTab === 'exam-stats' && (
             <motion.div
               key="exam-stats"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden"
+              className="flex-1 bg-[#111621]/60 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl flex items-center justify-center p-8 mb-4"
             >
-              <div className="px-6 md:px-8 py-5 bg-gradient-to-r from-orange-500 to-amber-500">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm">
-                    <TrendingUp size={22} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-white uppercase">Exam Intelligence</h2>
-                    <p className="text-xs text-orange-100 font-semibold">Historical & Real-time Exam Statistics</p>
-                  </div>
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+              <div className="text-center max-w-md">
+                <div className="w-24 h-24 bg-[#1A2234] border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl relative">
+                  <div className="absolute inset-0 bg-purple-500 blur-2xl opacity-10 rounded-3xl" />
+                  <Activity size={40} className="text-purple-400 relative z-10" />
                 </div>
-              </div>
-              <div className="p-8 bg-gray-50">
-                <div className="bg-white rounded-2xl p-8 text-center shadow-md border-2 border-gray-200">
-                  <TrendingUp size={48} className="text-purple-600 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Comprehensive Exam Analytics</h3>
-                  <p className="text-gray-700 text-sm font-medium mb-6">
-                    Ask FETS OMNI about exam statistics, candidate counts, session history, and performance metrics.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Show all exams conducted"); submitQuery("Show all exams conducted"); }}
-                      className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-2 border-gray-200 hover:border-blue-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Calendar size={20} className="text-blue-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Exams Conducted</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("How many candidates registered overall?"); submitQuery("How many candidates registered overall?"); }}
-                      className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-2 border-gray-200 hover:border-purple-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Users size={20} className="text-purple-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Candidate Registry</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Future exam schedule and capacity"); submitQuery("Future exam schedule and capacity"); }}
-                      className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-2 border-gray-200 hover:border-green-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Eye size={20} className="text-green-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Future Schedule</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Exam statistics by type"); submitQuery("Exam statistics by type"); }}
-                      className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border-2 border-gray-200 hover:border-orange-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <TrendingUp size={20} className="text-orange-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Statistics Breakdown</p>
-                    </button>
-                  </div>
-                </div>
+                <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Telemetry Offline</h2>
+                <p className="text-slate-400 font-medium leading-relaxed">
+                  Direct dashboard telemetry is currently offline. Please use the AI Nexus terminal to query exam statistics, candidate counts, and analytical summaries.
+                </p>
               </div>
             </motion.div>
           )}
 
-          {/* KNOWLEDGE BASE TAB */}
+          {/* Knowledge Tab */}
           {activeTab === 'knowledge' && (
             <motion.div
               key="knowledge"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden"
+              className="flex-1 bg-[#111621]/60 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl flex items-center justify-center p-8 mb-4"
             >
-              <div className="px-6 md:px-8 py-5 bg-gradient-to-r from-cyan-500 to-blue-600">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm">
-                    <FileText size={22} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-white uppercase">Knowledge Base</h2>
-                    <p className="text-xs text-cyan-100 font-semibold">Vault Documents & Historical Records</p>
-                  </div>
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+              <div className="text-center max-w-md">
+                <div className="w-24 h-24 bg-[#1A2234] border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl relative">
+                  <div className="absolute inset-0 bg-amber-500 blur-2xl opacity-10 rounded-3xl" />
+                  <FileText size={40} className="text-amber-400 relative z-10" />
                 </div>
-              </div>
-              <div className="p-8 bg-gray-50">
-                <div className="bg-white rounded-2xl p-8 text-center shadow-md border-2 border-gray-200">
-                  <FileText size={48} className="text-cyan-600 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Complete Document Archive</h3>
-                  <p className="text-gray-700 text-sm font-medium mb-6">
-                    Access all vault documents, notices, posts, and historical records through FETS OMNI.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("List all vault documents"); submitQuery("List all vault documents"); }}
-                      className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 border-2 border-gray-200 hover:border-cyan-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <FileText size={20} className="text-cyan-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Vault Documents</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Show all notices and announcements"); submitQuery("Show all notices and announcements"); }}
-                      className="p-4 bg-gradient-to-br from-purple-50 to-fuchsia-50 hover:from-purple-100 hover:to-fuchsia-100 border-2 border-gray-200 hover:border-purple-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <MessageCircle size={20} className="text-purple-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Notices Archive</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Past incidents and resolutions"); submitQuery("Past incidents and resolutions"); }}
-                      className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-gray-200 hover:border-amber-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <AlertCircle size={20} className="text-amber-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Incident History</p>
-                    </button>
-                    <button
-                      onClick={() => { setActiveTab('chat'); setQuery("Staff roster and leave history"); submitQuery("Staff roster and leave history"); }}
-                      className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 border-2 border-gray-200 hover:border-violet-300 rounded-xl text-left transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Users size={20} className="text-violet-600 mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Staff Records</p>
-                    </button>
-                  </div>
-                </div>
+                <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Vault Secured</h2>
+                <p className="text-slate-400 font-medium leading-relaxed">
+                  Access to raw records is restricted. To cross-reference documentation or historical incidents, initiate a query through the FETS AI terminal.
+                </p>
               </div>
             </motion.div>
           )}
@@ -505,3 +384,5 @@ export function FetsIntelligence({ initialTab = 'chat', initialQuery }: FetsAIPr
     </div>
   )
 }
+
+export default FetsIntelligence

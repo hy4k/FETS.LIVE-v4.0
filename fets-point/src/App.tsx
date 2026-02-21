@@ -14,7 +14,7 @@ import { CallProvider } from './contexts/CallContext';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LazyErrorBoundary } from './components/LazyErrorBoundary';
-import { DatabaseSetup } from './components/DatabaseSetup';
+
 import { PageLoadingFallback } from './components/LoadingFallback';
 import { Login } from './components/Login';
 import { Header } from './components/Header';
@@ -22,7 +22,7 @@ import { BottomNav } from './components/BottomNav';
 import { UpdatePassword } from './components/UpdatePassword';
 import { StaffBranchSelector } from './components/checklist/StaffBranchSelector';
 import { ChecklistFormModal } from './components/checklist/ChecklistFormModal';
-import { Fetchat } from './components/Fetchat';
+
 import { BranchIndicator } from './components/BranchIndicator';
 
 
@@ -61,7 +61,7 @@ const NewsManager = lazy(() => import('./components/NewsManager').then(module =>
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 const RaiseACasePage = lazy(() => import('./components/RaiseACasePage').then(module => ({ default: module.RaiseACasePage })))
-const FetsOmniAI = lazy(() => import('./components/FetsOmniAI').then(module => ({ default: module.FetsOmniAI })))
+
 const FetsProfilePage = lazy(() => import('./components/FetsProfile').then(module => ({ default: module.FetsProfile })))
 
 const queryClient = new QueryClient({
@@ -170,7 +170,7 @@ function AppContent() {
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'user-management': { component: <UserManagement />, name: 'User Management' },
       'profile': { component: <FetsProfilePage />, name: 'Profile' },
-      'fets-omni-ai': { component: <FetsOmniAI initialQuery={aiQuery} />, name: 'FETS OMNI AI' }
+      'fets-omni-ai': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS AI' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center'];

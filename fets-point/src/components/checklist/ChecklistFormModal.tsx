@@ -38,7 +38,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
     const theme = useMemo(() => {
         const isPre = template.type === 'pre_exam';
         const isPost = template.type === 'post_exam';
-        
+
         if (isPre) return {
             primary: 'bg-[#E19898]', // Elegant Rose Gold
             secondary: 'bg-[#FFF5F5]',
@@ -108,12 +108,33 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
 
         setSubmitting(true);
         try {
+            // 1. Verify session explicitly to catch 'Invalid Refresh Token'
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !sessionData.session) {
+                toast.error('Your session has expired. Please refresh the page and log in again.');
+                setSubmitting(false);
+                return;
+            }
+
+            // 2. Ensure currentUser profile is loaded
+            if (!currentUser) {
+                toast.error('User profile not fully loaded. Please refresh the page.');
+                setSubmitting(false);
+                return;
+            }
+
             // CRITICAL: submitted_by MUST be the auth.uid() (user_id from staff_profiles)
             // The RLS policy requires auth.uid() = submitted_by for INSERT
             // Note: When overrideStaff is used for admin submission on behalf of another user,
             // we still use the current user's auth ID since that's what RLS checks
-            const authUserId = currentUser.user_id || currentUser.id;
-            
+            const authUserId = currentUser?.user_id || currentUser?.id;
+
+            if (!authUserId) {
+                toast.error('Session error: Could not verify user identity. Please log in again.');
+                setSubmitting(false);
+                return;
+            }
+
             const submission = {
                 template_id: template.id,
                 submitted_by: authUserId, // Always use the authenticated user's ID
@@ -128,8 +149,8 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                 template_id: submission.template_id,
                 submitted_by: submission.submitted_by,
                 branch_id: submission.branch_id,
-                currentUser_user_id: currentUser.user_id,
-                currentUser_id: currentUser.id
+                currentUser_user_id: currentUser?.user_id,
+                currentUser_id: currentUser?.id
             });
 
             const { error } = await supabase.from('checklist_submissions').insert(submission);
@@ -179,7 +200,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                 <div className={`p-6 md:p-8 bg-white border-b border-slate-100 relative overflow-hidden`}>
                     {/* Progress Bar Background */}
                     <div className="absolute bottom-0 left-0 w-full h-1 bg-slate-100 opacity-50">
-                        <motion.div 
+                        <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             className={`h-full ${theme.primary} transition-all duration-700`}
@@ -242,15 +263,13 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                             setActiveSection(section);
                                             document.getElementById(`section-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
                                         }}
-                                        className={`w-full p-4 rounded-2xl flex items-center gap-3 transition-all text-left ${
-                                            isActive 
-                                            ? `${theme.primary} text-white shadow-lg ${theme.shadow}` 
-                                            : 'hover:bg-white text-slate-400 hover:text-slate-600'
-                                        }`}
+                                        className={`w-full p-4 rounded-2xl flex items-center gap-3 transition-all text-left ${isActive
+                                                ? `${theme.primary} text-white shadow-lg ${theme.shadow}`
+                                                : 'hover:bg-white text-slate-400 hover:text-slate-600'
+                                            }`}
                                     >
-                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                            isActive ? 'bg-white/20' : isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200/50 text-slate-400'
-                                        }`}>
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 ${isActive ? 'bg-white/20' : isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200/50 text-slate-400'
+                                            }`}>
                                             {isCompleted ? <Check size={14} /> : idx + 1}
                                         </div>
                                         <span className="text-[11px] font-black uppercase tracking-tight line-clamp-1">{section}</span>
@@ -258,7 +277,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                 );
                             })}
                         </div>
-                        
+
                         <div className="mt-auto p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center">
@@ -276,8 +295,8 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                     <div className="flex-1 overflow-y-auto p-4 md:p-10 scroll-smooth bg-[#fdfdfd]" id="form-container">
                         <form id="checklist-form" onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto space-y-16 pb-20">
                             {Object.entries(sectionedQuestions).map(([section, groupQuestions], sIdx) => (
-                                <motion.div 
-                                    key={section} 
+                                <motion.div
+                                    key={section}
                                     id={`section-${sIdx}`}
                                     variants={containerVariants}
                                     initial="hidden"
@@ -301,10 +320,10 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                             // ---------------------------------------------------------
                                             // LOGIC: Conditional Visibility & Custom System Error Input
                                             // ---------------------------------------------------------
-                                            
+
                                             // 1. Identify if this is the dependent question
                                             const isSystemErrorQuestion = q.text.toLowerCase().includes('system number') && q.text.toLowerCase().includes('error note');
-                                            
+
                                             // 2. Conditional Visibility Logic
                                             if (isSystemErrorQuestion) {
                                                 const triggerQuestion = questions.find(qst => qst.text.toLowerCase().includes('any workstation errors'));
@@ -314,7 +333,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                                     const isYes = typeof triggerValue === 'string' && ['yes', 'fail', 'error', 'issues'].some(v => triggerValue.toLowerCase().includes(v));
                                                     // Also check for boolean true if it's a checkbox, though usually these are Radios
                                                     const isChecked = triggerValue === true;
-                                                    
+
                                                     if (!isYes && !isChecked) return null;
                                                 }
                                             }
@@ -322,7 +341,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                             // 3. Render Custom System Selector if matched
                                             if (isSystemErrorQuestion) {
                                                 return (
-                                                     <SystemErrorInput 
+                                                    <SystemErrorInput
                                                         key={q.id}
                                                         question={q}
                                                         theme={theme}
@@ -334,7 +353,7 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                                         onFilesSelected={handleFilesSelected}
                                                         activeBranch={overrideBranch || currentUser.branch_assigned || currentUser.branch_id || 'Global'}
                                                         availableSystems={availableSystems}
-                                                     />
+                                                    />
                                                 );
                                             }
 
@@ -343,181 +362,180 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                                             // ---------------------------------------------------------
 
                                             return (
-                                            <motion.div 
-                                                key={q.id || idx}
-                                                variants={itemVariants}
-                                                className={`group p-6 md:p-8 rounded-[2rem] border transition-all duration-300 relative bg-white ${
-                                                    watchedValues[q.id] ? 'border-emerald-100 bg-emerald-50/5' : 'border-slate-100 hover:border-slate-200'
-                                                }`}
-                                            >
-                                                {/* Filled Indicator */}
-                                                <AnimatePresence>
-                                                    {watchedValues[q.id] && (
-                                                        <motion.div 
-                                                            initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                                            className="absolute -right-2 -top-2 w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-white z-10"
-                                                        >
-                                                            <Check size={14} />
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
+                                                <motion.div
+                                                    key={q.id || idx}
+                                                    variants={itemVariants}
+                                                    className={`group p-6 md:p-8 rounded-[2rem] border transition-all duration-300 relative bg-white ${watchedValues[q.id] ? 'border-emerald-100 bg-emerald-50/5' : 'border-slate-100 hover:border-slate-200'
+                                                        }`}
+                                                >
+                                                    {/* Filled Indicator */}
+                                                    <AnimatePresence>
+                                                        {watchedValues[q.id] && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                                                className="absolute -right-2 -top-2 w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-white z-10"
+                                                            >
+                                                                <Check size={14} />
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
 
-                                                <div className="flex gap-4 md:gap-6">
-                                                    <div className="flex-1 space-y-6">
-                                                        <div>
-                                                            <h3 className="text-lg md:text-xl font-black text-slate-700 leading-snug tracking-tight text-balance">
-                                                                {q.text} {q.required && <span className="text-rose-400 ml-1 font-bold">*</span>}
-                                                            </h3>
-                                                            {q.description && (
-                                                                <p className="text-[11px] text-slate-400 mt-2 font-bold leading-relaxed">{q.description}</p>
-                                                            )}
-                                                        </div>
+                                                    <div className="flex gap-4 md:gap-6">
+                                                        <div className="flex-1 space-y-6">
+                                                            <div>
+                                                                <h3 className="text-lg md:text-xl font-black text-slate-700 leading-snug tracking-tight text-balance">
+                                                                    {q.text} {q.required && <span className="text-rose-400 ml-1 font-bold">*</span>}
+                                                                </h3>
+                                                                {q.description && (
+                                                                    <p className="text-[11px] text-slate-400 mt-2 font-bold leading-relaxed">{q.description}</p>
+                                                                )}
+                                                            </div>
 
-                                                        {/* Input Canvas */}
-                                                        <div className="relative">
-                                                            {q.type === 'text' && (
-                                                                <input
-                                                                    type="text"
-                                                                    {...register(q.id, { required: q.required })}
-                                                                    className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm`}
-                                                                    placeholder="Type here..."
-                                                                />
-                                                            )}
-
-                                                            {q.type === 'textarea' && (
-                                                                <textarea
-                                                                    {...register(q.id, { required: q.required })}
-                                                                    rows={3}
-                                                                    className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm resize-none`}
-                                                                    placeholder="Type notes here..."
-                                                                />
-                                                            )}
-
-                                                            {q.type === 'number' && (
-                                                                <div className="max-w-[150px]">
+                                                            {/* Input Canvas */}
+                                                            <div className="relative">
+                                                                {q.type === 'text' && (
                                                                     <input
-                                                                        type="number"
-                                                                        step="any"
+                                                                        type="text"
                                                                         {...register(q.id, { required: q.required })}
-                                                                        className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black text-xl shadow-sm`}
-                                                                        placeholder="00"
+                                                                        className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm`}
+                                                                        placeholder="Type here..."
                                                                     />
-                                                                </div>
-                                                            )}
+                                                                )}
 
-                                                            {q.type === 'checkbox' && (
-                                                                <label className={`flex items-center gap-4 cursor-pointer p-5 rounded-2xl border-2 transition-all ${watchedValues[q.id] ? `border-emerald-100 bg-emerald-50/20` : 'border-slate-50 hover:border-slate-100'}`}>
-                                                                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${watchedValues[q.id] ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-100' : 'bg-white border-slate-200'}`}>
-                                                                        <Check size={16} className={watchedValues[q.id] ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} />
-                                                                    </div>
-                                                                    <input
-                                                                        type="checkbox"
+                                                                {q.type === 'textarea' && (
+                                                                    <textarea
                                                                         {...register(q.id, { required: q.required })}
-                                                                        className="hidden"
+                                                                        rows={3}
+                                                                        className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm resize-none`}
+                                                                        placeholder="Type notes here..."
                                                                     />
-                                                                    <span className={`text-sm font-black uppercase tracking-widest ${watchedValues[q.id] ? 'text-emerald-700' : 'text-slate-400'}`}>
-                                                                        I have checked this
-                                                                    </span>
-                                                                </label>
-                                                            )}
+                                                                )}
 
-                                                            {q.type === 'radio' && (
-                                                                <div className="flex flex-wrap gap-3">
-                                                                    {q.options?.map((opt: string, i: number) => {
-                                                                        const isSelected = watch(q.id) === opt;
-                                                                        return (
-                                                                            <label key={i} className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${isSelected ? `border-${theme.accent}-300 ${theme.secondary} ${theme.text}` : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}>
-                                                                                <input
-                                                                                    type="radio"
-                                                                                    value={opt}
-                                                                                    {...register(q.id, { required: q.required })}
-                                                                                    className="hidden"
-                                                                                />
-                                                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? `border-${theme.accent}-400 bg-${theme.accent}-400` : 'border-slate-200'}`}>
-                                                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                                                                </div>
-                                                                                <span className="text-xs font-black uppercase tracking-tight">{opt}</span>
-                                                                            </label>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            )}
-
-                                                            {q.type === 'dropdown' && (
-                                                                <div className="relative">
-                                                                    <select
-                                                                        {...register(q.id, { required: q.required })}
-                                                                        className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold appearance-none shadow-sm`}
-                                                                    >
-                                                                        <option value="">Choose one...</option>
-                                                                        {q.options?.map((opt: string, i: number) => (
-                                                                            <option key={i} value={opt}>{opt}</option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
-                                                                        <LayoutList size={20} />
+                                                                {q.type === 'number' && (
+                                                                    <div className="max-w-[150px]">
+                                                                        <input
+                                                                            type="number"
+                                                                            step="any"
+                                                                            {...register(q.id, { required: q.required })}
+                                                                            className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black text-xl shadow-sm`}
+                                                                            placeholder="00"
+                                                                        />
                                                                     </div>
-                                                                </div>
-                                                            )}
+                                                                )}
 
-                                                            {q.type === 'date' && (
-                                                                <input
-                                                                    type="date"
-                                                                    {...register(q.id, { required: q.required })}
-                                                                    className={`max-w-[280px] w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black shadow-sm`}
-                                                                />
-                                                            )}
-
-                                                            {q.type === 'time' && (
-                                                                <input
-                                                                    type="time"
-                                                                    {...register(q.id, { required: q.required })}
-                                                                    className={`max-w-[200px] w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black shadow-sm`}
-                                                                />
-                                                            )}
-
-                                                            {/* Evidence Upload Handler */}
-                                                            {q.attachment_mode && q.attachment_mode !== 'none' && (
-                                                                <div className={`mt-8 p-8 rounded-[2rem] border-2 border-dashed ${attachments[q.id]?.length > 0 ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-slate-50/30'} hover:border-slate-200 transition-colors shadow-inner`}>
-                                                                    <div className="flex items-center justify-between mb-6">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className={`w-8 h-8 rounded-lg ${theme.primary} text-white flex items-center justify-center shadow-md`}>
-                                                                                <Paperclip size={16} />
-                                                                            </div>
-                                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
-                                                                                Attach Photo {q.attachment_mode === 'required' ? '(Required)' : '(Optional)'}
-                                                                            </span>
+                                                                {q.type === 'checkbox' && (
+                                                                    <label className={`flex items-center gap-4 cursor-pointer p-5 rounded-2xl border-2 transition-all ${watchedValues[q.id] ? `border-emerald-100 bg-emerald-50/20` : 'border-slate-50 hover:border-slate-100'}`}>
+                                                                        <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${watchedValues[q.id] ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-100' : 'bg-white border-slate-200'}`}>
+                                                                            <Check size={16} className={watchedValues[q.id] ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} />
                                                                         </div>
-                                                                        {attachments[q.id]?.length > 0 && (
-                                                                            <div className="flex items-center gap-2 text-emerald-600 bg-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                                                                                <Check size={14} /> Attached
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <FileUpload 
-                                                                        onFilesSelected={(files) => handleFilesSelected(q.id, files)} 
-                                                                        maxFiles={1} 
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            {...register(q.id, { required: q.required })}
+                                                                            className="hidden"
+                                                                        />
+                                                                        <span className={`text-sm font-black uppercase tracking-widest ${watchedValues[q.id] ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                                                            I have checked this
+                                                                        </span>
+                                                                    </label>
+                                                                )}
 
-                                                        {/* Dynamic Error State */}
-                                                        <AnimatePresence>
-                                                            {errors[q.id] && (
-                                                                <motion.div
-                                                                    initial={{ opacity: 0, x: -10 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                    exit={{ opacity: 0, x: -10 }}
-                                                                    className="flex items-center gap-2 text-rose-500 font-black text-[10px] uppercase tracking-widest px-1"
-                                                                >
-                                                                    <AlertCircle size={14} /> Please fill this item
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
+                                                                {q.type === 'radio' && (
+                                                                    <div className="flex flex-wrap gap-3">
+                                                                        {q.options?.map((opt: string, i: number) => {
+                                                                            const isSelected = watch(q.id) === opt;
+                                                                            return (
+                                                                                <label key={i} className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${isSelected ? `border-${theme.accent}-300 ${theme.secondary} ${theme.text}` : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}`}>
+                                                                                    <input
+                                                                                        type="radio"
+                                                                                        value={opt}
+                                                                                        {...register(q.id, { required: q.required })}
+                                                                                        className="hidden"
+                                                                                    />
+                                                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? `border-${theme.accent}-400 bg-${theme.accent}-400` : 'border-slate-200'}`}>
+                                                                                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                                                    </div>
+                                                                                    <span className="text-xs font-black uppercase tracking-tight">{opt}</span>
+                                                                                </label>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+
+                                                                {q.type === 'dropdown' && (
+                                                                    <div className="relative">
+                                                                        <select
+                                                                            {...register(q.id, { required: q.required })}
+                                                                            className={`w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-bold appearance-none shadow-sm`}
+                                                                        >
+                                                                            <option value="">Choose one...</option>
+                                                                            {q.options?.map((opt: string, i: number) => (
+                                                                                <option key={i} value={opt}>{opt}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                                                                            <LayoutList size={20} />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {q.type === 'date' && (
+                                                                    <input
+                                                                        type="date"
+                                                                        {...register(q.id, { required: q.required })}
+                                                                        className={`max-w-[280px] w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black shadow-sm`}
+                                                                    />
+                                                                )}
+
+                                                                {q.type === 'time' && (
+                                                                    <input
+                                                                        type="time"
+                                                                        {...register(q.id, { required: q.required })}
+                                                                        className={`max-w-[200px] w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-${theme.accent}-400 outline-none transition-all text-slate-700 font-black shadow-sm`}
+                                                                    />
+                                                                )}
+
+                                                                {/* Evidence Upload Handler */}
+                                                                {q.attachment_mode && q.attachment_mode !== 'none' && (
+                                                                    <div className={`mt-8 p-8 rounded-[2rem] border-2 border-dashed ${attachments[q.id]?.length > 0 ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-slate-50/30'} hover:border-slate-200 transition-colors shadow-inner`}>
+                                                                        <div className="flex items-center justify-between mb-6">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className={`w-8 h-8 rounded-lg ${theme.primary} text-white flex items-center justify-center shadow-md`}>
+                                                                                    <Paperclip size={16} />
+                                                                                </div>
+                                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
+                                                                                    Attach Photo {q.attachment_mode === 'required' ? '(Required)' : '(Optional)'}
+                                                                                </span>
+                                                                            </div>
+                                                                            {attachments[q.id]?.length > 0 && (
+                                                                                <div className="flex items-center gap-2 text-emerald-600 bg-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                                                                    <Check size={14} /> Attached
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <FileUpload
+                                                                            onFilesSelected={(files) => handleFilesSelected(q.id, files)}
+                                                                            maxFiles={1}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Dynamic Error State */}
+                                                            <AnimatePresence>
+                                                                {errors[q.id] && (
+                                                                    <motion.div
+                                                                        initial={{ opacity: 0, x: -10 }}
+                                                                        animate={{ opacity: 1, x: 0 }}
+                                                                        exit={{ opacity: 0, x: -10 }}
+                                                                        className="flex items-center gap-2 text-rose-500 font-black text-[10px] uppercase tracking-widest px-1"
+                                                                    >
+                                                                        <AlertCircle size={14} /> Please fill this item
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </motion.div>
+                                                </motion.div>
                                             );
                                         })}
                                     </div>
@@ -533,10 +551,10 @@ export const ChecklistFormModal: React.FC<ChecklistFormModalProps> = ({ template
                         {/* Operator Display */}
                         <div className="flex items-center gap-5">
                             <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-lg`}>
-                                <img 
-                                    src={currentUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(overrideStaff?.name || currentUser.full_name || 'User')}&background=0F172A&color=EAB308&size=128`} 
-                                    alt="User" 
-                                    className="w-full h-full object-cover" 
+                                <img
+                                    src={currentUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(overrideStaff?.name || currentUser.full_name || 'User')}&background=0F172A&color=EAB308&size=128`}
+                                    alt="User"
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
                             <div>
@@ -582,13 +600,13 @@ const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, 
     const [selectedSysIds, setSelectedSysIds] = useState<string[]>([]);
     const [errorNote, setErrorNote] = useState('');
     const [search, setSearch] = useState('');
-    
+
     // Initialize from form state if present
     useEffect(() => {
         const currentVal = watch(question.id);
         if (currentVal && typeof currentVal === 'object') {
-             if (currentVal.systems) setSelectedSysIds(currentVal.systems);
-             if (currentVal.note) setErrorNote(currentVal.note);
+            if (currentVal.systems) setSelectedSysIds(currentVal.systems);
+            if (currentVal.note) setErrorNote(currentVal.note);
         }
     }, [watch, question.id]);
 
@@ -597,14 +615,14 @@ const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, 
         setValue(question.id, {
             systems: selectedSysIds,
             note: errorNote,
-            summary: `${selectedSysIds.length} Systems: ${errorNote}` 
+            summary: `${selectedSysIds.length} Systems: ${errorNote}`
         });
     }, [selectedSysIds, errorNote, setValue, question.id]);
 
     const filteredSystems = availableSystems.filter((s: any) => {
         const matchesBranch = activeBranch === 'Global' || s.branch_location === activeBranch;
         const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.ip_address && s.ip_address.includes(search));
-        return matchesBranch && matchesSearch; 
+        return matchesBranch && matchesSearch;
     });
 
     const toggleSystem = (id: string) => {
@@ -616,23 +634,23 @@ const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, 
             <h3 className="text-lg md:text-xl font-black text-slate-700 leading-snug tracking-tight mb-4">
                 {question.text} <span className="text-rose-400 ml-1">*</span>
             </h3>
-            
+
             <div className="space-y-6">
                 {/* 1. System Selector */}
                 <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Affected System(s)</label>
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <input 
-                            type="text" 
-                            placeholder="Search systems..." 
+                        <input
+                            type="text"
+                            placeholder="Search systems..."
                             className="w-full bg-transparent outline-none text-xs font-bold mb-4 border-b border-slate-200 pb-2"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
                         <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                             {filteredSystems.length > 0 ? filteredSystems.map((sys: any) => (
-                                <div 
-                                    key={sys.id} 
+                                <div
+                                    key={sys.id}
                                     onClick={() => toggleSystem(sys.id)}
                                     className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${selectedSysIds.includes(sys.id) ? `bg-${theme.accent}-100 border-${theme.accent}-200` : 'bg-white border-slate-100 hover:border-slate-200'}`}
                                 >
@@ -655,18 +673,18 @@ const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, 
 
                 {/* 2. Error Note */}
                 <div className="space-y-2">
-                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Error Details</label>
-                     <textarea
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Error Details</label>
+                    <textarea
                         value={errorNote}
                         onChange={e => setErrorNote(e.target.value)}
                         className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-rose-400 outline-none transition-all text-slate-700 font-bold placeholder:text-slate-300 shadow-sm resize-none"
                         placeholder="Describe the error..."
                         rows={3}
-                     />
+                    />
                 </div>
 
                 {/* 3. Attachment */}
-                 <div className={`p-6 rounded-[1.5rem] border-2 border-dashed ${attachments[question.id]?.length > 0 ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-slate-50/30'}`}>
+                <div className={`p-6 rounded-[1.5rem] border-2 border-dashed ${attachments[question.id]?.length > 0 ? 'border-emerald-100 bg-emerald-50/10' : 'border-slate-100 bg-slate-50/30'}`}>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">
@@ -679,9 +697,9 @@ const SystemErrorInput = ({ question, theme, register, setValue, watch, errors, 
                             </div>
                         )}
                     </div>
-                    <FileUpload 
-                        onFilesSelected={(files) => onFilesSelected(question.id, files)} 
-                        maxFiles={1} 
+                    <FileUpload
+                        onFilesSelected={(files) => onFilesSelected(question.id, files)}
+                        maxFiles={1}
                     />
                 </div>
             </div>

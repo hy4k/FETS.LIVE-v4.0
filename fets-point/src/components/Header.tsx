@@ -94,6 +94,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
     { id: 'lost-and-found', label: 'LOST & FOUND', icon: PackageSearch },
+    { id: 'exam-ops', label: 'EXAM OPS', icon: Cpu },
     { id: 'fets-intelligence', label: 'FETS AI', icon: Brain },
     { id: 'user-management', label: 'MANAGEMENT', icon: Shield },
   ].filter(item => {

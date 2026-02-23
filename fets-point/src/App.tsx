@@ -61,6 +61,7 @@ const NewsManager = lazy(() => import('./components/NewsManager').then(module =>
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
 const RaiseACasePage = lazy(() => import('./components/RaiseACasePage').then(module => ({ default: module.RaiseACasePage })))
+const ExamOpsCenter = lazy(() => import('./components/ExamOpsCenter').then(module => ({ default: module.ExamOpsCenter })))
 
 const FetsProfilePage = lazy(() => import('./components/FetsProfile').then(module => ({ default: module.FetsProfile })))
 
@@ -170,7 +171,8 @@ function AppContent() {
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'user-management': { component: <UserManagement />, name: 'User Management' },
       'profile': { component: <FetsProfilePage />, name: 'Profile' },
-      'fets-omni-ai': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS AI' }
+      'fets-omni-ai': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS AI' },
+      'exam-ops': { component: <ExamOpsCenter />, name: 'Exam Ops Center' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center'];

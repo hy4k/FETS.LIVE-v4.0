@@ -150,7 +150,7 @@ export const MonthlyRosterTimeline: React.FC<Props> = ({ staffProfiles, schedule
                     <div className="flex items-center gap-3">
                       {/* Neumorphic Initials Avatar */}
                       <div className={`w-10 h-10 rounded-xl bg-slate-50 shadow-[-2px_-2px_5px_rgba(255,255,255,1),2px_2px_5px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center justify-center font-bold shrink-0 text-base ${getAvatarColor(staff.full_name)}`} style={rajdhaniStyle}>
-                        {staff.full_name.substring(0, 2).toUpperCase()}
+                        {(staff.full_name || '??').substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-gray-900 font-bold text-base truncate leading-tight" style={rajdhaniStyle}>

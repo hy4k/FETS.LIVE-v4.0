@@ -187,7 +187,7 @@ export function NewsManager() {
   const handleAiAnalysis = async () => {
     setIsAnalyzing(true)
     const activeNotices = newsItems.filter(n => n.is_active).map(n => 
-      `- [${n.priority.toUpperCase()}] (${n.branch_location}): ${n.content}`
+      `- [${(n.priority || 'normal').toUpperCase()}] (${n.branch_location || 'global'}): ${n.content}`
     ).join('\n')
 
     const prompt = `Analyze these active notices for a Quick Briefing. Highlight critical alerts first, then summarize global news. 

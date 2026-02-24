@@ -224,3 +224,4 @@ const CheckMark = () => (
         <path d="M1 5L4.5 8.5L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
+export default FetsProfile

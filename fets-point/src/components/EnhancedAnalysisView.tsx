@@ -134,7 +134,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
             Workforce <span className="text-blue-600">Intelligence</span>
           </h2>
           <p className="text-gray-500 font-medium mt-2 ml-16">
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} • {activeBranch === 'global' ? 'All Centers' : activeBranch.toUpperCase()}
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} • {activeBranch === 'global' ? 'All Centers' : (activeBranch || '').toUpperCase()}
           </p>
         </div>
       </motion.div>
@@ -188,7 +188,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
                 <div key={staff.id} className="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center text-red-700 font-bold text-xs">
-                      {staff.full_name.charAt(0)}
+                      {(staff.full_name || '?').charAt(0)}
                     </div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">{staff.full_name}</p>
@@ -231,7 +231,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
                 <div key={staff.id} className="flex items-center justify-between p-3 rounded-xl bg-green-50 border border-green-100">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold text-xs">
-                      {staff.full_name.charAt(0)}
+                      {(staff.full_name || '?').charAt(0)}
                     </div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">{staff.full_name}</p>
@@ -283,7 +283,7 @@ export const EnhancedAnalysisView: React.FC<AnalysisViewProps> = ({
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs">
-                        {staff.full_name.charAt(0)}
+                        {(staff.full_name || '?').charAt(0)}
                       </div>
                       <div>
                         <div className="font-bold text-gray-700 text-sm">{staff.full_name}</div>

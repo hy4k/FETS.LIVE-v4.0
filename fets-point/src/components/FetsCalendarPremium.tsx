@@ -143,7 +143,8 @@ export function FetsCalendarPremium() {
     return sessions.filter(session => session.date === dateStr)
   }
 
-  const normalizeClientName = (name: string): string => {
+  const normalizeClientName = (name: string | null | undefined): string => {
+    if (!name) return 'UNKNOWN'
     const upper = name.toUpperCase()
     if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON'
     if (upper.includes('CELPIP')) return 'CELPIP'
@@ -178,7 +179,8 @@ export function FetsCalendarPremium() {
     return 'OTHER'
   }
 
-  const getClientLogo = (clientName: string) => {
+  const getClientLogo = (clientName: string | null | undefined) => {
+    if (!clientName) return null
     const upperName = clientName.toUpperCase()
     if (upperName.includes('PROMETRIC')) return '/client-logos/prometric.png'
     if (upperName.includes('PSI')) return '/client-logos/psi.png'
@@ -187,7 +189,8 @@ export function FetsCalendarPremium() {
     return null
   }
 
-  const getShortClient = (name: string) => {
+  const getShortClient = (name: string | null | undefined) => {
+    if (!name) return '—';
     const n = name.toUpperCase();
     if (n.includes('PEARSON')) return 'PV';
     if (n.includes('PROMETRIC')) return 'PROM';
@@ -205,7 +208,8 @@ export function FetsCalendarPremium() {
     return `${displayHour}${suffix}`;
   }
 
-  const getShortExam = (name: string) => {
+  const getShortExam = (name: string | null | undefined) => {
+    if (!name) return '—';
     return name
       .replace(/EXAM/gi, '')
       .replace(/SIMULATION/gi, 'SIM')

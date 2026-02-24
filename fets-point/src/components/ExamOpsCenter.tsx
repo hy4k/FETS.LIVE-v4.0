@@ -623,7 +623,7 @@ export function ExamOpsCenter() {
           </h1>
           <div className="ml-auto flex items-center gap-2 bg-white/40 px-5 py-2 rounded-2xl border border-white/50">
              <MapPin size={12} className="text-amber-500" />
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">NODE {branch.toUpperCase()}</span>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">NODE {(branch || '').toUpperCase()}</span>
           </div>
         </div>
 

@@ -552,3 +552,4 @@ export function FetsVault() {
     </div>
   )
 }
+export default FetsVault

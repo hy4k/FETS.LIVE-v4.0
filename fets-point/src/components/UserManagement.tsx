@@ -733,3 +733,4 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void, onAdd: (data: a
         </motion.div>
     )
 }
+export default UserManagement

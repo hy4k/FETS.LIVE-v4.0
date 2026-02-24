@@ -33,7 +33,8 @@ const CLIENT_COLORS: { [key: string]: string } = {
   OTHER: 'border-gray-500',
 }
 
-const getClientType = (clientName: string): string => {
+const getClientType = (clientName: string | null | undefined): string => {
+  if (!clientName) return 'OTHER'
   const upperName = clientName.toUpperCase()
   if (upperName.includes('PEARSON')) return 'PEARSON'
   if (upperName.includes('VUE')) return 'VUE'

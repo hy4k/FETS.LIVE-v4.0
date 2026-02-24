@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Search, Plus, Package, MapPin, Calendar, User, Phone, CheckCircle,
@@ -78,7 +78,7 @@ export function LostAndFound() {
         branch_location: activeBranch === 'global' ? 'calicut' : activeBranch
     })
 
-    const loadItems = async () => {
+    const loadItems = useCallback(async () => {
         setLoading(true)
         try {
             let query = supabase
@@ -99,9 +99,9 @@ export function LostAndFound() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [activeBranch])
 
-    const loadStaff = async () => {
+    const loadStaff = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from('staff_profiles')
@@ -113,12 +113,12 @@ export function LostAndFound() {
         } catch (err) {
             console.error('Failed to load staff profiles', err)
         }
-    }
+    }, [])
 
     useEffect(() => {
         loadItems()
         loadStaff()
-    }, [activeBranch])
+    }, [loadItems, loadStaff])
 
     const filteredItems = useMemo(() => {
         return items.filter(item => {
@@ -620,3 +620,4 @@ export function LostAndFound() {
         </div>
     )
 }
+export default LostAndFound

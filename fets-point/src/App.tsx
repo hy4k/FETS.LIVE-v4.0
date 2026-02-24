@@ -45,25 +45,25 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
 // Lazy load Desktop components
-const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard').then(module => ({ default: module.ICloudDashboard })))
-const AccessHubPage = lazy(() => import('./components/AccessHub').then(module => ({ default: module.AccessHub })))
+const Dashboard = lazy(() => import('./components/iCloud/iCloudDashboard'))
+const AccessHubPage = lazy(() => import('./components/AccessHub'))
 const CommandCentre = lazy(() => import('./components/CommandCentreFinal'))
-const CandidateTracker = lazy(() => import('./components/CandidateTrackerPremium').then(module => ({ default: module.CandidateTrackerPremium })))
-const MyDesk = lazy(() => import('./components/MyDeskLivingBoard').then(module => ({ default: module.MyDeskLivingBoard })))
-const StaffManagement = lazy(() => import('./components/StaffManagement').then(module => ({ default: module.StaffManagement })))
-const FetsVault = lazy(() => import('./components/FetsVault').then(module => ({ default: module.FetsVault })))
-const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then(module => ({ default: module.FetsIntelligence })))
+const CandidateTracker = lazy(() => import('./components/CandidateTrackerPremium'))
+const MyDesk = lazy(() => import('./components/MyDeskLivingBoard'))
+const StaffManagement = lazy(() => import('./components/StaffManagement'))
+const FetsVault = lazy(() => import('./components/FetsVault'))
+const FetsIntelligence = lazy(() => import('./components/FetsIntelligence'))
 const FetsRoster = lazy(() => import('./components/FetsRosterPremium'))
-const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium').then(module => ({ default: module.FetsCalendarPremium })))
-const SystemManager = lazy(() => import('./components/SystemManager').then(module => ({ default: module.default })))
-const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager').then(module => ({ default: module.ChecklistManager })))
-const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
-const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
-const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
-const RaiseACasePage = lazy(() => import('./components/RaiseACasePage').then(module => ({ default: module.RaiseACasePage })))
-const ExamOpsCenter = lazy(() => import('./components/ExamOpsCenter').then(module => ({ default: module.ExamOpsCenter })))
+const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium'))
+const SystemManager = lazy(() => import('./components/SystemManager'))
+const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager'))
+const NewsManager = lazy(() => import('./components/NewsManager'))
+const UserManagement = lazy(() => import('./components/UserManagement'))
+const LostAndFound = lazy(() => import('./components/LostAndFound'))
+const RaiseACasePage = lazy(() => import('./components/RaiseACasePage'))
+const ExamOpsCenter = lazy(() => import('./components/ExamOpsCenter'))
 
-const FetsProfilePage = lazy(() => import('./components/FetsProfile').then(module => ({ default: module.FetsProfile })))
+const FetsProfilePage = lazy(() => import('./components/FetsProfile'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -177,7 +177,7 @@ function AppContent() {
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center'];
     return (
-      <LazyErrorBoundary routeName={currentRoute.name} onGoBack={() => setActiveTab('command-center')}>
+      <LazyErrorBoundary key={activeTab} routeName={currentRoute.name} onGoBack={() => setActiveTab('command-center')}>
         <Suspense fallback={<PageLoadingFallback pageName={currentRoute.name} />}>
           {currentRoute.component}
         </Suspense>

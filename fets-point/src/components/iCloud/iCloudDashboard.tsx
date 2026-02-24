@@ -22,7 +22,7 @@ interface iCloudDashboardProps {
   onNavigate?: (tab: string) => void
 }
 
-export function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
+export default function ICloudDashboard({ onNavigate }: iCloudDashboardProps = {}) {
   const today = new Date().toISOString().split('T')[0]
   
   // Data fetching

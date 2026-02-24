@@ -247,7 +247,7 @@ const SystemGridCard: React.FC<SystemGridCardProps> = ({
 
                     {isTransferredOut && (
                         <span className="text-[8px] font-black text-slate-900 uppercase tracking-tighter opacity-60 mt-1">
-                            AT {sys.branch_location.toUpperCase()}
+                            AT {(sys.branch_location || '').toUpperCase()}
                         </span>
                     )}
                 </div>

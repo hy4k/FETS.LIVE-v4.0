@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X,
@@ -95,13 +95,9 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
         'OTHER': { bg: 'from-slate-600/20 to-slate-800/20', text: 'text-slate-400', border: 'border-slate-500/30' }
     };
 
-    useEffect(() => {
-        fetchSessionData();
-    }, [currentMonth, activeBranch]);
-
     const isGlobalView = activeBranch === 'global' || !activeBranch;
 
-    const fetchSessionData = async () => {
+    const fetchSessionData = useCallback(async () => {
         setLoading(true);
         try {
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -155,9 +151,14 @@ export const CalendarAnalysis: React.FC<CalendarAnalysisProps> = ({ onClose, act
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentMonth, activeBranch, isGlobalView]);
 
-    const normalizeClientName = (name: string): string => {
+    useEffect(() => {
+        fetchSessionData();
+    }, [fetchSessionData]);
+
+    const normalizeClientName = (name: string | null | undefined): string => {
+        if (!name) return 'OTHER';
         const upper = name.toUpperCase();
         if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON';
         if (upper.includes('PSI')) return 'PSI';

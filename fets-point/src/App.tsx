@@ -78,7 +78,7 @@ const queryClient = new QueryClient({
 function AppContent() {
   const { user, loading, profile } = useAuth()
   const { activeBranch, getBranchTheme } = useBranch()
-  const [activeTab, setActiveTab] = useState('command-center')
+  const [activeTab, setActiveTab] = useState('exam-ops-center')
   const isMobile = useIsMobile()
   const [isRecovering, setIsRecovering] = useState(false)
   const [aiQuery, setAiQuery] = useState<string | undefined>(undefined)

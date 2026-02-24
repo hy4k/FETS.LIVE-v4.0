@@ -1,259 +1,331 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Filter, Plus, AlertTriangle, Phone, Copy, ExternalLink, FolderLock,
-  Pin, Share2, BookOpen, FileText, Zap, Clock, Tag, Star,
-  X, ChevronRight, Download, Eye, Edit, Trash2, Bookmark,
-  Shield, Wifi, Database, Settings, Users, Activity, Layers,
-  CheckCircle, TrendingUp
-} from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabase'
-import { toast } from 'react-hot-toast'
+  Search,
+  Filter,
+  Plus,
+  AlertTriangle,
+  Phone,
+  Copy,
+  ExternalLink,
+  FolderLock,
+  Pin,
+  Share2,
+  BookOpen,
+  FileText,
+  Zap,
+  Clock,
+  Tag,
+  Star,
+  X,
+  ChevronRight,
+  Download,
+  Eye,
+  Edit,
+  Trash2,
+  Bookmark,
+  Shield,
+  Wifi,
+  Database,
+  Settings,
+  Users,
+  Activity,
+  Layers,
+  CheckCircle,
+  TrendingUp,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
+import { toast } from "react-hot-toast";
 
 interface VaultCategory {
-  id: string
-  name: string
-  icon: string
-  color: string
-  description?: string
-  display_order: number
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description?: string;
+  display_order: number;
 }
 
 interface VaultItem {
-  id: string
-  title: string
-  description: string
-  content: string
-  category: string
-  type: string
-  file_url: string
-  priority: string
-  tags: string[]
-  is_confidential: boolean
-  is_deleted: boolean
-  category_id: string
-  author_id: string
-  created_at: string
-  updated_at: string
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  type: string;
+  file_url: string;
+  priority: string;
+  tags: string[];
+  is_confidential: boolean;
+  is_deleted: boolean;
+  category_id: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ItemPin {
-  id: string
-  item_id: string
-  user_id: string
-  created_at: string
+  id: string;
+  item_id: string;
+  user_id: string;
+  created_at: string;
 }
 
 const PRIORITY_CONFIG = {
-  high: { color: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-500', label: 'High Priority', gradient: 'from-red-500 to-red-600' },
-  normal: { color: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500', label: 'Normal', gradient: 'from-blue-500 to-blue-600' },
-  low: { color: 'bg-gray-50 text-gray-700 border-gray-200', dot: 'bg-gray-500', label: 'Low Priority', gradient: 'from-gray-500 to-gray-600' }
-}
+  high: {
+    color: "bg-red-50 text-red-700 border-red-200",
+    dot: "bg-red-500",
+    label: "High Priority",
+    gradient: "from-red-500 to-red-600",
+  },
+  normal: {
+    color: "bg-blue-50 text-blue-700 border-blue-200",
+    dot: "bg-blue-500",
+    label: "Normal",
+    gradient: "from-blue-500 to-blue-600",
+  },
+  low: {
+    color: "bg-gray-50 text-gray-700 border-gray-200",
+    dot: "bg-gray-500",
+    label: "Low Priority",
+    gradient: "from-gray-500 to-gray-600",
+  },
+};
 
 const TYPE_CONFIG = {
-  sop: { icon: BookOpen, color: 'bg-purple-500', label: 'SOP', gradient: 'from-purple-500 to-purple-600' },
-  contact: { icon: Phone, color: 'bg-green-500', label: 'Contact', gradient: 'from-green-500 to-green-600' },
-  document: { icon: FileText, color: 'bg-blue-500', label: 'Document', gradient: 'from-blue-500 to-blue-600' },
-  procedure: { icon: Settings, color: 'bg-orange-500', label: 'Procedure', gradient: 'from-orange-500 to-orange-600' },
-  emergency: { icon: AlertTriangle, color: 'bg-red-500', label: 'Emergency', gradient: 'from-red-500 to-red-600' }
-}
+  sop: {
+    icon: BookOpen,
+    color: "bg-purple-500",
+    label: "SOP",
+    gradient: "from-purple-500 to-purple-600",
+  },
+  contact: {
+    icon: Phone,
+    color: "bg-green-500",
+    label: "Contact",
+    gradient: "from-green-500 to-green-600",
+  },
+  document: {
+    icon: FileText,
+    color: "bg-blue-500",
+    label: "Document",
+    gradient: "from-blue-500 to-blue-600",
+  },
+  procedure: {
+    icon: Settings,
+    color: "bg-orange-500",
+    label: "Procedure",
+    gradient: "from-orange-500 to-orange-600",
+  },
+  emergency: {
+    icon: AlertTriangle,
+    color: "bg-red-500",
+    label: "Emergency",
+    gradient: "from-red-500 to-red-600",
+  },
+};
 
 export default function ResourceCentre() {
-  const { profile, hasPermission } = useAuth()
+  const { profile, hasPermission } = useAuth();
 
-  const [categories, setCategories] = useState<VaultCategory[]>([])
-  const [items, setItems] = useState<VaultItem[]>([])
-  const [pins, setPins] = useState<ItemPin[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedItem, setSelectedItem] = useState<VaultItem | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showCategoryModal, setShowCategoryModal] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [categories, setCategories] = useState<VaultCategory[]>([]);
+  const [items, setItems] = useState<VaultItem[]>([]);
+  const [pins, setPins] = useState<ItemPin[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<VaultItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Add Resource Form State
   const [newResource, setNewResource] = useState({
-    title: '',
-    description: '',
-    content: '',
-    type: 'document',
-    priority: 'normal',
-    category_id: '',
-    file_url: '',
-    is_confidential: false
-  })
+    title: "",
+    description: "",
+    content: "",
+    type: "document",
+    priority: "normal",
+    category_id: "",
+    file_url: "",
+    is_confidential: false,
+  });
 
   // Edit Resource State
-  const [editResource, setEditResource] = useState<VaultItem | null>(null)
+  const [editResource, setEditResource] = useState<VaultItem | null>(null);
 
   // Category Management State
   const [categoryForm, setCategoryForm] = useState({
-    id: '',
-    name: '',
-    icon: '',
-    color: '#3B82F6',
-    description: ''
-  })
+    id: "",
+    name: "",
+    icon: "",
+    color: "#3B82F6",
+    description: "",
+  });
 
   const loadCategories = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('vault_categories')
-        .select('*')
-        .order('display_order', { ascending: true })
+        .from("vault_categories")
+        .select("*")
+        .order("display_order", { ascending: true });
 
-      if (error) throw error
-      setCategories(data || [])
+      if (error) throw error;
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error loading categories:', error)
-      toast.error('Failed to load categories')
+      console.error("Error loading categories:", error);
+      toast.error("Failed to load categories");
     }
-  }, [])
+  }, []);
 
   const loadItems = useCallback(async () => {
     try {
-      if (!profile) return
+      if (!profile) return;
 
       const { data: userProfile, error: profileError } = await supabase
-        .from('staff_profiles')
-        .select('role')
-        .eq('user_id', profile.user_id)
-        .single()
+        .from("staff_profiles")
+        .select("role")
+        .eq("user_id", profile.user_id)
+        .single();
 
       if (profileError) {
-        console.error('Profile error:', profileError)
+        console.error("Profile error:", profileError);
       }
-      setUserRole(userProfile?.role || null)
+      setUserRole(userProfile?.role || null);
 
       let query = supabase
-        .from('fets_vault')
-        .select('*')
-        .eq('is_deleted', false)
-        .order('priority', { ascending: false })
-        .order('updated_at', { ascending: false })
+        .from("fets_vault")
+        .select("*")
+        .eq("is_deleted", false)
+        .order("priority", { ascending: false })
+        .order("updated_at", { ascending: false });
 
       if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory)
+        query = query.eq("category_id", selectedCategory);
       }
 
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+        query = query.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`
+        );
       }
 
-      const { data, error } = await query
+      const { data, error } = await query;
       if (error) {
-        throw new Error(`Failed to load resources: ${error.message}`)
+        throw new Error(`Failed to load resources: ${error.message}`);
       }
 
-      setItems(data || [])
+      setItems(data || []);
     } catch (error: any) {
-      console.error('Error loading items:', error)
-      toast.error(error?.message || 'Failed to load resources')
+      console.error("Error loading items:", error);
+      toast.error(error?.message || "Failed to load resources");
     }
-  }, [profile, selectedCategory, searchQuery])
+  }, [profile, selectedCategory, searchQuery]);
 
   const loadPins = useCallback(async () => {
-    if (!profile?.id) return
+    if (!profile?.id) return;
 
     try {
       const { data, error } = await supabase
-        .from('vault_item_pins')
-        .select('*')
-        .eq('user_id', profile.id)
+        .from("vault_item_pins")
+        .select("*")
+        .eq("user_id", profile.id);
 
       if (error) {
-        throw new Error(`Failed to load pins: ${error.message}`)
+        throw new Error(`Failed to load pins: ${error.message}`);
       }
-      setPins(data || [])
+      setPins(data || []);
     } catch (error: any) {
-      console.error('Error loading pins:', error)
+      console.error("Error loading pins:", error);
     }
-  }, [profile])
+  }, [profile]);
 
   // Load all data
   const loadAllData = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await Promise.all([loadCategories(), loadPins()])
-      await loadItems()
+      await Promise.all([loadCategories(), loadPins()]);
+      await loadItems();
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error("Error loading data:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [loadCategories, loadPins, loadItems])
+  }, [loadCategories, loadPins, loadItems]);
 
   useEffect(() => {
-    loadAllData()
-  }, [selectedCategory, searchQuery])
+    loadAllData();
+  }, [selectedCategory, searchQuery]);
 
   const pinnedItems = useMemo(() => {
-    const pinnedIds = pins.map(p => p.item_id)
-    return items.filter(item => pinnedIds.includes(item.id))
-  }, [items, pins])
+    const pinnedIds = pins.map((p) => p.item_id);
+    return items.filter((item) => pinnedIds.includes(item.id));
+  }, [items, pins]);
 
   const togglePin = async (itemId: string) => {
-    if (!profile?.id) return
+    if (!profile?.id) return;
 
     try {
-      const existingPin = pins.find(p => p.item_id === itemId)
+      const existingPin = pins.find((p) => p.item_id === itemId);
 
       if (existingPin) {
-        await supabase.from('vault_item_pins').delete().eq('id', existingPin.id)
-        setPins(pins.filter(p => p.id !== existingPin.id))
-        toast.success('Unpinned from Quick Access')
+        await supabase
+          .from("vault_item_pins")
+          .delete()
+          .eq("id", existingPin.id);
+        setPins(pins.filter((p) => p.id !== existingPin.id));
+        toast.success("Unpinned from Quick Access");
       } else {
         const { data, error } = await supabase
-          .from('vault_item_pins')
+          .from("vault_item_pins")
           .insert({ item_id: itemId, user_id: profile.id })
           .select()
-          .single()
+          .single();
 
-        if (error) throw error
-        setPins([...pins, data])
-        toast.success('Pinned to Quick Access')
+        if (error) throw error;
+        setPins([...pins, data]);
+        toast.success("Pinned to Quick Access");
       }
     } catch (error) {
-      console.error('Error toggling pin:', error)
-      toast.error('Failed to update pin')
+      console.error("Error toggling pin:", error);
+      toast.error("Failed to update pin");
     }
-  }
+  };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard!')
-  }
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
+  };
 
   const viewDetails = (item: VaultItem) => {
-    setSelectedItem(item)
-    setShowDetailModal(true)
-  }
+    setSelectedItem(item);
+    setShowDetailModal(true);
+  };
 
   const createResource = async () => {
     if (!profile?.id) {
-      toast.error('You must be logged in to create a resource')
-      return
+      toast.error("You must be logged in to create a resource");
+      return;
     }
 
     if (!newResource.title.trim()) {
-      toast.error('Title is required')
-      return
+      toast.error("Title is required");
+      return;
     }
 
     if (!newResource.content.trim()) {
-      toast.error('Content is required')
-      return
+      toast.error("Content is required");
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
     try {
       const { error } = await supabase
-        .from('fets_vault')
+        .from("fets_vault")
         .insert({
           title: newResource.title,
           description: newResource.description,
@@ -265,41 +337,43 @@ export default function ResourceCentre() {
           tags: [],
           is_confidential: newResource.is_confidential,
           author_id: profile.id,
-          category: categories.find(c => c.id === newResource.category_id)?.name || 'General'
+          category:
+            categories.find((c) => c.id === newResource.category_id)?.name ||
+            "General",
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success('Resource created successfully!')
-      setShowAddModal(false)
+      toast.success("Resource created successfully!");
+      setShowAddModal(false);
       setNewResource({
-        title: '',
-        description: '',
-        content: '',
-        type: 'document',
-        priority: 'normal',
-        category_id: '',
-        file_url: '',
-        is_confidential: false
-      })
-      loadAllData()
+        title: "",
+        description: "",
+        content: "",
+        type: "document",
+        priority: "normal",
+        category_id: "",
+        file_url: "",
+        is_confidential: false,
+      });
+      loadAllData();
     } catch (error: any) {
-      console.error('Error creating resource:', error)
-      toast.error(error?.message || 'Failed to create resource')
+      console.error("Error creating resource:", error);
+      toast.error(error?.message || "Failed to create resource");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const updateResource = async () => {
-    if (!editResource || !profile?.id) return
+    if (!editResource || !profile?.id) return;
 
-    setSubmitting(true)
+    setSubmitting(true);
     try {
       const { error } = await supabase
-        .from('fets_vault')
+        .from("fets_vault")
         .update({
           title: editResource.title,
           description: editResource.description,
@@ -309,129 +383,145 @@ export default function ResourceCentre() {
           category_id: editResource.category_id,
           file_url: editResource.file_url,
           is_confidential: editResource.is_confidential,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', editResource.id)
+        .eq("id", editResource.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success('Resource updated successfully!')
-      setShowEditModal(false)
-      setEditResource(null)
-      loadAllData()
+      toast.success("Resource updated successfully!");
+      setShowEditModal(false);
+      setEditResource(null);
+      loadAllData();
     } catch (error: any) {
-      console.error('Error updating resource:', error)
-      toast.error(error?.message || 'Failed to update resource')
+      console.error("Error updating resource:", error);
+      toast.error(error?.message || "Failed to update resource");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const deleteResource = async (resourceId: string) => {
-    if (!window.confirm('Are you sure you want to delete this resource? This action cannot be undone.')) return
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this resource? This action cannot be undone."
+      )
+    )
+      return;
 
     try {
       const { error } = await supabase
-        .from('fets_vault')
+        .from("fets_vault")
         .update({
           is_deleted: true,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', resourceId)
+        .eq("id", resourceId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success('Resource deleted successfully!')
-      setShowDetailModal(false)
-      setShowEditModal(false)
-      loadAllData()
+      toast.success("Resource deleted successfully!");
+      setShowDetailModal(false);
+      setShowEditModal(false);
+      loadAllData();
     } catch (error: any) {
-      console.error('Error deleting resource:', error)
-      toast.error(`Failed to delete resource: ${error.message || 'Unknown error'}`)
+      console.error("Error deleting resource:", error);
+      toast.error(
+        `Failed to delete resource: ${error.message || "Unknown error"}`
+      );
     }
-  }
+  };
 
   const saveCategory = async () => {
     if (!categoryForm.name.trim()) {
-      toast.error('Category name is required')
-      return
+      toast.error("Category name is required");
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
     try {
       if (categoryForm.id) {
         const { error } = await supabase
-          .from('vault_categories')
+          .from("vault_categories")
           .update({
             name: categoryForm.name,
             icon: categoryForm.icon,
             color: categoryForm.color,
-            description: categoryForm.description
-          })
-          .eq('id', categoryForm.id)
-
-        if (error) throw error
-        toast.success('Category updated successfully!')
-      } else {
-        const { error } = await supabase
-          .from('vault_categories')
-          .insert({
-            name: categoryForm.name,
-            icon: categoryForm.icon,
-            color: categoryForm.color,
             description: categoryForm.description,
-            display_order: categories.length,
-            created_by: profile?.id
           })
+          .eq("id", categoryForm.id);
 
-        if (error) throw error
-        toast.success('Category created successfully!')
+        if (error) throw error;
+        toast.success("Category updated successfully!");
+      } else {
+        const { error } = await supabase.from("vault_categories").insert({
+          name: categoryForm.name,
+          icon: categoryForm.icon,
+          color: categoryForm.color,
+          description: categoryForm.description,
+          display_order: categories.length,
+          created_by: profile?.id,
+        });
+
+        if (error) throw error;
+        toast.success("Category created successfully!");
       }
 
-      setShowCategoryModal(false)
-      setCategoryForm({ id: '', name: '', icon: '', color: '#3B82F6', description: '' })
-      loadCategories()
+      setShowCategoryModal(false);
+      setCategoryForm({
+        id: "",
+        name: "",
+        icon: "",
+        color: "#3B82F6",
+        description: "",
+      });
+      loadCategories();
     } catch (error: any) {
-      console.error('Error saving category:', error)
-      toast.error(error?.message || 'Failed to save category')
+      console.error("Error saving category:", error);
+      toast.error(error?.message || "Failed to save category");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!window.confirm('Are you sure you want to delete this category? Resources in this category will not be affected.')) return
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this category? Resources in this category will not be affected."
+      )
+    )
+      return;
 
     try {
       const { error } = await supabase
-        .from('vault_categories')
+        .from("vault_categories")
         .delete()
-        .eq('id', categoryId)
+        .eq("id", categoryId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success('Category deleted successfully!')
-      setShowCategoryModal(false)
-      loadCategories()
+      toast.success("Category deleted successfully!");
+      setShowCategoryModal(false);
+      loadCategories();
     } catch (error: any) {
-      console.error('Error deleting category:', error)
-      toast.error(error?.message || 'Failed to delete category')
+      console.error("Error deleting category:", error);
+      toast.error(error?.message || "Failed to delete category");
     }
-  }
+  };
 
   const handleEditResource = (item: VaultItem) => {
-    setEditResource({ ...item })
-    setShowEditModal(true)
-  }
+    setEditResource({ ...item });
+    setShowEditModal(true);
+  };
 
-  const isAdmin = hasPermission('sop_edit')
+  const isAdmin = hasPermission("sop_edit");
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -439,8 +529,12 @@ export default function ResourceCentre() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">Resource Centre</h1>
-          <p className="text-gray-500 mt-1">Central repository for training, SOPs, and credentials.</p>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">
+            Resource Centre
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Central repository for training, SOPs, and credentials.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -470,22 +564,24 @@ export default function ResourceCentre() {
         <div className="w-full lg:w-64 flex-shrink-0 space-y-1">
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${selectedCategory === null
-              ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-gray-200'
-              : 'text-gray-600 hover:bg-gray-100'
-              }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+              selectedCategory === null
+                ? "bg-white text-indigo-600 shadow-sm ring-1 ring-gray-200"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <Layers className="w-4 h-4" />
             All Resources
           </button>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat.id
-                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-gray-200'
-                : 'text-gray-600 hover:bg-gray-100'
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                selectedCategory === cat.id
+                  ? "bg-white text-indigo-600 shadow-sm ring-1 ring-gray-200"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
             >
               <FolderLock className="w-4 h-4" />
               {cat.name}
@@ -512,10 +608,12 @@ export default function ResourceCentre() {
                 <Pin className="w-3 h-3" /> Quick Access
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {pinnedItems.map(item => {
-                  const typeConfig = TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.document
-                  const TypeIcon = typeConfig.icon
-                  const colorClass = typeConfig.color.split('-')[1] // e.g., 'purple' from 'bg-purple-500'
+                {pinnedItems.map((item) => {
+                  const typeConfig =
+                    TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG] ||
+                    TYPE_CONFIG.document;
+                  const TypeIcon = typeConfig.icon;
+                  const colorClass = typeConfig.color.split("-")[1]; // e.g., 'purple' from 'bg-purple-500'
 
                   return (
                     <div
@@ -524,15 +622,21 @@ export default function ResourceCentre() {
                       className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group relative"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div className={`p-2 rounded-lg ${typeConfig.color} bg-opacity-10 text-${colorClass}-600`}>
+                        <div
+                          className={`p-2 rounded-lg ${typeConfig.color} bg-opacity-10 text-${colorClass}-600`}
+                        >
                           <TypeIcon size={18} />
                         </div>
                         <Pin className="w-4 h-4 text-amber-400 fill-amber-400" />
                       </div>
-                      <h3 className="font-semibold text-gray-900 truncate pr-6">{item.title}</h3>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">{item.description}</p>
+                      <h3 className="font-semibold text-gray-900 truncate pr-6">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                        {item.description}
+                      </p>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -542,9 +646,13 @@ export default function ResourceCentre() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">
-                {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'Library'}
+                {selectedCategory
+                  ? categories.find((c) => c.id === selectedCategory)?.name
+                  : "Library"}
               </h2>
-              <span className="text-sm text-gray-500">{items.length} items</span>
+              <span className="text-sm text-gray-500">
+                {items.length} items
+              </span>
             </div>
 
             {items.length === 0 ? (
@@ -554,17 +662,21 @@ export default function ResourceCentre() {
                 </div>
                 <p className="text-gray-900 font-medium">No resources found</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {searchQuery ? 'Try adjusting your search terms' : 'Select a different category or add a new resource'}
+                  {searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Select a different category or add a new resource"}
                 </p>
               </div>
             ) : (
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="divide-y divide-gray-100">
-                  {items.map(item => {
-                    const typeConfig = TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.document
-                    const TypeIcon = typeConfig.icon
-                    const colorClass = typeConfig.color.split('-')[1]
-                    const isPinned = pins.some(p => p.item_id === item.id)
+                  {items.map((item) => {
+                    const typeConfig =
+                      TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG] ||
+                      TYPE_CONFIG.document;
+                    const TypeIcon = typeConfig.icon;
+                    const colorClass = typeConfig.color.split("-")[1];
+                    const isPinned = pins.some((p) => p.item_id === item.id);
 
                     return (
                       <div
@@ -572,37 +684,58 @@ export default function ResourceCentre() {
                         onClick={() => viewDetails(item)}
                         className="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4 group"
                       >
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${typeConfig.color} bg-opacity-10`}>
-                          <TypeIcon size={20} className={`text-${colorClass}-600`} />
+                        <div
+                          className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${typeConfig.color} bg-opacity-10`}
+                        >
+                          <TypeIcon
+                            size={20}
+                            className={`text-${colorClass}-600`}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-900 truncate">{item.title}</h3>
+                            <h3 className="font-medium text-gray-900 truncate">
+                              {item.title}
+                            </h3>
                             {item.is_confidential && (
-                              <div className="flex-shrink-0" title="Confidential">
+                              <div
+                                className="flex-shrink-0"
+                                title="Confidential"
+                              >
                                 <Shield className="w-3 h-3 text-red-500" />
                               </div>
                             )}
-                            {item.priority === 'high' && (
+                            {item.priority === "high" && (
                               <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold uppercase rounded">
                                 High
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 truncate">{item.description}</p>
+                          <p className="text-sm text-gray-500 truncate">
+                            {item.description}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
-                            className={`p-2 rounded-full hover:bg-gray-200 transition-colors ${isPinned ? 'text-amber-500' : 'text-gray-400'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePin(item.id);
+                            }}
+                            className={`p-2 rounded-full hover:bg-gray-200 transition-colors ${
+                              isPinned ? "text-amber-500" : "text-gray-400"
+                            }`}
                             title={isPinned ? "Unpin" : "Pin to Quick Access"}
                           >
-                            <Pin className={`w-4 h-4 ${isPinned ? 'fill-amber-500' : ''}`} />
+                            <Pin
+                              className={`w-4 h-4 ${
+                                isPinned ? "fill-amber-500" : ""
+                              }`}
+                            />
                           </button>
                           <ChevronRight className="w-4 h-4 text-gray-300" />
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -620,17 +753,17 @@ export default function ResourceCentre() {
           setResource={setNewResource}
           onSave={createResource}
           onClose={() => {
-            setShowAddModal(false)
+            setShowAddModal(false);
             setNewResource({
-              title: '',
-              description: '',
-              content: '',
-              type: 'document',
-              priority: 'normal',
-              category_id: '',
-              file_url: '',
-              is_confidential: false
-            })
+              title: "",
+              description: "",
+              content: "",
+              type: "document",
+              priority: "normal",
+              category_id: "",
+              file_url: "",
+              is_confidential: false,
+            });
           }}
           submitting={submitting}
         />
@@ -645,8 +778,8 @@ export default function ResourceCentre() {
           setResource={setEditResource}
           onSave={updateResource}
           onClose={() => {
-            setShowEditModal(false)
-            setEditResource(null)
+            setShowEditModal(false);
+            setEditResource(null);
           }}
           submitting={submitting}
           onDelete={() => deleteResource(editResource.id)}
@@ -658,18 +791,25 @@ export default function ResourceCentre() {
         <ResourceDetailModal
           item={selectedItem}
           onClose={() => {
-            setShowDetailModal(false)
-            setSelectedItem(null)
+            setShowDetailModal(false);
+            setSelectedItem(null);
           }}
           onEdit={() => {
-            setShowDetailModal(false)
-            handleEditResource(selectedItem)
+            setShowDetailModal(false);
+            handleEditResource(selectedItem);
           }}
           onPin={() => togglePin(selectedItem.id)}
-          isPinned={pins.some(p => p.item_id === selectedItem.id)}
+          isPinned={pins.some((p) => p.item_id === selectedItem.id)}
           copyToClipboard={copyToClipboard}
-          typeConfig={TYPE_CONFIG[selectedItem.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.document}
-          priorityConfig={PRIORITY_CONFIG[selectedItem.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.normal}
+          typeConfig={
+            TYPE_CONFIG[selectedItem.type as keyof typeof TYPE_CONFIG] ||
+            TYPE_CONFIG.document
+          }
+          priorityConfig={
+            PRIORITY_CONFIG[
+              selectedItem.priority as keyof typeof PRIORITY_CONFIG
+            ] || PRIORITY_CONFIG.normal
+          }
           isAdmin={isAdmin}
         />
       )}
@@ -681,15 +821,26 @@ export default function ResourceCentre() {
           onSave={saveCategory}
           onClose={() => setShowCategoryModal(false)}
           submitting={submitting}
-          onDelete={categoryForm.id ? () => deleteCategory(categoryForm.id) : undefined}
+          onDelete={
+            categoryForm.id ? () => deleteCategory(categoryForm.id) : undefined
+          }
         />
       )}
     </div>
-  )
+  );
 }
 
 // Resource Form Modal Component
-function ResourceFormModal({ title, categories, resource, setResource, onSave, onClose, submitting, onDelete }: any) {
+function ResourceFormModal({
+  title,
+  categories,
+  resource,
+  setResource,
+  onSave,
+  onClose,
+  submitting,
+  onDelete,
+}: any) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <motion.div
@@ -700,7 +851,10 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-purple-600">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white">{title}</h2>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/20 transition-colors">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+            >
               <X className="w-5 h-5 text-white" />
             </button>
           </div>
@@ -708,11 +862,15 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
 
         <div className="p-6 space-y-4 max-h-[calc(90vh-180px)] overflow-y-auto">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Title *
+            </label>
             <input
               type="text"
               value={resource.title}
-              onChange={(e) => setResource({ ...resource, title: e.target.value })}
+              onChange={(e) =>
+                setResource({ ...resource, title: e.target.value })
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="Resource title"
               required
@@ -720,10 +878,14 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
             <textarea
               value={resource.description}
-              onChange={(e) => setResource({ ...resource, description: e.target.value })}
+              onChange={(e) =>
+                setResource({ ...resource, description: e.target.value })
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
               rows={2}
               placeholder="Brief description"
@@ -731,10 +893,14 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Content *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Content *
+            </label>
             <textarea
               value={resource.content}
-              onChange={(e) => setResource({ ...resource, content: e.target.value })}
+              onChange={(e) =>
+                setResource({ ...resource, content: e.target.value })
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
               rows={6}
               placeholder="Full content, instructions, or details..."
@@ -744,25 +910,35 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Category *
+              </label>
               <select
                 value={resource.category_id}
-                onChange={(e) => setResource({ ...resource, category_id: e.target.value })}
+                onChange={(e) =>
+                  setResource({ ...resource, category_id: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
                 required
               >
                 <option value="">Select category</option>
                 {categories.map((cat: any) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Type *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Type *
+              </label>
               <select
                 value={resource.type}
-                onChange={(e) => setResource({ ...resource, type: e.target.value })}
+                onChange={(e) =>
+                  setResource({ ...resource, type: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
                 required
               >
@@ -775,10 +951,14 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Priority *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Priority *
+              </label>
               <select
                 value={resource.priority}
-                onChange={(e) => setResource({ ...resource, priority: e.target.value })}
+                onChange={(e) =>
+                  setResource({ ...resource, priority: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
                 required
               >
@@ -790,11 +970,15 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">File URL (optional)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              File URL (optional)
+            </label>
             <input
               type="url"
               value={resource.file_url}
-              onChange={(e) => setResource({ ...resource, file_url: e.target.value })}
+              onChange={(e) =>
+                setResource({ ...resource, file_url: e.target.value })
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="https://..."
             />
@@ -805,10 +989,15 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
               type="checkbox"
               id="is_confidential"
               checked={resource.is_confidential}
-              onChange={(e) => setResource({ ...resource, is_confidential: e.target.checked })}
+              onChange={(e) =>
+                setResource({ ...resource, is_confidential: e.target.checked })
+              }
               className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_confidential" className="ml-2 text-sm font-medium text-gray-700">
+            <label
+              htmlFor="is_confidential"
+              className="ml-2 text-sm font-medium text-gray-700"
+            >
               Mark as confidential (restricted access)
             </label>
           </div>
@@ -854,12 +1043,22 @@ function ResourceFormModal({ title, categories, resource, setResource, onSave, o
         </div>
       </motion.div>
     </div>
-  )
+  );
 }
 
 // Resource Detail Modal Component
-function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToClipboard, typeConfig, priorityConfig, isAdmin }: any) {
-  const TypeIcon = typeConfig.icon
+function ResourceDetailModal({
+  item,
+  onClose,
+  onEdit,
+  onPin,
+  isPinned,
+  copyToClipboard,
+  typeConfig,
+  priorityConfig,
+  isAdmin,
+}: any) {
+  const TypeIcon = typeConfig.icon;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -868,7 +1067,9 @@ function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToCli
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
       >
-        <div className={`p-6 border-b border-gray-200 bg-gradient-to-r ${typeConfig.gradient}`}>
+        <div
+          className={`p-6 border-b border-gray-200 bg-gradient-to-r ${typeConfig.gradient}`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
@@ -885,7 +1086,11 @@ function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToCli
                 className="p-2.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
                 title={isPinned ? "Unpin" : "Pin to Quick Access"}
               >
-                <Pin className={`w-5 h-5 ${isPinned ? 'text-yellow-300 fill-yellow-300' : 'text-white'}`} />
+                <Pin
+                  className={`w-5 h-5 ${
+                    isPinned ? "text-yellow-300 fill-yellow-300" : "text-white"
+                  }`}
+                />
               </button>
               {isAdmin && (
                 <button
@@ -945,8 +1150,12 @@ function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToCli
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 rounded-xl p-4">
-              <h4 className="font-semibold text-gray-900 mb-2 text-sm">Priority</h4>
-              <span className={`px-4 py-2 rounded-lg text-sm font-semibold ${priorityConfig.color} border inline-block`}>
+              <h4 className="font-semibold text-gray-900 mb-2 text-sm">
+                Priority
+              </h4>
+              <span
+                className={`px-4 py-2 rounded-lg text-sm font-semibold ${priorityConfig.color} border inline-block`}
+              >
                 {priorityConfig.label}
               </span>
             </div>
@@ -961,7 +1170,9 @@ function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToCli
           {item.is_confidential && (
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-center gap-3">
               <Shield className="w-5 h-5 text-red-600" />
-              <span className="text-sm font-semibold text-red-700">Confidential - Restricted Access</span>
+              <span className="text-sm font-semibold text-red-700">
+                Confidential - Restricted Access
+              </span>
             </div>
           )}
         </div>
@@ -976,11 +1187,18 @@ function ResourceDetailModal({ item, onClose, onEdit, onPin, isPinned, copyToCli
         </div>
       </motion.div>
     </div>
-  )
+  );
 }
 
 // Category Form Modal Component
-function CategoryFormModal({ category, setCategory, onSave, onClose, submitting, onDelete }: any) {
+function CategoryFormModal({
+  category,
+  setCategory,
+  onSave,
+  onClose,
+  submitting,
+  onDelete,
+}: any) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <motion.div
@@ -989,19 +1207,28 @@ function CategoryFormModal({ category, setCategory, onSave, onClose, submitting,
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
       >
         <div className="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">{category.id ? 'Edit Category' : 'New Category'}</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-200 transition-colors">
+          <h2 className="text-xl font-bold text-gray-900">
+            {category.id ? "Edit Category" : "New Category"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
+          >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Name *
+            </label>
             <input
               type="text"
               value={category.name}
-              onChange={(e) => setCategory({ ...category, name: e.target.value })}
+              onChange={(e) =>
+                setCategory({ ...category, name: e.target.value })
+              }
               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
               placeholder="e.g. Training, SOPs"
               required
@@ -1009,10 +1236,14 @@ function CategoryFormModal({ category, setCategory, onSave, onClose, submitting,
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
             <textarea
               value={category.description}
-              onChange={(e) => setCategory({ ...category, description: e.target.value })}
+              onChange={(e) =>
+                setCategory({ ...category, description: e.target.value })
+              }
               className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
               rows={3}
               placeholder="Optional description"
@@ -1044,11 +1275,11 @@ function CategoryFormModal({ category, setCategory, onSave, onClose, submitting,
               disabled={submitting}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all font-medium disabled:opacity-50 flex items-center gap-2"
             >
-              {submitting ? 'Saving...' : 'Save Category'}
+              {submitting ? "Saving..." : "Save Category"}
             </button>
           </div>
         </div>
       </motion.div>
     </div>
-  )
+  );
 }

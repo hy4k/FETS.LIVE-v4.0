@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const MyTasks = ({ tasks, isLoading, error, openTaskModal }) => {
   return (
@@ -7,7 +7,9 @@ const MyTasks = ({ tasks, isLoading, error, openTaskModal }) => {
       {isLoading ? (
         <p>Loading tasks...</p>
       ) : error ? (
-        <p className="text-center text-red-500">Error loading tasks. Please try again later.</p>
+        <p className="text-center text-red-500">
+          Error loading tasks. Please try again later.
+        </p>
       ) : (
         <ul className="space-y-2">
           {tasks.length > 0 ? (

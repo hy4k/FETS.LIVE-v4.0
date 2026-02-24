@@ -1,14 +1,22 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, Megaphone, AlertTriangle, Info, Clock, CheckCircle2, Zap } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useBranch } from '../hooks/useBranch';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Radio,
+  Megaphone,
+  AlertTriangle,
+  Info,
+  Clock,
+  CheckCircle2,
+  Zap,
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { useBranch } from "../hooks/useBranch";
+import { formatDistanceToNow } from "date-fns";
 
 interface NewsItem {
   id: string;
   content: string;
-  priority: 'normal' | 'high';
+  priority: "normal" | "high";
   branch_location: string;
   is_active: boolean;
   expires_at: string | null;
@@ -25,13 +33,13 @@ export function NewsTickerBar() {
 
     // Subscribe to real-time updates
     const channel = supabase
-      .channel('news_ticker_updates')
+      .channel("news_ticker_updates")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'news_ticker'
+          event: "*",
+          schema: "public",
+          table: "news_ticker",
         },
         () => {
           fetchActiveNews();
@@ -47,26 +55,31 @@ export function NewsTickerBar() {
   const fetchActiveNews = async () => {
     try {
       const now = new Date().toISOString();
-      const currentBranch = typeof activeBranch === 'string' ? activeBranch : (activeBranch as any)?.name || 'calicut';
+      const currentBranch =
+        typeof activeBranch === "string"
+          ? activeBranch
+          : (activeBranch as any)?.name || "calicut";
 
       const { data, error } = await supabase
-        .from('news_ticker' as any)
-        .select('*')
-        .eq('is_active', true)
+        .from("news_ticker" as any)
+        .select("*")
+        .eq("is_active", true)
         .or(`expires_at.is.null,expires_at.gt.${now}`)
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: false });
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       // Filter by branch
-      const filteredNews = ((data as any) || []).filter((item: any) =>
-        item.branch_location === currentBranch || item.branch_location === 'global'
+      const filteredNews = ((data as any) || []).filter(
+        (item: any) =>
+          item.branch_location === currentBranch ||
+          item.branch_location === "global"
       );
 
       setNewsItems(filteredNews as NewsItem[]);
     } catch (error) {
-      console.error('Error fetching news:', error);
+      console.error("Error fetching news:", error);
     }
   };
 
@@ -84,7 +97,6 @@ export function NewsTickerBar() {
   return (
     <div className="w-full mb-8 px-1">
       <div className="relative overflow-hidden rounded-2xl bg-[#e0e5ec] shadow-[9px_9px_16px_rgba(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.8)] border border-white/20">
-
         <div className="flex items-stretch h-14">
           {/* Live Badge Section - Gold/Yellow Theme */}
           <div className="relative z-10 flex items-center px-6 bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] shadow-[4px_0_15px_rgba(255,215,0,0.3)]">
@@ -92,7 +104,10 @@ export function NewsTickerBar() {
               <div className="relative flex items-center justify-center w-8 h-8">
                 <div className="absolute inset-0 bg-yellow-100 rounded-full animate-ping opacity-75"></div>
                 <div className="relative z-10 bg-white/20 backdrop-blur-sm rounded-full p-1.5 shadow-inner border border-white/40">
-                  <Zap className="w-full h-full text-yellow-900 fill-yellow-900" strokeWidth={2.5} />
+                  <Zap
+                    className="w-full h-full text-yellow-900 fill-yellow-900"
+                    strokeWidth={2.5}
+                  />
                 </div>
               </div>
               <span className="text-yellow-950 font-black text-sm tracking-[0.2em] uppercase hidden sm:block drop-shadow-sm">
@@ -112,15 +127,15 @@ export function NewsTickerBar() {
             <motion.div
               className="flex gap-16 px-8 whitespace-nowrap"
               animate={{
-                x: isPaused ? 0 : [0, -1000]
+                x: isPaused ? 0 : [0, -1000],
               }}
               transition={{
                 x: {
                   repeat: Infinity,
                   repeatType: "loop",
                   duration: Math.max(30, newsItems.length * 15), // Smoother scrolling
-                  ease: "linear"
-                }
+                  ease: "linear",
+                },
               }}
             >
               {[...newsItems, ...newsItems, ...newsItems].map((item, index) => (
@@ -129,7 +144,7 @@ export function NewsTickerBar() {
                   className="inline-flex items-center gap-4 group"
                 >
                   {/* Priority Indicator - Neumorphic Pill */}
-                  {item.priority === 'high' ? (
+                  {item.priority === "high" ? (
                     <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0e5ec] shadow-[3px_3px_6px_#bec3c9,-3px_-3px_6px_#ffffff] border border-red-200/30 text-red-600 text-[10px] font-bold uppercase tracking-wider">
                       <AlertTriangle size={12} className="fill-red-600/20" />
                       Urgent

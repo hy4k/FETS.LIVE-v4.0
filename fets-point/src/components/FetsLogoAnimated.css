@@ -3,54 +3,50 @@
    =================================================== */
 
 .fets-text-logo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
 }
 
 .fets-main-text {
-    font-family: 'Syncopate', sans-serif;
-    font-weight: 700;
-    font-size: 1.5rem; /* Much smaller */
-    line-height: 1;
-    letter-spacing: 0.1em;
-    color: #2D1B18; /* Dark brown for strong contrast */
-    
-    /* Strong 3D embossed effect */
-    text-shadow: 
-        1px 1px 2px rgba(0, 0, 0, 0.3),
-        2px 2px 4px rgba(255, 200, 69, 0.4),
-        -1px -1px 1px rgba(255, 255, 255, 0.6);
-    
-    transition: all 0.3s ease;
+  font-family: "Syncopate", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem; /* Much smaller */
+  line-height: 1;
+  letter-spacing: 0.1em;
+  color: #2d1b18; /* Dark brown for strong contrast */
+
+  /* Strong 3D embossed effect */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3),
+    2px 2px 4px rgba(255, 200, 69, 0.4), -1px -1px 1px rgba(255, 255, 255, 0.6);
+
+  transition: all 0.3s ease;
 }
 
 .fets-sub-text {
-    font-family: 'Syncopate', sans-serif;
-    font-weight: 400;
-    font-size: 0.5rem; /* Very small */
-    letter-spacing: 0.3em;
-    color: #4E342E;
-    margin-left: 2px;
-    margin-top: 2px;
-    opacity: 0.8;
+  font-family: "Syncopate", sans-serif;
+  font-weight: 400;
+  font-size: 0.5rem; /* Very small */
+  letter-spacing: 0.3em;
+  color: #4e342e;
+  margin-left: 2px;
+  margin-top: 2px;
+  opacity: 0.8;
 }
 
 /* Hover Interaction */
 .fets-text-logo-container:hover .fets-main-text {
-    transform: translateY(-1px);
-    text-shadow: 
-        1px 1px 3px rgba(0, 0, 0, 0.4),
-        3px 3px 6px rgba(255, 200, 69, 0.5),
-        -1px -1px 1px rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4),
+    3px 3px 6px rgba(255, 200, 69, 0.5), -1px -1px 1px rgba(255, 255, 255, 0.7);
 }
 
 .fets-dot {
-    color: #FF6B35; /* Orange accent */
-    -webkit-text-fill-color: initial;
-    text-shadow: 0 0 8px rgba(255, 107, 53, 0.5);
+  color: #ff6b35; /* Orange accent */
+  -webkit-text-fill-color: initial;
+  text-shadow: 0 0 8px rgba(255, 107, 53, 0.5);
 }

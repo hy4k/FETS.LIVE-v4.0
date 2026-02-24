@@ -1,12 +1,12 @@
 export type QuestionType =
-  | 'text'
-  | 'number'
-  | 'checkbox'
-  | 'radio'
-  | 'dropdown'
-  | 'date'
-  | 'time'
-  | 'textarea';
+  | "text"
+  | "number"
+  | "checkbox"
+  | "radio"
+  | "dropdown"
+  | "date"
+  | "time"
+  | "textarea";
 
 export interface Question {
   id: string;
@@ -16,7 +16,7 @@ export interface Question {
   required: boolean;
   description?: string;
   section?: string; // For grouping questions
-  attachment_mode?: 'none' | 'optional' | 'required';
+  attachment_mode?: "none" | "optional" | "required";
 }
 
 export interface Attachment {
@@ -25,7 +25,7 @@ export interface Attachment {
   type: string;
 }
 
-export type ChecklistType = 'pre_exam' | 'post_exam' | 'custom';
+export type ChecklistType = "pre_exam" | "post_exam" | "custom";
 
 export interface ChecklistTemplate {
   id: string;

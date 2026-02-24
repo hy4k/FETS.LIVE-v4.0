@@ -1,83 +1,121 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen, Fingerprint, Pen, Star, Lock, Sparkles,
-  Plus, Trash2, Edit3, Check, X, Calendar, Clock,
-  Bookmark, Heart, Flag, Tag, Search, ChevronRight,
-  BookMarked, Feather, Crown, Gem, Award, Brain,
-  AlertCircle, Activity, CheckCircle as LucideCheckCircle
-} from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabase'
-import { toast } from 'react-hot-toast'
-import { format } from 'date-fns'
+  BookOpen,
+  Fingerprint,
+  Pen,
+  Star,
+  Lock,
+  Sparkles,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  X,
+  Calendar,
+  Clock,
+  Bookmark,
+  Heart,
+  Flag,
+  Tag,
+  Search,
+  ChevronRight,
+  BookMarked,
+  Feather,
+  Crown,
+  Gem,
+  Award,
+  Brain,
+  AlertCircle,
+  Activity,
+  CheckCircle as LucideCheckCircle,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
+import { toast } from "react-hot-toast";
+import { format } from "date-fns";
 
 // --- Types ---
 interface SlateEntry {
-  id: string
-  user_id: string
-  title: string
-  content: string
-  category: 'note' | 'strategy' | 'intel'
-  is_starred: boolean
-  is_pinned: boolean
-  mood?: string
-  created_at: string
-  updated_at: string
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  category: "note" | "strategy" | "intel";
+  is_starred: boolean;
+  is_pinned: boolean;
+  mood?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // --- FETS Theme Color Palette (Matching App Theme) ---
 const COLORS = {
   // Primary Gold/Amber tones matching the header
-  tuscanYellow: '#E4A853',
-  deepGold: '#C4922F',
-  champagne: '#F7E7CE',
-  darkChocolate: '#3D2B1F',
-  warmBrown: '#5D4E37',
-  ivory: '#FFFFF0',
+  tuscanYellow: "#E4A853",
+  deepGold: "#C4922F",
+  champagne: "#F7E7CE",
+  darkChocolate: "#3D2B1F",
+  warmBrown: "#5D4E37",
+  ivory: "#FFFFF0",
   // Accent Colors
-  sapphire: '#0F52BA',
-  emerald: '#50C878',
-  amethyst: '#9966CC',
-  coral: '#FF6B6B',
-  teal: '#20B2AA',
-  bronze: '#CD7F32',
-  cream: '#FFFDD0',
-  slate: '#607D8B'
-}
+  sapphire: "#0F52BA",
+  emerald: "#50C878",
+  amethyst: "#9966CC",
+  coral: "#FF6B6B",
+  teal: "#20B2AA",
+  bronze: "#CD7F32",
+  cream: "#FFFDD0",
+  slate: "#607D8B",
+};
 
 // --- Enhanced Category Varieties ---
 const CATEGORY_CONFIG = {
-  note: { icon: Pen, color: 'from-amber-400 to-yellow-500', label: 'Start', accent: COLORS.tuscanYellow },
-  strategy: { icon: Brain, color: 'from-indigo-400 to-blue-500', label: 'Strategy', accent: COLORS.sapphire },
-  intel: { icon: Sparkles, color: 'from-purple-400 to-pink-500', label: 'Intel', accent: COLORS.amethyst }
-}
+  note: {
+    icon: Pen,
+    color: "from-amber-400 to-yellow-500",
+    label: "Start",
+    accent: COLORS.tuscanYellow,
+  },
+  strategy: {
+    icon: Brain,
+    color: "from-indigo-400 to-blue-500",
+    label: "Strategy",
+    accent: COLORS.sapphire,
+  },
+  intel: {
+    icon: Sparkles,
+    color: "from-purple-400 to-pink-500",
+    label: "Intel",
+    accent: COLORS.amethyst,
+  },
+};
 
 // --- Book Cover Component ---
 const BookCover = ({
   userName,
   onOpen,
-  isAuthenticated
+  isAuthenticated,
 }: {
-  userName: string
-  onOpen: () => void
-  isAuthenticated: boolean
+  userName: string;
+  onOpen: () => void;
+  isAuthenticated: boolean;
 }) => {
-  const [isHovered, setIsHovered] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
+  const [isHovered, setIsHovered] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleFingerprintClick = () => {
     if (!isAuthenticated) {
-      toast.error('Please log in to access your Slate')
-      return
+      toast.error("Please log in to access your Slate");
+      return;
     }
-    setIsScanning(true)
+    setIsScanning(true);
     // Simulate fingerprint scan
     setTimeout(() => {
-      setIsScanning(false)
-      onOpen()
-    }, 1500)
-  }
+      setIsScanning(false);
+      onOpen();
+    }, 1500);
+  };
 
   return (
     <motion.div
@@ -92,20 +130,20 @@ const BookCover = ({
       <motion.div
         animate={{
           rotateY: isHovered ? -5 : 0,
-          scale: isHovered ? 1.02 : 1
+          scale: isHovered ? 1.02 : 1,
         }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="relative rounded-lg overflow-hidden shadow-2xl"
         style={{
           background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 50%, ${COLORS.darkChocolate} 100%)`,
-          minHeight: '500px'
+          minHeight: "500px",
         }}
       >
         {/* Leather Texture Overlay */}
         <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
 
@@ -114,7 +152,7 @@ const BookCover = ({
           className="absolute left-0 top-0 bottom-0 w-8"
           style={{
             background: `linear-gradient(90deg, ${COLORS.bronze} 0%, ${COLORS.tuscanYellow} 50%, ${COLORS.bronze} 100%)`,
-            boxShadow: 'inset -4px 0 8px rgba(0,0,0,0.3)'
+            boxShadow: "inset -4px 0 8px rgba(0,0,0,0.3)",
           }}
         />
 
@@ -132,12 +170,13 @@ const BookCover = ({
 
         {/* Main Content */}
         <div className="relative z-10 flex flex-col items-center justify-between h-full min-h-[500px] p-8 pl-12">
-
           {/* Top Badge */}
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-amber-400/10 border border-amber-400/30">
               <BookMarked size={14} className="text-amber-400" />
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.3em]">Personal Archive</span>
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.3em]">
+                Personal Archive
+              </span>
             </div>
           </div>
 
@@ -147,7 +186,8 @@ const BookCover = ({
               className="text-5xl md:text-6xl font-serif text-amber-100 tracking-wider"
               style={{
                 fontFamily: "'Cinzel Decorative', 'Times New Roman', serif",
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(212,175,55,0.3)'
+                textShadow:
+                  "2px 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(212,175,55,0.3)",
               }}
             >
               SLATE
@@ -165,10 +205,10 @@ const BookCover = ({
                 className="text-2xl md:text-3xl text-amber-200/90 tracking-widest uppercase"
                 style={{
                   fontFamily: "'Cinzel', 'Times New Roman', serif",
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
                 }}
               >
-                {userName || 'Anonymous'}
+                {userName || "Anonymous"}
               </p>
               <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
             </div>
@@ -182,25 +222,38 @@ const BookCover = ({
               whileTap={{ scale: 0.95 }}
               className="relative group"
             >
-              <div className={`
+              <div
+                className={`
                 w-24 h-24 rounded-full flex items-center justify-center
                 bg-gradient-to-br from-amber-900/50 to-amber-950/50
                 border-2 border-amber-400/30 
                 shadow-[0_0_30px_rgba(212,175,55,0.2),inset_0_0_20px_rgba(0,0,0,0.3)]
                 transition-all duration-500
-                ${isScanning ? 'border-emerald-400 shadow-[0_0_40px_rgba(80,200,120,0.4)]' : ''}
-              `}>
+                ${
+                  isScanning
+                    ? "border-emerald-400 shadow-[0_0_40px_rgba(80,200,120,0.4)]"
+                    : ""
+                }
+              `}
+              >
                 <motion.div
-                  animate={isScanning ? {
-                    scale: [1, 1.2, 1],
-                    opacity: [1, 0.5, 1]
-                  } : {}}
+                  animate={
+                    isScanning
+                      ? {
+                          scale: [1, 1.2, 1],
+                          opacity: [1, 0.5, 1],
+                        }
+                      : {}
+                  }
                   transition={{ repeat: Infinity, duration: 0.8 }}
                 >
                   <Fingerprint
                     size={48}
-                    className={`transition-colors duration-300 ${isScanning ? 'text-emerald-400' : 'text-amber-400/70 group-hover:text-amber-300'
-                      }`}
+                    className={`transition-colors duration-300 ${
+                      isScanning
+                        ? "text-emerald-400"
+                        : "text-amber-400/70 group-hover:text-amber-300"
+                    }`}
                   />
                 </motion.div>
               </div>
@@ -217,7 +270,7 @@ const BookCover = ({
             </motion.button>
 
             <p className="mt-4 text-xs text-amber-400/60 uppercase tracking-[0.2em]">
-              {isScanning ? 'Authenticating...' : 'Touch to Unlock'}
+              {isScanning ? "Authenticating..." : "Touch to Unlock"}
             </p>
           </div>
         </div>
@@ -228,30 +281,32 @@ const BookCover = ({
         </div>
       </motion.div>
     </motion.div>
-  )
-}
+  );
+};
 
 // --- Entry Editor Modal ---
 const EntryEditor = ({
   entry,
   onSave,
-  onClose
+  onClose,
 }: {
-  entry?: SlateEntry | null
-  onSave: (data: Partial<SlateEntry>) => void
-  onClose: () => void
+  entry?: SlateEntry | null;
+  onSave: (data: Partial<SlateEntry>) => void;
+  onClose: () => void;
 }) => {
-  const [title, setTitle] = useState(entry?.title || '')
-  const [content, setContent] = useState(entry?.content || '')
-  const [category, setCategory] = useState<SlateEntry['category']>(entry?.category || 'note')
+  const [title, setTitle] = useState(entry?.title || "");
+  const [content, setContent] = useState(entry?.content || "");
+  const [category, setCategory] = useState<SlateEntry["category"]>(
+    entry?.category || "note"
+  );
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) {
-      toast.error('Please fill in all fields')
-      return
+      toast.error("Please fill in all fields");
+      return;
     }
-    onSave({ title, content, category })
-  }
+    onSave({ title, content, category });
+  };
 
   return (
     <motion.div
@@ -266,21 +321,29 @@ const EntryEditor = ({
         exit={{ scale: 0.9, opacity: 0 }}
         className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
         style={{
-          background: `linear-gradient(135deg, ${COLORS.cream} 0%, ${COLORS.ivory} 100%)`
+          background: `linear-gradient(135deg, ${COLORS.cream} 0%, ${COLORS.ivory} 100%)`,
         }}
       >
         {/* Header */}
         <div
           className="px-6 py-4 flex items-center justify-between"
-          style={{ background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)` }}
+          style={{
+            background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)`,
+          }}
         >
           <div className="flex items-center gap-3">
             <BookOpen size={20} className="text-amber-400" />
-            <h3 className="text-lg font-bold text-amber-100" style={{ fontFamily: "'Cinzel', serif" }}>
-              {entry ? 'Edit Entry' : 'New Entry'}
+            <h3
+              className="text-lg font-bold text-amber-100"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              {entry ? "Edit Entry" : "New Entry"}
             </h3>
           </div>
-          <button onClick={onClose} className="p-2 text-amber-400/70 hover:text-amber-300 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 text-amber-400/70 hover:text-amber-300 transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
@@ -290,24 +353,25 @@ const EntryEditor = ({
           {/* Category Selector */}
           <div className="flex flex-wrap gap-2">
             {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-              const Icon = config.icon
+              const Icon = config.icon;
               return (
                 <button
                   key={key}
-                  onClick={() => setCategory(key as SlateEntry['category'])}
+                  onClick={() => setCategory(key as SlateEntry["category"])}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold
                     transition-all duration-300
-                    ${category === key
-                      ? `bg-gradient-to-r ${config.color} text-white shadow-lg`
-                      : 'bg-white/50 text-slate-600 hover:bg-white/80 border border-slate-200'
+                    ${
+                      category === key
+                        ? `bg-gradient-to-r ${config.color} text-white shadow-lg`
+                        : "bg-white/50 text-slate-600 hover:bg-white/80 border border-slate-200"
                     }
                   `}
                 >
                   <Icon size={14} />
                   {config.label}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -326,8 +390,8 @@ const EntryEditor = ({
             className="relative rounded-xl overflow-hidden border border-amber-200"
             style={{
               background: `linear-gradient(to bottom, transparent 31px, rgba(180,140,100,0.2) 31px)`,
-              backgroundSize: '100% 32px',
-              backgroundColor: COLORS.cream
+              backgroundSize: "100% 32px",
+              backgroundColor: COLORS.cream,
             }}
           >
             {/* Red Margin Line */}
@@ -341,8 +405,8 @@ const EntryEditor = ({
               className="w-full pl-12 pr-4 py-4 bg-transparent resize-none focus:outline-none text-slate-700 leading-8"
               style={{
                 fontFamily: "'Inter', sans-serif",
-                fontSize: '15px',
-                lineHeight: '32px'
+                fontSize: "15px",
+                lineHeight: "32px",
               }}
             />
           </div>
@@ -358,7 +422,9 @@ const EntryEditor = ({
             <button
               onClick={handleSubmit}
               className="flex-1 px-6 py-3 font-bold rounded-xl text-white shadow-lg transition-all hover:shadow-xl"
-              style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)`,
+              }}
             >
               <span className="flex items-center justify-center gap-2">
                 <Pen size={18} />
@@ -372,18 +438,27 @@ const EntryEditor = ({
             <div className="flex items-center gap-3">
               <Sparkles size={18} className="text-indigo-600" />
               <div>
-                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Action Extractor</p>
-                <p className="text-[10px] text-indigo-700/70 italic">Extract tasks from your note content automatically</p>
+                <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                  Action Extractor
+                </p>
+                <p className="text-[10px] text-indigo-700/70 italic">
+                  Extract tasks from your note content automatically
+                </p>
               </div>
             </div>
             <button
               onClick={() => {
-                const lines = content.split('\n');
-                const tasks = lines.filter(l => l.trim().startsWith('- [ ]') || l.trim().startsWith('TODO:'));
+                const lines = content.split("\n");
+                const tasks = lines.filter(
+                  (l) =>
+                    l.trim().startsWith("- [ ]") || l.trim().startsWith("TODO:")
+                );
                 if (tasks.length > 0) {
                   toast.success(`Extracted ${tasks.length} actions!`);
                 } else {
-                  toast('No clear actions found. Use "- [ ]" or "TODO:"', { icon: 'ℹ️' });
+                  toast('No clear actions found. Use "- [ ]" or "TODO:"', {
+                    icon: "ℹ️",
+                  });
                 }
               }}
               className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors"
@@ -394,8 +469,8 @@ const EntryEditor = ({
         </div>
       </motion.div>
     </motion.div>
-  )
-}
+  );
+};
 
 // --- Entry Card ---
 const EntryCard = ({
@@ -403,16 +478,16 @@ const EntryCard = ({
   onEdit,
   onDelete,
   onToggleStar,
-  smartFeatures
+  smartFeatures,
 }: {
-  entry: SlateEntry
-  onEdit: () => void
-  onDelete: () => void
-  onToggleStar: () => void
-  smartFeatures?: React.ReactNode
+  entry: SlateEntry;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleStar: () => void;
+  smartFeatures?: React.ReactNode;
 }) => {
-  const config = CATEGORY_CONFIG[entry.category]
-  const Icon = config.icon
+  const config = CATEGORY_CONFIG[entry.category];
+  const Icon = config.icon;
 
   return (
     <motion.div
@@ -425,7 +500,9 @@ const EntryCard = ({
       style={{ backgroundColor: COLORS.ivory }}
     >
       {/* Category Stripe */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.color}`} />
+      <div
+        className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.color}`}
+      />
 
       {/* Pinned Badge */}
       {entry.is_pinned && (
@@ -450,7 +527,7 @@ const EntryCard = ({
               {entry.title}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {format(new Date(entry.created_at), 'MMM dd, yyyy • HH:mm')}
+              {format(new Date(entry.created_at), "MMM dd, yyyy • HH:mm")}
             </p>
           </div>
         </div>
@@ -458,7 +535,7 @@ const EntryCard = ({
         {/* Content Preview */}
         <p
           className="text-slate-600 text-sm line-clamp-3 mb-4"
-          style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px' }}
+          style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px" }}
         >
           {entry.content}
         </p>
@@ -472,7 +549,10 @@ const EntryCard = ({
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-          <span className={`text-xs font-bold uppercase tracking-wider`} style={{ color: config.accent }}>
+          <span
+            className={`text-xs font-bold uppercase tracking-wider`}
+            style={{ color: config.accent }}
+          >
             {config.label}
           </span>
 
@@ -481,7 +561,14 @@ const EntryCard = ({
               onClick={onToggleStar}
               className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors"
             >
-              <Star size={14} className={entry.is_starred ? 'text-amber-500 fill-amber-500' : 'text-slate-400'} />
+              <Star
+                size={14}
+                className={
+                  entry.is_starred
+                    ? "text-amber-500 fill-amber-500"
+                    : "text-slate-400"
+                }
+              />
             </button>
             <button
               onClick={onEdit}
@@ -499,140 +586,148 @@ const EntryCard = ({
         </div>
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
 // --- Main Slate Component ---
 export function Slate() {
-  const { profile, user } = useAuth()
-  const [isOpen, setIsOpen] = useState(true) // Always open
-  const [entries, setEntries] = useState<SlateEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [showEditor, setShowEditor] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<SlateEntry | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const { profile, user } = useAuth();
+  const [isOpen, setIsOpen] = useState(true); // Always open
+  const [entries, setEntries] = useState<SlateEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<SlateEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   // Load entries function using useCallback
   const loadEntries = useCallback(async () => {
-    if (!user?.id) return
-    setLoading(true)
+    if (!user?.id) return;
+    setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('slate_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false })
+        .from("slate_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) {
-        if (error.code === '42P01') {
-          console.warn('Slate table does not exist yet')
-          setEntries([])
-          return
+        if (error.code === "42P01") {
+          console.warn("Slate table does not exist yet");
+          setEntries([]);
+          return;
         }
-        throw error
+        throw error;
       }
-      setEntries(data || [])
+      setEntries(data || []);
     } catch (err) {
-      console.error('Error loading entries:', err)
+      console.error("Error loading entries:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [user?.id])
+  }, [user?.id]);
 
   // Load entries on open
   useEffect(() => {
     if (isOpen && user?.id) {
-      loadEntries()
+      loadEntries();
     }
-  }, [isOpen, user?.id, loadEntries])
+  }, [isOpen, user?.id, loadEntries]);
 
   const saveEntry = async (data: Partial<SlateEntry>) => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
     try {
       if (editingEntry) {
         const { error } = await supabase
-          .from('slate_entries')
+          .from("slate_entries")
           .update({ ...data, updated_at: new Date().toISOString() })
-          .eq('id', editingEntry.id)
-        if (error) throw error
-        toast.success('Entry updated!')
+          .eq("id", editingEntry.id);
+        if (error) throw error;
+        toast.success("Entry updated!");
       } else {
-        const { error } = await supabase
-          .from('slate_entries')
-          .insert({
-            ...data,
-            user_id: user.id,
-            is_starred: false,
-            is_pinned: false
-          })
-        if (error) throw error
-        toast.success('Entry created!')
+        const { error } = await supabase.from("slate_entries").insert({
+          ...data,
+          user_id: user.id,
+          is_starred: false,
+          is_pinned: false,
+        });
+        if (error) throw error;
+        toast.success("Entry created!");
       }
-      setShowEditor(false)
-      setEditingEntry(null)
-      loadEntries()
+      setShowEditor(false);
+      setEditingEntry(null);
+      loadEntries();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save entry')
+      toast.error(err.message || "Failed to save entry");
     }
-  }
+  };
 
   const deleteEntry = async (id: string) => {
     try {
-      const { error } = await supabase.from('slate_entries').delete().eq('id', id)
-      if (error) throw error
-      toast.success('Entry deleted')
-      loadEntries()
+      const { error } = await supabase
+        .from("slate_entries")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Entry deleted");
+      loadEntries();
     } catch (err: any) {
-      toast.error('Failed to delete entry')
+      toast.error("Failed to delete entry");
     }
-  }
+  };
 
   const toggleStar = async (entry: SlateEntry) => {
     try {
       const { error } = await supabase
-        .from('slate_entries')
+        .from("slate_entries")
         .update({ is_starred: !entry.is_starred })
-        .eq('id', entry.id)
-      if (error) throw error
-      loadEntries()
+        .eq("id", entry.id);
+      if (error) throw error;
+      loadEntries();
     } catch (err) {
-      console.error('Error toggling star:', err)
+      console.error("Error toggling star:", err);
     }
-  }
+  };
 
-  const filteredEntries = entries.filter(e => {
-    if (filterCategory !== 'all' && e.category !== filterCategory) return false
-    if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !e.content.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    return true
-  })
+  const filteredEntries = entries.filter((e) => {
+    if (filterCategory !== "all" && e.category !== filterCategory) return false;
+    if (
+      searchQuery &&
+      !e.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !e.content.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+      return false;
+    return true;
+  });
 
-  const starredCount = entries.filter(e => e.is_starred).length
+  const starredCount = entries.filter((e) => e.is_starred).length;
 
   // --- Smart Features ---
   const extractActions = (content: string) => {
-    const lines = content.split('\n')
+    const lines = content.split("\n");
     const actions = lines
-      .filter(line => line.trim().startsWith('- [ ]') || line.trim().startsWith('TODO:'))
-      .map(line => line.replace('- [ ]', '').replace('TODO:', '').trim())
-    return actions.slice(0, 3) // Only show top 3
-  }
+      .filter(
+        (line) =>
+          line.trim().startsWith("- [ ]") || line.trim().startsWith("TODO:")
+      )
+      .map((line) => line.replace("- [ ]", "").replace("TODO:", "").trim());
+    return actions.slice(0, 3); // Only show top 3
+  };
 
   const extractCaseLinks = (content: string) => {
-    const caseRegex = /#case-([a-zA-Z0-9-]+)/gi
-    const matches = Array.from(content.matchAll(caseRegex))
-    return [...new Set(matches.map(m => m[1]))] // Unique case IDs
-  }
+    const caseRegex = /#case-([a-zA-Z0-9-]+)/gi;
+    const matches = Array.from(content.matchAll(caseRegex));
+    return [...new Set(matches.map((m) => m[1]))]; // Unique case IDs
+  };
 
   // Open book view
   return (
     <div
       className="min-h-screen p-6 pt-28"
       style={{
-        background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.cream} 50%, ${COLORS.ivory} 100%)`
+        background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.cream} 50%, ${COLORS.ivory} 100%)`,
       }}
     >
       {/* Notebook Paper Pattern */}
@@ -642,7 +737,7 @@ export function Slate() {
           backgroundImage: `
             linear-gradient(to bottom, transparent 31px, rgba(180,140,100,0.15) 31px)
           `,
-          backgroundSize: '100% 32px'
+          backgroundSize: "100% 32px",
         }}
       />
 
@@ -658,7 +753,9 @@ export function Slate() {
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                style={{ background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)` }}
+                style={{
+                  background: `linear-gradient(135deg, ${COLORS.darkChocolate} 0%, ${COLORS.warmBrown} 100%)`,
+                }}
               >
                 <BookOpen size={24} className="text-amber-400" />
               </button>
@@ -669,7 +766,10 @@ export function Slate() {
                 >
                   My Slate
                 </h1>
-                <p className="text-sm text-slate-500" style={{ fontFamily: "'Cinzel', serif" }}>
+                <p
+                  className="text-sm text-slate-500"
+                  style={{ fontFamily: "'Cinzel', serif" }}
+                >
                   {profile?.full_name}'s Personal Archive
                 </p>
               </div>
@@ -679,11 +779,15 @@ export function Slate() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-4 py-2 bg-white/70 rounded-xl border border-amber-200">
                 <Pen size={16} className="text-amber-600" />
-                <span className="text-sm font-bold text-slate-700">{entries.length} Entries</span>
+                <span className="text-sm font-bold text-slate-700">
+                  {entries.length} Entries
+                </span>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-white/70 rounded-xl border border-amber-200">
                 <Star size={16} className="text-amber-500 fill-amber-500" />
-                <span className="text-sm font-bold text-slate-700">{starredCount} Starred</span>
+                <span className="text-sm font-bold text-slate-700">
+                  {starredCount} Starred
+                </span>
               </div>
             </div>
           </div>
@@ -698,7 +802,10 @@ export function Slate() {
         >
           {/* Search */}
           <div className="flex-1 min-w-[200px] relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            />
             <input
               type="text"
               value={searchQuery}
@@ -711,40 +818,44 @@ export function Slate() {
           {/* Category Filter */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => setFilterCategory('all')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${filterCategory === 'all'
-                ? 'bg-slate-800 text-white'
-                : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
-                }`}
+              onClick={() => setFilterCategory("all")}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                filterCategory === "all"
+                  ? "bg-slate-800 text-white"
+                  : "bg-white/70 text-slate-600 hover:bg-white border border-slate-200"
+              }`}
             >
               All
             </button>
             {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-              const Icon = config.icon
+              const Icon = config.icon;
               return (
                 <button
                   key={key}
                   onClick={() => setFilterCategory(key)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all ${filterCategory === key
-                    ? `bg-gradient-to-r ${config.color} text-white shadow-md`
-                    : 'bg-white/70 text-slate-600 hover:bg-white border border-slate-200'
-                    }`}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all ${
+                    filterCategory === key
+                      ? `bg-gradient-to-r ${config.color} text-white shadow-md`
+                      : "bg-white/70 text-slate-600 hover:bg-white border border-slate-200"
+                  }`}
                 >
                   <Icon size={14} />
                   {config.label}
                 </button>
-              )
+              );
             })}
           </div>
 
           {/* New Entry Button */}
           <button
             onClick={() => {
-              setEditingEntry(null)
-              setShowEditor(true)
+              setEditingEntry(null);
+              setShowEditor(true);
             }}
             className="flex items-center gap-2 px-5 py-3 font-bold rounded-xl text-white shadow-lg hover:shadow-xl transition-all"
-            style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)`,
+            }}
           >
             <Plus size={18} />
             New Entry
@@ -755,9 +866,7 @@ export function Slate() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div
-                className="w-16 h-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin mx-auto mb-4"
-              />
+              <div className="w-16 h-16 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin mx-auto mb-4" />
               <p className="text-slate-500">Loading your entries...</p>
             </div>
           </div>
@@ -769,11 +878,16 @@ export function Slate() {
           >
             <div
               className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.ivory} 100%)` }}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.champagne} 0%, ${COLORS.ivory} 100%)`,
+              }}
             >
               <BookOpen size={40} className="text-amber-500" />
             </div>
-            <h3 className="text-xl font-bold text-slate-700 mb-2" style={{ fontFamily: "'Cinzel', serif" }}>
+            <h3
+              className="text-xl font-bold text-slate-700 mb-2"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
               Your Slate Awaits
             </h3>
             <p className="text-slate-500 mb-6">
@@ -782,7 +896,9 @@ export function Slate() {
             <button
               onClick={() => setShowEditor(true)}
               className="px-6 py-3 font-bold rounded-xl text-white shadow-lg"
-              style={{ background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)` }}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.tuscanYellow} 0%, ${COLORS.deepGold} 100%)`,
+              }}
             >
               Create Your First Entry
             </button>
@@ -794,27 +910,30 @@ export function Slate() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence>
-              {filteredEntries.map(entry => {
-                const actions = extractActions(entry.content)
-                const caseLinks = extractCaseLinks(entry.content)
+              {filteredEntries.map((entry) => {
+                const actions = extractActions(entry.content);
+                const caseLinks = extractCaseLinks(entry.content);
 
                 return (
                   <EntryCard
                     key={entry.id}
                     entry={entry}
                     onEdit={() => {
-                      setEditingEntry(entry)
-                      setShowEditor(true)
+                      setEditingEntry(entry);
+                      setShowEditor(true);
                     }}
                     onDelete={() => deleteEntry(entry.id)}
                     onToggleStar={() => toggleStar(entry)}
                     smartFeatures={
-                      (actions.length > 0 || caseLinks.length > 0) ? (
+                      actions.length > 0 || caseLinks.length > 0 ? (
                         <div className="flex flex-col gap-2">
                           {actions.length > 0 && (
                             <div className="flex flex-wrap gap-1">
                               {actions.map((action, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-bold flex items-center gap-1">
+                                <span
+                                  key={i}
+                                  className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-bold flex items-center gap-1"
+                                >
                                   <Sparkles size={8} /> {action}
                                 </span>
                               ))}
@@ -823,7 +942,10 @@ export function Slate() {
                           {caseLinks.length > 0 && (
                             <div className="flex flex-wrap gap-1">
                               {caseLinks.map((caseId, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold flex items-center gap-1 border border-emerald-100">
+                                <span
+                                  key={i}
+                                  className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold flex items-center gap-1 border border-emerald-100"
+                                >
                                   <AlertCircle size={8} /> CASE: {caseId}
                                 </span>
                               ))}
@@ -833,7 +955,7 @@ export function Slate() {
                       ) : null
                     }
                   />
-                )
+                );
               })}
             </AnimatePresence>
           </motion.div>
@@ -847,14 +969,14 @@ export function Slate() {
             entry={editingEntry}
             onSave={saveEntry}
             onClose={() => {
-              setShowEditor(false)
-              setEditingEntry(null)
+              setShowEditor(false);
+              setEditingEntry(null);
             }}
           />
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default Slate
+export default Slate;

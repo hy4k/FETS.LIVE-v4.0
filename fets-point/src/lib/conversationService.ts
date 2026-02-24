@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { useAuth } from '../hooks/useAuth';
+import { supabase } from "./supabase";
+import { useAuth } from "../hooks/useAuth";
 
 /**
  * Conversation Service for FETS OMNI AI
@@ -20,7 +20,7 @@ interface Conversation {
 interface ConversationMessage {
   id: string;
   conversation_id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   data_references: any[];
   tokens_used: number;
@@ -40,40 +40,44 @@ interface KnowledgeInsight {
 // Get current user from auth
 function getCurrentUser() {
   // This will be replaced with actual auth context in components
-  return typeof window !== 'undefined' ? (window as any).__CURRENT_USER__ : null;
+  return typeof window !== "undefined"
+    ? (window as any).__CURRENT_USER__
+    : null;
 }
 
 export const conversationService = {
   /**
    * Create a new conversation
    */
-  async createConversation(title: string = 'New Conversation'): Promise<Conversation | null> {
+  async createConversation(
+    title: string = "New Conversation"
+  ): Promise<Conversation | null> {
     const user = getCurrentUser();
     if (!user?.id) {
-      console.warn('No authenticated user found');
+      console.warn("No authenticated user found");
       return null;
     }
 
     try {
       const { data, error } = await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .insert({
           user_id: user.id,
           title: title,
           context: {},
-          status: 'active'
+          status: "active",
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating conversation:', error);
+        console.error("Error creating conversation:", error);
         return null;
       }
 
       return data;
     } catch (err) {
-      console.error('Exception creating conversation:', err);
+      console.error("Exception creating conversation:", err);
       return null;
     }
   },
@@ -87,20 +91,20 @@ export const conversationService = {
 
     try {
       const { data, error } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
+        .from("ai_conversations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching conversations:', error);
+        console.error("Error fetching conversations:", error);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('Exception fetching conversations:', err);
+      console.error("Exception fetching conversations:", err);
       return [];
     }
   },
@@ -111,19 +115,19 @@ export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
     try {
       const { data, error } = await supabase
-        .from('ai_conversations')
-        .select('*')
-        .eq('id', conversationId)
+        .from("ai_conversations")
+        .select("*")
+        .eq("id", conversationId)
         .single();
 
       if (error) {
-        console.error('Error fetching conversation:', error);
+        console.error("Error fetching conversation:", error);
         return null;
       }
 
       return data;
     } catch (err) {
-      console.error('Exception fetching conversation:', err);
+      console.error("Exception fetching conversation:", err);
       return null;
     }
   },
@@ -134,19 +138,19 @@ export const conversationService = {
   async getMessages(conversationId: string): Promise<ConversationMessage[]> {
     try {
       const { data, error } = await supabase
-        .from('ai_conversation_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+        .from("ai_conversation_messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
 
       if (error) {
-        console.error('Error fetching messages:', error);
+        console.error("Error fetching messages:", error);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('Exception fetching messages:', err);
+      console.error("Exception fetching messages:", err);
       return [];
     }
   },
@@ -156,38 +160,38 @@ export const conversationService = {
    */
   async addMessage(
     conversationId: string,
-    role: 'user' | 'assistant',
+    role: "user" | "assistant",
     content: string,
     dataReferences: any[] = [],
     tokensUsed: number = 0
   ): Promise<ConversationMessage | null> {
     try {
       const { data, error } = await supabase
-        .from('ai_conversation_messages')
+        .from("ai_conversation_messages")
         .insert({
           conversation_id: conversationId,
           role: role,
           content: content,
           data_references: dataReferences,
-          tokens_used: tokensUsed
+          tokens_used: tokensUsed,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding message:', error);
+        console.error("Error adding message:", error);
         return null;
       }
 
       // Update conversation timestamp
       await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .update({ updated_at: new Date().toISOString() })
-        .eq('id', conversationId);
+        .eq("id", conversationId);
 
       return data;
     } catch (err) {
-      console.error('Exception adding message:', err);
+      console.error("Exception adding message:", err);
       return null;
     }
   },
@@ -200,13 +204,13 @@ export const conversationService = {
     if (messages.length === 0) return null;
 
     const userMessages = messages
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .join(' | ');
+      .filter((m) => m.role === "user")
+      .map((m) => m.content)
+      .join(" | ");
 
     // Simple summary - first 200 chars of user queries
-    return userMessages.length > 200 
-      ? userMessages.substring(0, 200) + '...' 
+    return userMessages.length > 200
+      ? userMessages.substring(0, 200) + "..."
       : userMessages;
   },
 
@@ -217,9 +221,9 @@ export const conversationService = {
     const summary = await this.generateSummary(conversationId);
     if (summary) {
       await supabase
-        .from('ai_conversations')
+        .from("ai_conversations")
         .update({ summary: summary })
-        .eq('id', conversationId);
+        .eq("id", conversationId);
     }
   },
 
@@ -237,19 +241,17 @@ export const conversationService = {
     const user = getCurrentUser();
 
     try {
-      await supabase
-        .from('ai_query_log')
-        .insert({
-          user_id: user?.id,
-          conversation_id: conversationId,
-          query_text: queryText,
-          response_summary: responseSummary,
-          data_sources: dataSources,
-          execution_time_ms: executionTimeMs,
-          tokens_used: tokensUsed
-        });
+      await supabase.from("ai_query_log").insert({
+        user_id: user?.id,
+        conversation_id: conversationId,
+        query_text: queryText,
+        response_summary: responseSummary,
+        data_sources: dataSources,
+        execution_time_ms: executionTimeMs,
+        tokens_used: tokensUsed,
+      });
     } catch (err) {
-      console.error('Error logging query:', err);
+      console.error("Error logging query:", err);
     }
   },
 
@@ -263,16 +265,14 @@ export const conversationService = {
     dataPoints: any[]
   ): Promise<void> {
     try {
-      await supabase
-        .from('ai_citations')
-        .insert({
-          query_log_id: queryLogId,
-          source_table: sourceTable,
-          source_query: sourceQuery,
-          data_points: dataPoints
-        });
+      await supabase.from("ai_citations").insert({
+        query_log_id: queryLogId,
+        source_table: sourceTable,
+        source_query: sourceQuery,
+        data_points: dataPoints,
+      });
     } catch (err) {
-      console.error('Error adding citation:', err);
+      console.error("Error adding citation:", err);
     }
   },
 
@@ -286,24 +286,27 @@ export const conversationService = {
   /**
    * Get knowledge by query search
    */
-  async getKnowledgeByQuery(query: string, limit: number = 5): Promise<KnowledgeInsight[]> {
+  async getKnowledgeByQuery(
+    query: string,
+    limit: number = 5
+  ): Promise<KnowledgeInsight[]> {
     try {
       const { data, error } = await supabase
-        .from('ai_knowledge_base')
-        .select('*')
+        .from("ai_knowledge_base")
+        .select("*")
         .or(`topic.ilike.%${query}%,insight.ilike.%${query}%`)
-        .eq('verified', true)
-        .order('confidence_score', { ascending: false })
+        .eq("verified", true)
+        .order("confidence_score", { ascending: false })
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching knowledge by query:', error);
+        console.error("Error fetching knowledge by query:", error);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('Exception fetching knowledge:', err);
+      console.error("Exception fetching knowledge:", err);
       return [];
     }
   },
@@ -319,29 +322,29 @@ export const conversationService = {
   ): Promise<KnowledgeInsight | null> {
     try {
       const { data, error } = await supabase
-        .from('ai_knowledge_base')
+        .from("ai_knowledge_base")
         .insert({
           topic: topic,
           insight: summary,
-          source_query: relatedTopics.join(', '),
-          source_table: dataSources.join(', '),
+          source_query: relatedTopics.join(", "),
+          source_table: dataSources.join(", "),
           confidence_score: 0.7,
-          verified: false
+          verified: false,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding knowledge:', error);
+        console.error("Error adding knowledge:", error);
         return null;
       }
 
       return data;
     } catch (err) {
-      console.error('Exception adding knowledge:', err);
+      console.error("Exception adding knowledge:", err);
       return null;
     }
-  }
+  },
 };
 
 /**
@@ -361,26 +364,26 @@ export const knowledgeService = {
   ): Promise<KnowledgeInsight | null> {
     try {
       const { data, error } = await supabase
-        .from('ai_knowledge_base')
+        .from("ai_knowledge_base")
         .insert({
           topic: topic,
           insight: insight,
           source_query: sourceQuery,
           source_table: sourceTable,
           confidence_score: confidenceScore,
-          verified: false
+          verified: false,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding insight:', error);
+        console.error("Error adding insight:", error);
         return null;
       }
 
       return data;
     } catch (err) {
-      console.error('Exception adding insight:', err);
+      console.error("Exception adding insight:", err);
       return null;
     }
   },
@@ -388,24 +391,27 @@ export const knowledgeService = {
   /**
    * Get insights for a topic
    */
-  async getInsights(topic: string, minConfidence: number = 0.7): Promise<KnowledgeInsight[]> {
+  async getInsights(
+    topic: string,
+    minConfidence: number = 0.7
+  ): Promise<KnowledgeInsight[]> {
     try {
       const { data, error } = await supabase
-        .from('ai_knowledge_base')
-        .select('*')
-        .ilike('topic', `%${topic}%`)
-        .gte('confidence_score', minConfidence)
-        .order('confidence_score', { ascending: false })
+        .from("ai_knowledge_base")
+        .select("*")
+        .ilike("topic", `%${topic}%`)
+        .gte("confidence_score", minConfidence)
+        .order("confidence_score", { ascending: false })
         .limit(20);
 
       if (error) {
-        console.error('Error fetching insights:', error);
+        console.error("Error fetching insights:", error);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('Exception fetching insights:', err);
+      console.error("Exception fetching insights:", err);
       return [];
     }
   },
@@ -413,20 +419,23 @@ export const knowledgeService = {
   /**
    * Verify an insight
    */
-  async verifyInsight(insightId: string, verified: boolean = true): Promise<void> {
+  async verifyInsight(
+    insightId: string,
+    verified: boolean = true
+  ): Promise<void> {
     const user = getCurrentUser();
 
     try {
       await supabase
-        .from('ai_knowledge_base')
+        .from("ai_knowledge_base")
         .update({
           verified: verified,
           verified_by: user?.id,
-          verified_at: new Date().toISOString()
+          verified_at: new Date().toISOString(),
         })
-        .eq('id', insightId);
+        .eq("id", insightId);
     } catch (err) {
-      console.error('Error verifying insight:', err);
+      console.error("Error verifying insight:", err);
     }
   },
 
@@ -436,23 +445,23 @@ export const knowledgeService = {
   async getVerifiedKnowledge(): Promise<KnowledgeInsight[]> {
     try {
       const { data, error } = await supabase
-        .from('ai_knowledge_base')
-        .select('*')
-        .eq('verified', true)
-        .order('created_at', { ascending: false })
+        .from("ai_knowledge_base")
+        .select("*")
+        .eq("verified", true)
+        .order("created_at", { ascending: false })
         .limit(50);
 
       if (error) {
-        console.error('Error fetching verified knowledge:', error);
+        console.error("Error fetching verified knowledge:", error);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('Exception fetching verified knowledge:', err);
+      console.error("Exception fetching verified knowledge:", err);
       return [];
     }
-  }
+  },
 };
 
 /**
@@ -463,7 +472,10 @@ export const contextBuilder = {
   /**
    * Build context for an AI query
    */
-  async buildContext(userQuery: string, conversationId?: string): Promise<{
+  async buildContext(
+    userQuery: string,
+    conversationId?: string
+  ): Promise<{
     systemPrompt: string;
     contextData: Record<string, any>;
     conversationHistory: ConversationMessage[];
@@ -474,13 +486,15 @@ export const contextBuilder = {
     let verifiedKnowledge: KnowledgeInsight[] = [];
 
     if (conversationId) {
-      conversationHistory = await conversationService.getMessages(conversationId);
+      conversationHistory = await conversationService.getMessages(
+        conversationId
+      );
     }
 
     // Extract topic from query and get relevant insights
     const queryLower = userQuery.toLowerCase();
-    const keywords = queryLower.split(' ').filter(w => w.length > 3);
-    
+    const keywords = queryLower.split(" ").filter((w) => w.length > 3);
+
     if (keywords.length > 0) {
       const mainTopic = keywords[0];
       recentInsights = await knowledgeService.getInsights(mainTopic, 0.6);
@@ -495,23 +509,23 @@ export const contextBuilder = {
       conversation_history_length: conversationHistory.length,
       relevant_insights_count: recentInsights.length,
       verified_knowledge_count: verifiedKnowledge.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Add relevant insights to context
     if (recentInsights.length > 0) {
-      contextData.recent_insights = recentInsights.map(i => ({
+      contextData.recent_insights = recentInsights.map((i) => ({
         topic: i.topic,
         insight: i.insight,
-        confidence: i.confidence_score
+        confidence: i.confidence_score,
       }));
     }
 
     // Add verified knowledge
     if (verifiedKnowledge.length > 0) {
-      contextData.verified_knowledge = verifiedKnowledge.map(k => ({
+      contextData.verified_knowledge = verifiedKnowledge.map((k) => ({
         topic: k.topic,
-        insight: k.insight
+        insight: k.insight,
       }));
     }
 
@@ -533,7 +547,7 @@ Respond helpfully and accurately.`;
     return {
       systemPrompt,
       contextData,
-      conversationHistory
+      conversationHistory,
     };
   },
 
@@ -551,12 +565,12 @@ Respond helpfully and accurately.`;
     // Extract numbers/statistics from response
     const numberPatterns = /(\d+[\d,]*)/g;
     const numbers = aiResponse.match(numberPatterns);
-    
+
     if (numbers && numbers.length > 0) {
       insightsToStore.push({
-        topic: 'Statistics',
-        insight: `Response contained: ${numbers.slice(0, 5).join(', ')}`,
-        confidence: 0.8
+        topic: "Statistics",
+        insight: `Response contained: ${numbers.slice(0, 5).join(", ")}`,
+        confidence: 0.8,
       });
     }
 
@@ -566,9 +580,9 @@ Respond helpfully and accurately.`;
         insight.topic,
         insight.insight,
         userQuery,
-        'ai_response',
+        "ai_response",
         insight.confidence
       );
     }
-  }
+  },
 };

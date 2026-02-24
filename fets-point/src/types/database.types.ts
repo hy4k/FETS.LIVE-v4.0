@@ -1,43 +1,47 @@
 export type Json =
-    | string
-    | number
-    | boolean
-    | null
-    | { [key: string]: Json | undefined }
-    | Json[]
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export interface Database {
-    public: {
-        Tables: {
-            [key: string]: {
-                Row: Record<string, any>
-                Insert: Record<string, any>
-                Update: Record<string, any>
-                Relationships: any[]
-            }
-        }
-        Views: {
-            [key: string]: {
-                Row: Record<string, any>
-                Relationships: any[]
-            }
-        }
-        Functions: {
-            [key: string]: {
-                Args: Record<string, any>
-                Returns: any
-            }
-        }
-        Enums: {
-            [key: string]: any
-        }
-        CompositeTypes: {
-            [key: string]: any
-        }
-    }
+  public: {
+    Tables: {
+      [key: string]: {
+        Row: Record<string, any>;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+        Relationships: any[];
+      };
+    };
+    Views: {
+      [key: string]: {
+        Row: Record<string, any>;
+        Relationships: any[];
+      };
+    };
+    Functions: {
+      [key: string]: {
+        Args: Record<string, any>;
+        Returns: any;
+      };
+    };
+    Enums: {
+      [key: string]: any;
+    };
+    CompositeTypes: {
+      [key: string]: any;
+    };
+  };
 }
 
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
-export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
-export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
-export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T]
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"];
+export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
+export type Enums<T extends keyof Database["public"]["Enums"]> =
+  Database["public"]["Enums"][T];

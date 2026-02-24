@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useAllStaff } from '../../hooks/useFetsConnect';
-import { usePresence } from '../../hooks/useChat';
-import UserSearch from './UserSearch';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useState } from "react";
+import { useAllStaff } from "../../hooks/useFetsConnect";
+import { usePresence } from "../../hooks/useChat";
+import UserSearch from "./UserSearch";
+import { useAuth } from "../../hooks/useAuth";
 
 const UserList = () => {
   const { data: users, isLoading } = useAllStaff();
   const { profile } = useAuth();
-  const onlineUsers = usePresence('fets-connect', profile?.id || '');
-  const [searchQuery, setSearchQuery] = useState('');
+  const onlineUsers = usePresence("fets-connect", profile?.id || "");
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (isLoading) {
     return <div>Loading users...</div>;
@@ -23,10 +23,16 @@ const UserList = () => {
       <UserSearch setSearchQuery={setSearchQuery} />
       <div className="flex flex-col gap-2 mt-4">
         {filteredUsers.map((user) => (
-          <div key={user.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-200 cursor-pointer">
+          <div
+            key={user.id}
+            className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-200 cursor-pointer"
+          >
             <div className="relative">
               <img
-                src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.full_name}&background=random`}
+                src={
+                  user.avatar_url ||
+                  `https://ui-avatars.com/api/?name=${user.full_name}&background=random`
+                }
                 alt={user.full_name}
                 className="w-10 h-10 rounded-full"
               />

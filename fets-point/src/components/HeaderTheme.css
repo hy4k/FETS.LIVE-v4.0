@@ -1,210 +1,210 @@
 /* HeaderTheme.css - Tuscan Sun Yellow Neumorphic Command Deck */
 
 :root {
-    --deck-bg: #F6C845;
-    /* Tuscan Sun Yellow */
-    --deck-shadow-dark: 6px 6px 14px #C99E22;
-    /* Deep Amber Shadow */
-    --deck-shadow-light: -6px -6px 14px #FFEA7A;
-    /* Soft Cream Highlight */
-    --deck-shadow-inset: inset 4px 4px 8px #C99E22, inset -4px -4px 8px #FFEA7A;
-    --deck-text: #4E342E;
-    /* Dark Chocolate Typography */
-    --deck-radius: 18px;
-    --branch-tint: transparent;
+  --deck-bg: #f6c845;
+  /* Tuscan Sun Yellow */
+  --deck-shadow-dark: 6px 6px 14px #c99e22;
+  /* Deep Amber Shadow */
+  --deck-shadow-light: -6px -6px 14px #ffea7a;
+  /* Soft Cream Highlight */
+  --deck-shadow-inset: inset 4px 4px 8px #c99e22, inset -4px -4px 8px #ffea7a;
+  --deck-text: #4e342e;
+  /* Dark Chocolate Typography */
+  --deck-radius: 18px;
+  --branch-tint: transparent;
 }
 
 /* Branch Specific Tints */
 body.branch-calicut {
-    --deck-bg: #F6C845;
-    /* Original Tuscan Sun */
-    --deck-shadow-dark: 6px 6px 14px #C99E22;
-    --deck-shadow-light: -6px -6px 14px #FFEA7A;
-    --branch-tint: rgba(246, 200, 69, 0.03);
+  --deck-bg: #f6c845;
+  /* Original Tuscan Sun */
+  --deck-shadow-dark: 6px 6px 14px #c99e22;
+  --deck-shadow-light: -6px -6px 14px #ffea7a;
+  --branch-tint: rgba(246, 200, 69, 0.03);
 }
 
 body.branch-cochin {
-    --deck-bg: #FFC107;
-    /* Deep Amber / Vibrant Yellow */
-    --deck-shadow-dark: 6px 6px 14px #D9A406;
-    --deck-shadow-light: -6px -6px 14px #FFD54F;
-    --branch-tint: rgba(255, 193, 7, 0.04);
+  --deck-bg: #ffc107;
+  /* Deep Amber / Vibrant Yellow */
+  --deck-shadow-dark: 6px 6px 14px #d9a406;
+  --deck-shadow-light: -6px -6px 14px #ffd54f;
+  --branch-tint: rgba(255, 193, 7, 0.04);
 }
 
 body.branch-kannur {
-    --deck-bg: #FFD600;
-    /* Electric / Safety Yellow */
-    --deck-shadow-dark: 6px 6px 14px #C9A900;
-    --deck-shadow-light: -6px -6px 14px #FFE54D;
-    --branch-tint: rgba(255, 214, 0, 0.04);
+  --deck-bg: #ffd600;
+  /* Electric / Safety Yellow */
+  --deck-shadow-dark: 6px 6px 14px #c9a900;
+  --deck-shadow-light: -6px -6px 14px #ffe54d;
+  --branch-tint: rgba(255, 214, 0, 0.04);
 }
 
 body.branch-global {
-    --deck-bg: #E0E5EC;
-    /* Classic Neumorphic Gray */
-    --deck-shadow-dark: 9px 9px 16px #bec3c9;
-    --deck-shadow-light: -9px -9px 16px #ffffff;
-    --deck-text: #4a5568;
+  --deck-bg: #e0e5ec;
+  /* Classic Neumorphic Gray */
+  --deck-shadow-dark: 9px 9px 16px #bec3c9;
+  --deck-shadow-light: -9px -9px 16px #ffffff;
+  --deck-text: #4a5568;
 }
 
 /* Global Tone Overlay with Transition */
 body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background: var(--branch-tint);
-    z-index: 9999;
-    transition: background 0.8s ease-in-out;
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--branch-tint);
+  z-index: 9999;
+  transition: background 0.8s ease-in-out;
 }
 
 /* Command Deck Container with Smooth Transition */
 .fets-command-deck {
-    background-color: var(--deck-bg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--deck-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Neumorphic Module Button (Top Row) */
 .module-btn {
-    position: relative;
-    padding: 14px 28px;
-    border-radius: var(--deck-radius);
-    background: var(--deck-bg);
-    box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 800;
-    /* Increased weight */
-    font-size: 1.1rem;
-    /* Increased size */
-    color: var(--deck-text);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    /* Increased spacing */
-    border: none;
-    white-space: nowrap;
-    /* Ensure one line */
+  position: relative;
+  padding: 14px 28px;
+  border-radius: var(--deck-radius);
+  background: var(--deck-bg);
+  box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 800;
+  /* Increased weight */
+  font-size: 1.1rem;
+  /* Increased size */
+  color: var(--deck-text);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  /* Increased spacing */
+  border: none;
+  white-space: nowrap;
+  /* Ensure one line */
 }
 
 .module-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: -8px -8px 20px #FFEA7A, 8px 8px 20px #C99E22;
+  transform: translateY(-3px);
+  box-shadow: -8px -8px 20px #ffea7a, 8px 8px 20px #c99e22;
 }
 
 .module-btn.active {
-    box-shadow: var(--deck-shadow-inset);
-    color: #000;
-    transform: translateY(0.5px);
+  box-shadow: var(--deck-shadow-inset);
+  color: #000;
+  transform: translateY(0.5px);
 }
 
 /* Character Animation */
 .module-btn span {
-    display: inline-block;
-    transition: transform 0.2s;
+  display: inline-block;
+  transition: transform 0.2s;
 }
 
 .module-btn:hover span {
-    animation: char-bounce 0.4s ease forwards;
-    animation-delay: calc(0.04s * var(--char-index));
+  animation: char-bounce 0.4s ease forwards;
+  animation-delay: calc(0.04s * var(--char-index));
 }
 
 @keyframes char-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
 
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-4px);
-        color: #000;
-    }
+  50% {
+    transform: translateY(-4px);
+    color: #000;
+  }
 }
 
 /* Utility Bar (Bottom Row - Recessed Slot) */
 .utility-deck {
-    background-color: var(--deck-bg);
-    box-shadow: inset 0 20px 20px -10px rgba(0, 0, 0, 0.05);
-    padding: 4px 0;
+  background-color: var(--deck-bg);
+  box-shadow: inset 0 20px 20px -10px rgba(0, 0, 0, 0.05);
+  padding: 4px 0;
 }
 
 .utility-btn {
-    padding: 10px 22px;
-    border-radius: 14px;
-    background: var(--deck-bg);
-    box-shadow: -3px -3px 8px #FFEA7A, 3px 3px 8px #C99E22;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 800;
-    /* Bolder */
-    font-size: 0.95rem;
-    /* Bigger */
-    color: var(--deck-text);
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-transform: uppercase;
-    opacity: 0.95;
-    white-space: nowrap;
+  padding: 10px 22px;
+  border-radius: 14px;
+  background: var(--deck-bg);
+  box-shadow: -3px -3px 8px #ffea7a, 3px 3px 8px #c99e22;
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 800;
+  /* Bolder */
+  font-size: 0.95rem;
+  /* Bigger */
+  color: var(--deck-text);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-transform: uppercase;
+  opacity: 0.95;
+  white-space: nowrap;
 }
 
 .utility-btn:hover {
-    opacity: 1;
-    transform: scale(1.02);
-    box-shadow: -4px -4px 10px #FFEA7A, 4px 4px 10px #C99E22;
+  opacity: 1;
+  transform: scale(1.02);
+  box-shadow: -4px -4px 10px #ffea7a, 4px 4px 10px #c99e22;
 }
 
 .utility-btn.active {
-    box-shadow: inset 3px 3px 6px #C99E22, inset -3px -3px 6px #FFEA7A;
-    background: transparent;
-    color: #000;
+  box-shadow: inset 3px 3px 6px #c99e22, inset -3px -3px 6px #ffea7a;
+  background: transparent;
+  color: #000;
 }
 
 /* Pill Controls (Right Side) */
 .fets-pill-control {
-    height: 44px;
-    padding: 0 20px;
-    border-radius: 22px;
-    background: var(--deck-bg);
-    box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s;
-    color: var(--deck-text);
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  background: var(--deck-bg);
+  box-shadow: var(--deck-shadow-light), var(--deck-shadow-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  color: var(--deck-text);
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
 }
 
 .fets-pill-control:hover {
-    box-shadow: -4px -4px 10px #FFEA7A, 4px 4px 10px #C99E22;
-    transform: translateY(-1px);
+  box-shadow: -4px -4px 10px #ffea7a, 4px 4px 10px #c99e22;
+  transform: translateY(-1px);
 }
 
 /* Exit Button */
 .exit-btn {
-    width: 44px;
-    padding: 0;
+  width: 44px;
+  padding: 0;
 }
 
 .exit-btn:hover {
-    color: #D32F2F;
+  color: #d32f2f;
 }
 
 /* Hide Scrollbar */
 .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

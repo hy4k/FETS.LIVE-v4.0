@@ -1,370 +1,452 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Calendar, Plus, ChevronLeft, ChevronRight, Edit, Trash2, X, Check, Clock, Users, Eye, MapPin, Building, Filter, TrendingUp, Target, Award, Shield, Activity } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { CalendarAnalysis } from './CalendarAnalysis'
-import { useAuth } from '../hooks/useAuth'
-import { useBranch } from '../hooks/useBranch'
-import { useBranchFilter } from '../hooks/useBranchFilter'
-import { formatDateForIST, getCurrentISTDateString, isToday as isTodayIST, formatDateForDisplay } from '../utils/dateUtils'
-import { validateSessionCapacity, getCapacityStatusColor, formatCapacityDisplay, getBranchCapacity } from '../utils/sessionUtils'
-import { useCalendarSessions, useSessionMutations } from '../hooks/useCalendarSessions'
-import { useClients, useClientExams } from '../hooks/useClients'
-import { toast } from 'react-hot-toast'
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Calendar,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Trash2,
+  X,
+  Check,
+  Clock,
+  Users,
+  Eye,
+  MapPin,
+  Building,
+  Filter,
+  TrendingUp,
+  Target,
+  Award,
+  Shield,
+  Activity,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarAnalysis } from "./CalendarAnalysis";
+import { useAuth } from "../hooks/useAuth";
+import { useBranch } from "../hooks/useBranch";
+import { useBranchFilter } from "../hooks/useBranchFilter";
+import {
+  formatDateForIST,
+  getCurrentISTDateString,
+  isToday as isTodayIST,
+  formatDateForDisplay,
+} from "../utils/dateUtils";
+import {
+  validateSessionCapacity,
+  getCapacityStatusColor,
+  formatCapacityDisplay,
+  getBranchCapacity,
+} from "../utils/sessionUtils";
+import {
+  useCalendarSessions,
+  useSessionMutations,
+} from "../hooks/useCalendarSessions";
+import { useClients, useClientExams } from "../hooks/useClients";
+import { toast } from "react-hot-toast";
 
 interface Session {
-  id?: number
-  client_name: string
-  exam_name: string
-  date: string
-  candidate_count: number
-  start_time: string
-  end_time: string
-  user_id: string
-  created_at?: string
-  updated_at?: string
-  branch_location?: 'calicut' | 'cochin' | 'kannur'
+  id?: number;
+  client_name: string;
+  exam_name: string;
+  date: string;
+  candidate_count: number;
+  start_time: string;
+  end_time: string;
+  user_id: string;
+  created_at?: string;
+  updated_at?: string;
+  branch_location?: "calicut" | "cochin" | "kannur";
 }
 
 const CLIENT_COLORS = {
-  'PEARSON': {
-    bg: '#f0f7ff',
-    text: '#1e40af',
-    border: '#3b82f6',
-    accent: '#dbeafe',
-    shadow: 'rgba(59, 130, 246, 0.12)',
-    ring: 'ring-blue-400/30'
+  PEARSON: {
+    bg: "#f0f7ff",
+    text: "#1e40af",
+    border: "#3b82f6",
+    accent: "#dbeafe",
+    shadow: "rgba(59, 130, 246, 0.12)",
+    ring: "ring-blue-400/30",
   },
-  'PSI': {
-    bg: '#f0fdf4',
-    text: '#166534',
-    border: '#22c55e',
-    accent: '#dcfce7',
-    shadow: 'rgba(34, 197, 94, 0.12)',
-    ring: 'ring-green-400/30'
+  PSI: {
+    bg: "#f0fdf4",
+    text: "#166534",
+    border: "#22c55e",
+    accent: "#dcfce7",
+    shadow: "rgba(34, 197, 94, 0.12)",
+    ring: "ring-green-400/30",
   },
-  'ITTS': {
-    bg: '#fffdf0',
-    text: '#92400e',
-    border: '#f59e0b',
-    accent: '#fef3c7',
-    shadow: 'rgba(245, 158, 11, 0.12)',
-    ring: 'ring-amber-400/30'
+  ITTS: {
+    bg: "#fffdf0",
+    text: "#92400e",
+    border: "#f59e0b",
+    accent: "#fef3c7",
+    shadow: "rgba(245, 158, 11, 0.12)",
+    ring: "ring-amber-400/30",
   },
-  'PROMETRIC': {
-    bg: '#fff1f2',
-    text: '#9f1239',
-    border: '#f43f5e',
-    accent: '#ffe4e6',
-    shadow: 'rgba(244, 63, 94, 0.12)',
-    ring: 'ring-rose-400/30'
+  PROMETRIC: {
+    bg: "#fff1f2",
+    text: "#9f1239",
+    border: "#f43f5e",
+    accent: "#ffe4e6",
+    shadow: "rgba(244, 63, 94, 0.12)",
+    ring: "ring-rose-400/30",
   },
-  'OTHER': {
-    bg: '#f8fafc',
-    text: '#334155',
-    border: '#64748b',
-    accent: '#f1f5f9',
-    shadow: 'rgba(100, 116, 139, 0.12)',
-    ring: 'ring-slate-400/30'
-  }
-}
+  OTHER: {
+    bg: "#f8fafc",
+    text: "#334155",
+    border: "#64748b",
+    accent: "#f1f5f9",
+    shadow: "rgba(100, 116, 139, 0.12)",
+    ring: "ring-slate-400/30",
+  },
+};
 
 const CENTRE_COLORS = {
-  'calicut': { primary: '#FFFFFF', secondary: '#F1F5F9', light: '#FFFFFF', accent: '#E5E7EB', shadow: 'rgba(0,0,0,0.06)', glass: 'rgba(255,255,255,0.6)' },
-  'cochin': { primary: '#FFFFFF', secondary: '#F1F5F9', light: '#FFFFFF', accent: '#E5E7EB', shadow: 'rgba(0,0,0,0.06)', glass: 'rgba(255,255,255,0.6)' },
-  'global': { primary: '#FFFFFF', secondary: '#F1F5F9', light: '#FFFFFF', accent: '#E5E7EB', shadow: 'rgba(0,0,0,0.06)', glass: 'rgba(255,255,255,0.6)' }
-}
+  calicut: {
+    primary: "#FFFFFF",
+    secondary: "#F1F5F9",
+    light: "#FFFFFF",
+    accent: "#E5E7EB",
+    shadow: "rgba(0,0,0,0.06)",
+    glass: "rgba(255,255,255,0.6)",
+  },
+  cochin: {
+    primary: "#FFFFFF",
+    secondary: "#F1F5F9",
+    light: "#FFFFFF",
+    accent: "#E5E7EB",
+    shadow: "rgba(0,0,0,0.06)",
+    glass: "rgba(255,255,255,0.6)",
+  },
+  global: {
+    primary: "#FFFFFF",
+    secondary: "#F1F5F9",
+    light: "#FFFFFF",
+    accent: "#E5E7EB",
+    shadow: "rgba(0,0,0,0.06)",
+    glass: "rgba(255,255,255,0.6)",
+  },
+};
 
-type ClientType = keyof typeof CLIENT_COLORS
+type ClientType = keyof typeof CLIENT_COLORS;
 
 export function FetsCalendarPremium() {
-  const { user, hasPermission, profile } = useAuth()
-  const canEdit = hasPermission('calendar_edit')
-  const { activeBranch } = useBranch()
-  const { applyFilter, isGlobalView } = useBranchFilter()
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [locationFilter, setLocationFilter] = useState(activeBranch || 'all')
+  const { user, hasPermission, profile } = useAuth();
+  const canEdit = hasPermission("calendar_edit");
+  const { activeBranch } = useBranch();
+  const { applyFilter, isGlobalView } = useBranchFilter();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [locationFilter, setLocationFilter] = useState(activeBranch || "all");
 
   // Sync location filter with active branch changes from header
   useEffect(() => {
-    setLocationFilter(activeBranch || 'all')
-  }, [activeBranch])
+    setLocationFilter(activeBranch || "all");
+  }, [activeBranch]);
 
-  const sessionBranch = locationFilter === 'all' ? 'global' : locationFilter
-  const { data: sessions = [], isLoading: loading, isError, error } = useCalendarSessions(currentDate, sessionBranch as any, applyFilter, isGlobalView) // Cast to any to avoid type issues if strictly typed
-  
+  const sessionBranch = locationFilter === "all" ? "global" : locationFilter;
+  const {
+    data: sessions = [],
+    isLoading: loading,
+    isError,
+    error,
+  } = useCalendarSessions(
+    currentDate,
+    sessionBranch as any,
+    applyFilter,
+    isGlobalView
+  ); // Cast to any to avoid type issues if strictly typed
+
   // Fetch clients and exams from database
-  const { data: dbClients = [] } = useClients()
-  const { data: dbExams = [] } = useClientExams()
+  const { data: dbClients = [] } = useClients();
+  const { data: dbExams = [] } = useClientExams();
 
-  const { addSession, updateSession, deleteSession, isMutating } = useSessionMutations()
-  const [showModal, setShowModal] = useState(false)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showAnalysis, setShowAnalysis] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [editingSession, setEditingSession] = useState<Session | null>(null)
+  const { addSession, updateSession, deleteSession, isMutating } =
+    useSessionMutations();
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [formData, setFormData] = useState({
-    client_name: '',
-    exam_name: '',
-    date: '',
+    client_name: "",
+    exam_name: "",
+    date: "",
     candidate_count: 1,
-    start_time: '09:00',
-    end_time: '17:00'
-  })
+    start_time: "09:00",
+    end_time: "17:00",
+  });
 
   useEffect(() => {
     if (isError) {
-      toast.error(`Failed to load sessions: ${error.message}`)
+      toast.error(`Failed to load sessions: ${error.message}`);
     }
-  }, [isError, error])
+  }, [isError, error]);
 
   const getDaysInMonth = useCallback(() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
 
-    const days = []
+    const days = [];
 
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null)
+      days.push(null);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day))
+      days.push(new Date(year, month, day));
     }
 
-    return days
-  }, [currentDate])
+    return days;
+  }, [currentDate]);
 
   const getSessionsForDate = (date: Date) => {
-    const dateStr = formatDateForIST(date)
-    return sessions.filter(session => session.date === dateStr)
-  }
+    const dateStr = formatDateForIST(date);
+    return sessions.filter((session) => session.date === dateStr);
+  };
 
   const normalizeClientName = (name: string | null | undefined): string => {
-    if (!name) return 'UNKNOWN'
-    const upper = name.toUpperCase()
-    if (upper.includes('PEARSON') || upper.includes('VUE')) return 'PEARSON'
-    if (upper.includes('CELPIP')) return 'CELPIP'
-    if (upper.includes('CMA')) return 'CMA US'
-    if (upper.includes('PROMETRIC')) return 'PROMETRIC'
-    return upper
-  }
+    if (!name) return "UNKNOWN";
+    const upper = name.toUpperCase();
+    if (upper.includes("PEARSON") || upper.includes("VUE")) return "PEARSON";
+    if (upper.includes("CELPIP")) return "CELPIP";
+    if (upper.includes("CMA")) return "CMA US";
+    if (upper.includes("PROMETRIC")) return "PROMETRIC";
+    return upper;
+  };
 
   const getClientAggregates = (date: Date) => {
-    const daySessions = getSessionsForDate(date)
-    const aggregates: { [key: string]: { candidates: number, sessions: number, displayName: string } } = {}
+    const daySessions = getSessionsForDate(date);
+    const aggregates: {
+      [key: string]: {
+        candidates: number;
+        sessions: number;
+        displayName: string;
+      };
+    } = {};
 
-    daySessions.forEach(session => {
-      const normalizedKey = normalizeClientName(session.client_name)
+    daySessions.forEach((session) => {
+      const normalizedKey = normalizeClientName(session.client_name);
       if (!aggregates[normalizedKey]) {
         aggregates[normalizedKey] = {
           candidates: 0,
           sessions: 0,
-          displayName: session.client_name
-        }
+          displayName: session.client_name,
+        };
       }
-      aggregates[normalizedKey].candidates += session.candidate_count
-      aggregates[normalizedKey].sessions += 1
-    })
+      aggregates[normalizedKey].candidates += session.candidate_count;
+      aggregates[normalizedKey].sessions += 1;
+    });
 
-    return aggregates
-  }
+    return aggregates;
+  };
 
   const getClientType = (clientName: string): ClientType => {
-    const normalized = normalizeClientName(clientName)
-    if (normalized in CLIENT_COLORS) return normalized as ClientType
-    return 'OTHER'
-  }
+    const normalized = normalizeClientName(clientName);
+    if (normalized in CLIENT_COLORS) return normalized as ClientType;
+    return "OTHER";
+  };
 
   const getClientLogo = (clientName: string | null | undefined) => {
-    if (!clientName) return null
-    const upperName = clientName.toUpperCase()
-    if (upperName.includes('PROMETRIC')) return '/client-logos/prometric.png'
-    if (upperName.includes('PSI')) return '/client-logos/psi.png'
-    if (upperName.includes('ITTS')) return '/client-logos/itts.png'
-    if (upperName.includes('PEARSON') || upperName.includes('VUE')) return '/client-logos/pearson_vue.png'
-    return null
-  }
+    if (!clientName) return null;
+    const upperName = clientName.toUpperCase();
+    if (upperName.includes("PROMETRIC")) return "/client-logos/prometric.png";
+    if (upperName.includes("PSI")) return "/client-logos/psi.png";
+    if (upperName.includes("ITTS")) return "/client-logos/itts.png";
+    if (upperName.includes("PEARSON") || upperName.includes("VUE"))
+      return "/client-logos/pearson_vue.png";
+    return null;
+  };
 
   const getShortClient = (name: string | null | undefined) => {
-    if (!name) return '—';
+    if (!name) return "—";
     const n = name.toUpperCase();
-    if (n.includes('PEARSON')) return 'PV';
-    if (n.includes('PROMETRIC')) return 'PROM';
-    if (n.includes('VUE')) return 'VUE';
-    if (n.includes('PSI')) return 'PSI';
-    if (n.includes('ITTS')) return 'ITTS';
+    if (n.includes("PEARSON")) return "PV";
+    if (n.includes("PROMETRIC")) return "PROM";
+    if (n.includes("VUE")) return "VUE";
+    if (n.includes("PSI")) return "PSI";
+    if (n.includes("ITTS")) return "ITTS";
     return n.slice(0, 4);
-  }
+  };
 
   const getShortTime = (time: string) => {
-    const [h, m] = time.split(':');
+    const [h, m] = time.split(":");
     const hour = parseInt(h);
-    const suffix = hour >= 12 ? 'P' : 'A';
+    const suffix = hour >= 12 ? "P" : "A";
     const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
     return `${displayHour}${suffix}`;
-  }
+  };
 
   const getShortExam = (name: string | null | undefined) => {
-    if (!name) return '—';
+    if (!name) return "—";
     return name
-      .replace(/EXAM/gi, '')
-      .replace(/SIMULATION/gi, 'SIM')
-      .replace(/INTERNATIONAL/gi, 'INTL')
-      .replace(/CERTIFIED/gi, 'CERT')
-      .replace(/PROFESSIONAL/gi, 'PRO')
-      .trim()
-  }
+      .replace(/EXAM/gi, "")
+      .replace(/SIMULATION/gi, "SIM")
+      .replace(/INTERNATIONAL/gi, "INTL")
+      .replace(/CERTIFIED/gi, "CERT")
+      .replace(/PROFESSIONAL/gi, "PRO")
+      .trim();
+  };
 
   const getRemainingSeats = (candidateCount: number) => {
-    const maxCapacity = getBranchCapacity(activeBranch)
-    return Math.max(0, maxCapacity - candidateCount)
-  }
+    const maxCapacity = getBranchCapacity(activeBranch);
+    return Math.max(0, maxCapacity - candidateCount);
+  };
 
   const formatTimeRange = (startTime: string, endTime: string) => {
     const formatTime = (time: string) => {
-      const [hours, minutes] = time.split(':')
-      const hour = parseInt(hours)
-      const ampm = hour >= 12 ? 'pm' : 'am'
-      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
-      return `${displayHour}:${minutes}${ampm}`
-    }
-    return `${formatTime(startTime)} - ${formatTime(endTime)}`
-  }
+      const [hours, minutes] = time.split(":");
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? "pm" : "am";
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${displayHour}:${minutes}${ampm}`;
+    };
+    return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+  };
 
   const openModal = (date?: Date, session?: Session) => {
     if (session) {
-      setEditingSession(session)
+      setEditingSession(session);
       setFormData({
         client_name: session.client_name,
         exam_name: session.exam_name,
         date: session.date,
         candidate_count: session.candidate_count,
         start_time: session.start_time,
-        end_time: session.end_time
-      })
+        end_time: session.end_time,
+      });
     } else {
-      setEditingSession(null)
-      const dateStr = date ? formatDateForIST(date) : getCurrentISTDateString()
+      setEditingSession(null);
+      const dateStr = date ? formatDateForIST(date) : getCurrentISTDateString();
       setFormData({
-        client_name: '',
-        exam_name: '',
+        client_name: "",
+        exam_name: "",
         date: dateStr,
         candidate_count: 1,
-        start_time: '09:00',
-        end_time: '17:00'
-      })
+        start_time: "09:00",
+        end_time: "17:00",
+      });
     }
-    setShowModal(true)
-  }
+    setShowModal(true);
+  };
 
   const openDetailsModal = (date: Date) => {
-    const daySessions = getSessionsForDate(date)
+    const daySessions = getSessionsForDate(date);
     if (daySessions.length > 0) {
-      setSelectedDate(date)
-      setShowDetailsModal(true)
+      setSelectedDate(date);
+      setShowDetailsModal(true);
     } else {
-      openModal(date)
+      openModal(date);
     }
-  }
+  };
 
   const closeModal = () => {
-    setShowModal(false)
-    setShowDetailsModal(false)
-    setEditingSession(null)
-    setSelectedDate(null)
+    setShowModal(false);
+    setShowDetailsModal(false);
+    setEditingSession(null);
+    setSelectedDate(null);
     setFormData({
-      client_name: '',
-      exam_name: '',
-      date: '',
+      client_name: "",
+      exam_name: "",
+      date: "",
       candidate_count: 1,
-      start_time: '09:00',
-      end_time: '17:00'
-    })
-  }
+      start_time: "09:00",
+      end_time: "17:00",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
+    e.preventDefault();
+    if (!user) return;
 
-    const capacityValidation = validateSessionCapacity(formData.candidate_count, activeBranch)
+    const capacityValidation = validateSessionCapacity(
+      formData.candidate_count,
+      activeBranch
+    );
 
     if (!capacityValidation.isValid) {
-      toast.error(capacityValidation.error!)
-      return
+      toast.error(capacityValidation.error!);
+      return;
     }
 
     if (capacityValidation.warning) {
-      toast(capacityValidation.warning, { icon: '⚠️' })
+      toast(capacityValidation.warning, { icon: "⚠️" });
     }
 
     try {
-      if (activeBranch === 'global') {
-        toast.error('Please select a centre (Calicut, Cochin or Kannur) to add or edit sessions.')
-        return
+      if (activeBranch === "global") {
+        toast.error(
+          "Please select a centre (Calicut, Cochin or Kannur) to add or edit sessions."
+        );
+        return;
       }
 
-      const sessionData: Omit<Session, 'id'> & { created_at?: string } = {
+      const sessionData: Omit<Session, "id"> & { created_at?: string } = {
         ...formData,
         user_id: user.id,
         updated_at: new Date().toISOString(),
-        branch_location: activeBranch
-      }
+        branch_location: activeBranch,
+      };
 
       if (editingSession && editingSession.id) {
-        await updateSession({ ...sessionData, id: editingSession.id })
+        await updateSession({ ...sessionData, id: editingSession.id });
       } else {
-        await addSession({ ...sessionData, created_at: new Date().toISOString() })
+        await addSession({
+          ...sessionData,
+          created_at: new Date().toISOString(),
+        });
       }
 
-      closeModal()
+      closeModal();
     } catch (error) {
-      console.error('Error saving session:', error)
+      console.error("Error saving session:", error);
     }
-  }
+  };
 
   const handleDelete = async (sessionId: number) => {
-    if (!confirm('Are you sure you want to delete this session?')) return
+    if (!confirm("Are you sure you want to delete this session?")) return;
 
-    await deleteSession(sessionId)
+    await deleteSession(sessionId);
 
     if (selectedDate) {
-      const remainingSessions = sessions.filter(s => s.date === formatDateForIST(selectedDate) && s.id !== sessionId)
+      const remainingSessions = sessions.filter(
+        (s) => s.date === formatDateForIST(selectedDate) && s.id !== sessionId
+      );
       if (remainingSessions.length === 0) {
-        setShowDetailsModal(false)
+        setShowDetailsModal(false);
       }
     }
-  }
+  };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate)
-    if (direction === 'prev') {
-      newDate.setMonth(newDate.getMonth() - 1)
+  const navigateMonth = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
+    if (direction === "prev") {
+      newDate.setMonth(newDate.getMonth() - 1);
     } else {
-      newDate.setMonth(newDate.getMonth() + 1)
+      newDate.setMonth(newDate.getMonth() + 1);
     }
-    setCurrentDate(newDate)
-  }
+    setCurrentDate(newDate);
+  };
 
-  const monthYear = currentDate.toLocaleDateString('en-IN', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'Asia/Kolkata'
-  })
+  const monthYear = currentDate.toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
   const days = useMemo(() => {
-    return getDaysInMonth()
-  }, [getDaysInMonth])
+    return getDaysInMonth();
+  }, [getDaysInMonth]);
 
   const isToday = (date: Date | null) => {
-    if (!date) return false
-    return isTodayIST(date)
-  }
+    if (!date) return false;
+    return isTodayIST(date);
+  };
 
-  const currentTheme = CENTRE_COLORS[activeBranch] || CENTRE_COLORS['global']
+  const currentTheme = CENTRE_COLORS[activeBranch] || CENTRE_COLORS["global"];
 
   if (loading) {
     return (
@@ -375,17 +457,23 @@ export function FetsCalendarPremium() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent absolute inset-0"></div>
           </div>
           <div className="text-center">
-            <p className="text-slate-800 font-bold text-lg mb-1 font-rajdhani">Loading Calendar</p>
-            <p className="text-slate-500 text-sm">Fetching latest sessions...</p>
+            <p className="text-slate-800 font-bold text-lg mb-1 font-rajdhani">
+              Loading Calendar
+            </p>
+            <p className="text-slate-500 text-sm">
+              Fetching latest sessions...
+            </p>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-
+    <div
+      className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]"
+      style={{ fontFamily: "'Montserrat', sans-serif" }}
+    >
       {/* Functional Notification Banner Spacer */}
       <div className="h-6 -mx-8 -mt-8 mb-8"></div>
 
@@ -401,12 +489,22 @@ export function FetsCalendarPremium() {
               FETS Calendar
             </h1>
             <p className="text-lg text-gray-600 font-medium">
-              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Exam Schedule
+              {activeBranch && activeBranch !== "global"
+                ? `${
+                    activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)
+                  } · `
+                : ""}
+              Exam Schedule
             </p>
           </div>
           <div className="text-right">
             <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
-              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
             </p>
           </div>
         </motion.div>
@@ -433,7 +531,7 @@ export function FetsCalendarPremium() {
             {/* Month Navigation */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => navigateMonth('prev')}
+                onClick={() => navigateMonth("prev")}
                 className="neomorphic-btn-icon"
                 title="Previous month"
               >
@@ -443,7 +541,7 @@ export function FetsCalendarPremium() {
                 {monthYear}
               </div>
               <button
-                onClick={() => navigateMonth('next')}
+                onClick={() => navigateMonth("next")}
                 className="neomorphic-btn-icon"
                 title="Next month"
               >
@@ -463,7 +561,7 @@ export function FetsCalendarPremium() {
             {/* Analysis Button */}
             <button
               onClick={() => {
-                setShowAnalysis(true)
+                setShowAnalysis(true);
               }}
               className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center space-x-2"
             >
@@ -487,7 +585,15 @@ export function FetsCalendarPremium() {
         <div className="bg-[#F0F4F8] rounded-3xl p-6 min-h-[600px]">
           {/* Day Headers */}
           <div className="grid grid-cols-7 mb-6">
-            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
+            {[
+              "Sunday",
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+            ].map((day, index) => (
               <div key={day} className="text-center group">
                 <div className="font-black text-slate-400 text-[10px] uppercase tracking-[0.3em] mb-1 group-hover:text-slate-600 transition-colors">
                   {day.substring(0, 3)}
@@ -502,19 +608,28 @@ export function FetsCalendarPremium() {
             {days.map((date, index) => {
               if (!date) {
                 return (
-                  <div key={index} className="h-52 bg-transparent opacity-0 pointer-events-none"></div>
-                )
+                  <div
+                    key={index}
+                    className="h-52 bg-transparent opacity-0 pointer-events-none"
+                  ></div>
+                );
               }
 
-              const daySessions = getSessionsForDate(date)
-              const clientAggregates = getClientAggregates(date)
-              const isCurrentDay = isToday(date)
-              const isSelectedMonth = date.getMonth() === currentDate.getMonth()
+              const daySessions = getSessionsForDate(date);
+              const clientAggregates = getClientAggregates(date);
+              const isCurrentDay = isToday(date);
+              const isSelectedMonth =
+                date.getMonth() === currentDate.getMonth();
 
               // Only dim dates from other months slightly to keep layout consistent
-              const opacityClass = isSelectedMonth ? 'opacity-100' : 'opacity-30 grayscale'
+              const opacityClass = isSelectedMonth
+                ? "opacity-100"
+                : "opacity-30 grayscale";
 
-              const totalCandidates = daySessions.reduce((sum, s) => sum + s.candidate_count, 0)
+              const totalCandidates = daySessions.reduce(
+                (sum, s) => sum + s.candidate_count,
+                0
+              );
 
               return (
                 <motion.div
@@ -526,9 +641,10 @@ export function FetsCalendarPremium() {
                   className={`
                     min-h-[260px] p-6 cursor-pointer transition-all duration-300 rounded-[2.5rem] group flex flex-col relative
                     ${opacityClass}
-                    ${isCurrentDay
-                      ? 'bg-[#f6ba41] border-4 border-white shadow-[0_30px_60px_-15px_rgba(246,186,65,0.4)]'
-                      : 'bg-[#185a86] border border-white/10 hover:bg-[#398bb1] shadow-xl'
+                    ${
+                      isCurrentDay
+                        ? "bg-[#f6ba41] border-4 border-white shadow-[0_30px_60px_-15px_rgba(246,186,65,0.4)]"
+                        : "bg-[#185a86] border border-white/10 hover:bg-[#398bb1] shadow-xl"
                     }
                   `}
                 >
@@ -536,11 +652,23 @@ export function FetsCalendarPremium() {
                     {/* 1. TOP BAR: DATE & STATUS */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex flex-col">
-                        <span className={`text-4xl font-black tracking-tighter leading-none ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
+                        <span
+                          className={`text-4xl font-black tracking-tighter leading-none ${
+                            isCurrentDay ? "text-[#185a86]" : "text-white"
+                          }`}
+                        >
                           {date.getDate()}
                         </span>
-                        <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${isCurrentDay ? 'text-[#185a86]/60' : 'text-[#80b8d6]'}`}>
-                          {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                        <span
+                          className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${
+                            isCurrentDay
+                              ? "text-[#185a86]/60"
+                              : "text-[#80b8d6]"
+                          }`}
+                        >
+                          {date.toLocaleDateString("en-US", {
+                            weekday: "short",
+                          })}
                         </span>
                       </div>
 
@@ -551,35 +679,63 @@ export function FetsCalendarPremium() {
                         </div>
                       )}
 
-                      {!isCurrentDay && (date.getDay() === 0 || date.getDay() === 6) && (
-                        <div className="text-[10px] font-black text-[#80b8d6]/50 uppercase tracking-[0.3em]">Off</div>
-                      )}
+                      {!isCurrentDay &&
+                        (date.getDay() === 0 || date.getDay() === 6) && (
+                          <div className="text-[10px] font-black text-[#80b8d6]/50 uppercase tracking-[0.3em]">
+                            Off
+                          </div>
+                        )}
                     </div>
 
                     {/* 2. HERO: CANDIDATE VOLUME BADGE */}
                     <div className="flex-1 flex flex-col items-center justify-center py-2">
                       {totalCandidates > 0 ? (
-                        <div className={`
+                        <div
+                          className={`
                            w-full py-4 rounded-2xl flex flex-col items-center justify-center border transition-all duration-300
-                           ${isCurrentDay
-                            ? 'bg-white/40 border-[#185a86]/10 shadow-sm'
-                            : 'bg-black/20 border-white/5 shadow-inner'
-                          }
-                         `}>
+                           ${
+                             isCurrentDay
+                               ? "bg-white/40 border-[#185a86]/10 shadow-sm"
+                               : "bg-black/20 border-white/5 shadow-inner"
+                           }
+                         `}
+                        >
                           <div className="flex items-baseline gap-1">
-                            <span className={`text-5xl font-black tracking-tighter leading-none ${isCurrentDay ? 'text-[#185a86]' : 'text-[#f6ba41]'}`}>
+                            <span
+                              className={`text-5xl font-black tracking-tighter leading-none ${
+                                isCurrentDay
+                                  ? "text-[#185a86]"
+                                  : "text-[#f6ba41]"
+                              }`}
+                            >
                               {totalCandidates}
                             </span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest ${isCurrentDay ? 'text-[#185a86]/40' : 'text-white/40'}`}>
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-widest ${
+                                isCurrentDay
+                                  ? "text-[#185a86]/40"
+                                  : "text-white/40"
+                              }`}
+                            >
                               Pax
                             </span>
                           </div>
-                          <p className={`text-[8px] font-black uppercase tracking-[0.4em] mt-2 ${isCurrentDay ? 'text-[#185a86]/50' : 'text-[#80b8d6]'}`}>
+                          <p
+                            className={`text-[8px] font-black uppercase tracking-[0.4em] mt-2 ${
+                              isCurrentDay
+                                ? "text-[#185a86]/50"
+                                : "text-[#80b8d6]"
+                            }`}
+                          >
                             Total Count
                           </p>
                         </div>
                       ) : (
-                        <div className={`opacity-10 py-8 ${isCurrentDay ? 'text-[#185a86]' : 'text-white'}`}>
+                        <div
+                          className={`opacity-10 py-8 ${
+                            isCurrentDay ? "text-[#185a86]" : "text-white"
+                          }`}
+                        >
                           <Calendar size={48} />
                         </div>
                       )}
@@ -587,32 +743,48 @@ export function FetsCalendarPremium() {
 
                     {/* 3. SESSIONS: COMPACT LIST */}
                     <div className="mt-4 space-y-1.5 flex-1">
-                      {Object.entries(clientAggregates).slice(0, 3).map(([key, stat]) => (
-                        <div
-                          key={key}
-                          className={`
+                      {Object.entries(clientAggregates)
+                        .slice(0, 3)
+                        .map(([key, stat]) => (
+                          <div
+                            key={key}
+                            className={`
                             px-3 py-2 rounded-xl border transition-all duration-300 flex justify-between items-center
-                            ${isCurrentDay
-                              ? 'bg-white/50 text-[#185a86] border-[#185a86]/10'
-                              : 'bg-white/10 text-white border-white/5'
+                            ${
+                              isCurrentDay
+                                ? "bg-white/50 text-[#185a86] border-[#185a86]/10"
+                                : "bg-white/10 text-white border-white/5"
                             }
                           `}
-                        >
-                          <span className="text-[10px] font-black uppercase truncate w-24">
-                            {stat.displayName}
-                          </span>
-                          <span className={`text-[11px] font-black ${isCurrentDay ? 'text-[#185a86]' : 'text-[#f6ba41]'}`}>
-                            {stat.candidates}
-                          </span>
-                        </div>
-                      ))}
-                      
+                          >
+                            <span className="text-[10px] font-black uppercase truncate w-24">
+                              {stat.displayName}
+                            </span>
+                            <span
+                              className={`text-[11px] font-black ${
+                                isCurrentDay
+                                  ? "text-[#185a86]"
+                                  : "text-[#f6ba41]"
+                              }`}
+                            >
+                              {stat.candidates}
+                            </span>
+                          </div>
+                        ))}
+
                       {Object.entries(clientAggregates).length > 3 && (
-                        <div className={`
+                        <div
+                          className={`
                           text-[8px] font-black text-center py-1 rounded-lg border border-dashed uppercase tracking-widest
-                          ${isCurrentDay ? 'text-[#185a86]/50 border-[#185a86]/20' : 'text-white/30 border-white/10'}
-                        `}>
-                          + {Object.entries(clientAggregates).length - 3} more clients
+                          ${
+                            isCurrentDay
+                              ? "text-[#185a86]/50 border-[#185a86]/20"
+                              : "text-white/30 border-white/10"
+                          }
+                        `}
+                        >
+                          + {Object.entries(clientAggregates).length - 3} more
+                          clients
                         </div>
                       )}
                     </div>
@@ -623,16 +795,21 @@ export function FetsCalendarPremium() {
                         <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden shadow-inner">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(totalCandidates / 80) * 100}%` }}
-                            className={`h-full rounded-full ${totalCandidates >= 70 ? 'bg-[#d64d2e]' : 'bg-[#80b8d6]'
-                              }`}
+                            animate={{
+                              width: `${(totalCandidates / 80) * 100}%`,
+                            }}
+                            className={`h-full rounded-full ${
+                              totalCandidates >= 70
+                                ? "bg-[#d64d2e]"
+                                : "bg-[#80b8d6]"
+                            }`}
                           />
                         </div>
                       </div>
                     )}
                   </div>
                 </motion.div>
-              )
+              );
             })}
           </div>
         </div>
@@ -666,13 +843,23 @@ export function FetsCalendarPremium() {
                       <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-amber-500 shadow-xl">
                         <Calendar size={20} />
                       </div>
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Daily Operations Overview</span>
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">
+                        Daily Operations Overview
+                      </span>
                     </div>
                     <h3 className="text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">
-                      {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      {selectedDate.toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </h3>
                   </div>
-                  <button onClick={closeModal} className="w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors border border-slate-100">
+                  <button
+                    onClick={closeModal}
+                    className="w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors border border-slate-100"
+                  >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
@@ -684,8 +871,12 @@ export function FetsCalendarPremium() {
                       <Building size={24} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Sessions</p>
-                      <p className="text-2xl font-black text-slate-800">{getSessionsForDate(selectedDate).length}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Total Sessions
+                      </p>
+                      <p className="text-2xl font-black text-slate-800">
+                        {getSessionsForDate(selectedDate).length}
+                      </p>
                     </div>
                   </div>
                   <div className="bg-[#EEF2F9] rounded-3xl p-6 shadow-[8px_8px_16px_#bec3c9,-8px_-8px_16px_#ffffff] border border-white/50 flex items-center gap-5">
@@ -693,8 +884,15 @@ export function FetsCalendarPremium() {
                       <Users size={24} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Candidates</p>
-                      <p className="text-2xl font-black text-slate-800">{getSessionsForDate(selectedDate).reduce((sum, s) => sum + s.candidate_count, 0)}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Total Candidates
+                      </p>
+                      <p className="text-2xl font-black text-slate-800">
+                        {getSessionsForDate(selectedDate).reduce(
+                          (sum, s) => sum + s.candidate_count,
+                          0
+                        )}
+                      </p>
                     </div>
                   </div>
                   <div className="bg-[#EEF2F9] rounded-3xl p-6 shadow-[8px_8px_16px_#bec3c9,-8px_-8px_16px_#ffffff] border border-white/50 flex items-center gap-5">
@@ -702,9 +900,19 @@ export function FetsCalendarPremium() {
                       <Shield size={24} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Load</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        System Load
+                      </p>
                       <p className="text-2xl font-black text-slate-800">
-                        {Math.round((getSessionsForDate(selectedDate).reduce((sum, s) => sum + s.candidate_count, 0) / (getBranchCapacity(activeBranch) * 3)) * 100)}%
+                        {Math.round(
+                          (getSessionsForDate(selectedDate).reduce(
+                            (sum, s) => sum + s.candidate_count,
+                            0
+                          ) /
+                            (getBranchCapacity(activeBranch) * 3)) *
+                            100
+                        )}
+                        %
                       </p>
                     </div>
                   </div>
@@ -713,99 +921,156 @@ export function FetsCalendarPremium() {
 
               {/* TICKET-STYLE SESSION LIST */}
               <div className="flex-1 overflow-y-auto p-12 custom-scrollbar space-y-8">
-                {Object.entries(getClientAggregates(selectedDate)).length > 0 ? (
-                  Object.entries(getClientAggregates(selectedDate)).map(([key, stat]) => {
-                    const clientSessions = getSessionsForDate(selectedDate).filter(s => normalizeClientName(s.client_name) === key)
-                    const clientType = getClientType(stat.displayName)
-                    const clientColor = CLIENT_COLORS[clientType] || CLIENT_COLORS['OTHER']
+                {Object.entries(getClientAggregates(selectedDate)).length >
+                0 ? (
+                  Object.entries(getClientAggregates(selectedDate)).map(
+                    ([key, stat]) => {
+                      const clientSessions = getSessionsForDate(
+                        selectedDate
+                      ).filter(
+                        (s) => normalizeClientName(s.client_name) === key
+                      );
+                      const clientType = getClientType(stat.displayName);
+                      const clientColor =
+                        CLIENT_COLORS[clientType] || CLIENT_COLORS["OTHER"];
 
-                    return (
-                      <div key={key} className="space-y-4">
-                        <div className="flex items-center gap-4 px-4">
-                          <div className="w-2 h-8 rounded-full" style={{ backgroundColor: clientColor.border }} />
-                          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">{stat.displayName}</h4>
-                          <div className="h-px flex-1 bg-slate-200" />
-                        </div>
+                      return (
+                        <div key={key} className="space-y-4">
+                          <div className="flex items-center gap-4 px-4">
+                            <div
+                              className="w-2 h-8 rounded-full"
+                              style={{ backgroundColor: clientColor.border }}
+                            />
+                            <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+                              {stat.displayName}
+                            </h4>
+                            <div className="h-px flex-1 bg-slate-200" />
+                          </div>
 
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                          {clientSessions.map((session, sIdx) => (
-                            <motion.div
-                              key={session.id || sIdx}
-                              whileHover={{ y: -5 }}
-                              className="rounded-[2rem] shadow-lg border overflow-hidden flex flex-col"
-                              style={{
-                                background: clientColor.bg,
-                                borderColor: clientColor.accent
-                              }}
-                            >
-                              <div className="p-8 flex-1">
-                                <div className="flex justify-between items-start mb-6">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md" style={{ background: clientColor.accent, color: clientColor.text }}>
-                                      <Award size={20} />
+                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            {clientSessions.map((session, sIdx) => (
+                              <motion.div
+                                key={session.id || sIdx}
+                                whileHover={{ y: -5 }}
+                                className="rounded-[2rem] shadow-lg border overflow-hidden flex flex-col"
+                                style={{
+                                  background: clientColor.bg,
+                                  borderColor: clientColor.accent,
+                                }}
+                              >
+                                <div className="p-8 flex-1">
+                                  <div className="flex justify-between items-start mb-6">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                                        style={{
+                                          background: clientColor.accent,
+                                          color: clientColor.text,
+                                        }}
+                                      >
+                                        <Award size={20} />
+                                      </div>
+                                      <div>
+                                        <h5
+                                          className="font-black uppercase tracking-tight leading-none"
+                                          style={{ color: clientColor.text }}
+                                        >
+                                          {session.exam_name}
+                                        </h5>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                          Confirmed Session
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <h5 className="font-black uppercase tracking-tight leading-none" style={{ color: clientColor.text }}>{session.exam_name}</h5>
-                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Confirmed Session</p>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 bg-white/50 p-6 rounded-2xl mb-4">
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+                                        Exam Description
+                                      </span>
+                                      <p className="text-sm font-bold text-slate-800 leading-tight">
+                                        {session.exam_name}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+                                        Time Slot
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <Clock
+                                          size={14}
+                                          className="text-amber-500"
+                                        />
+                                        <p className="text-sm font-bold text-slate-800">
+                                          {formatTimeRange(
+                                            session.start_time,
+                                            session.end_time
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+                                        Client
+                                      </span>
+                                      <p className="text-sm font-bold text-slate-800">
+                                        {session.client_name}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
+                                        Candidates
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <Users
+                                          size={14}
+                                          className="text-amber-500"
+                                        />
+                                        <p className="text-lg font-black text-slate-800">
+                                          {session.candidate_count}
+                                        </p>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 bg-white/50 p-6 rounded-2xl mb-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Exam Description</span>
-                                    <p className="text-sm font-bold text-slate-800 leading-tight">{session.exam_name}</p>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Time Slot</span>
-                                    <div className="flex items-center gap-2">
-                                      <Clock size={14} className="text-amber-500" />
-                                      <p className="text-sm font-bold text-slate-800">{formatTimeRange(session.start_time, session.end_time)}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Client</span>
-                                    <p className="text-sm font-bold text-slate-800">{session.client_name}</p>
-                                  </div>
-                                  <div className="flex flex-col border-t border-slate-100 pt-4 md:border-t-0 md:pt-0">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Candidates</span>
-                                    <div className="flex items-center gap-2">
-                                      <Users size={14} className="text-amber-500" />
-                                      <p className="text-lg font-black text-slate-800">{session.candidate_count}</p>
-                                    </div>
-                                  </div>
+                                {/* Premium Reveal Actions */}
+                                <div className="p-6 bg-white/50 border-t border-slate-100 flex items-center justify-end gap-3 px-8">
+                                  <button
+                                    disabled={!canEdit}
+                                    onClick={() =>
+                                      openModal(selectedDate, session)
+                                    }
+                                    className="p-3 rounded-xl bg-white shadow-sm text-slate-500 hover:text-amber-500 hover:shadow-md transition-all border border-slate-200 active:scale-95 disabled:opacity-30"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    disabled={!canEdit}
+                                    onClick={() =>
+                                      session.id && handleDelete(session.id)
+                                    }
+                                    className="p-3 rounded-xl bg-white shadow-sm text-slate-500 hover:text-rose-500 hover:shadow-md transition-all border border-slate-200 active:scale-95 disabled:opacity-30"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
                                 </div>
-                              </div>
-
-                              {/* Premium Reveal Actions */}
-                              <div className="p-6 bg-white/50 border-t border-slate-100 flex items-center justify-end gap-3 px-8">
-                                <button
-                                  disabled={!canEdit}
-                                  onClick={() => openModal(selectedDate, session)}
-                                  className="p-3 rounded-xl bg-white shadow-sm text-slate-500 hover:text-amber-500 hover:shadow-md transition-all border border-slate-200 active:scale-95 disabled:opacity-30"
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <button
-                                  disabled={!canEdit}
-                                  onClick={() => session.id && handleDelete(session.id)}
-                                  className="p-3 rounded-xl bg-white shadow-sm text-slate-500 hover:text-rose-500 hover:shadow-md transition-all border border-slate-200 active:scale-95 disabled:opacity-30"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </motion.div>
-                          ))}
+                              </motion.div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })
+                      );
+                    }
+                  )
                 ) : (
                   <div className="flex flex-col items-center justify-center py-24 opacity-60">
                     <div className="w-24 h-24 rounded-[2rem] bg-[#EEF2F9] shadow-[12px_12px_24px_#bec3c9,-12px_-12px_24px_#ffffff] flex items-center justify-center text-slate-300 mb-6">
                       <Calendar size={40} />
                     </div>
-                    <p className="text-xl font-black text-slate-400 uppercase tracking-widest">No Sessions Scheduled</p>
+                    <p className="text-xl font-black text-slate-400 uppercase tracking-widest">
+                      No Sessions Scheduled
+                    </p>
                   </div>
                 )}
               </div>
@@ -833,13 +1098,18 @@ export function FetsCalendarPremium() {
             <div className="px-8 py-6 border-b border-gray-100 bg-white flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold font-rajdhani text-slate-800">
-                  {editingSession ? 'Edit Session' : 'Create Session'}
+                  {editingSession ? "Edit Session" : "Create Session"}
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  {editingSession ? 'Update session details.' : 'Add a new session to the current calendar.'}
+                  {editingSession
+                    ? "Update session details."
+                    : "Add a new session to the current calendar."}
                 </p>
               </div>
-              <button onClick={closeModal} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+              >
                 <X className="h-5 w-5 text-slate-400" />
               </button>
             </div>
@@ -850,53 +1120,83 @@ export function FetsCalendarPremium() {
                 {/* Client and Exam */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Client Name</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Client Name
+                    </label>
                     <select
                       value={formData.client_name}
-                      onChange={(e) => setFormData({ ...formData, client_name: e.target.value, exam_name: '' })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          client_name: e.target.value,
+                          exam_name: "",
+                        })
+                      }
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     >
                       <option value="">Select Client</option>
-                      {dbClients.length > 0 ? (
-                        dbClients.map(client => (
-                          <option key={client.id} value={client.name}>{client.name}</option>
-                        ))
-                      ) : (
-                        Object.keys(CLIENT_COLORS).map(client => (
-                          <option key={client} value={client}>{client}</option>
-                        ))
-                      )}
+                      {dbClients.length > 0
+                        ? dbClients.map((client) => (
+                            <option key={client.id} value={client.name}>
+                              {client.name}
+                            </option>
+                          ))
+                        : Object.keys(CLIENT_COLORS).map((client) => (
+                            <option key={client} value={client}>
+                              {client}
+                            </option>
+                          ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Exam Name</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Exam Name
+                    </label>
                     {(() => {
-                      const selectedClient = dbClients.find(c => c.name === formData.client_name)
-                      const clientExams = selectedClient ? dbExams.filter(e => e.client_id === selectedClient.id) : []
-                      
+                      const selectedClient = dbClients.find(
+                        (c) => c.name === formData.client_name
+                      );
+                      const clientExams = selectedClient
+                        ? dbExams.filter(
+                            (e) => e.client_id === selectedClient.id
+                          )
+                        : [];
+
                       return clientExams.length > 0 ? (
                         <select
                           value={formData.exam_name}
-                          onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              exam_name: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                           required
                         >
                           <option value="">Select Exam</option>
-                          {clientExams.map(exam => (
-                            <option key={exam.id} value={exam.name}>{exam.name}</option>
+                          {clientExams.map((exam) => (
+                            <option key={exam.id} value={exam.name}>
+                              {exam.name}
+                            </option>
                           ))}
                         </select>
                       ) : (
                         <input
                           type="text"
                           value={formData.exam_name}
-                          onChange={(e) => setFormData({ ...formData, exam_name: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              exam_name: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                           placeholder="e.g., CMA US Exam"
                           required
                         />
-                      )
+                      );
                     })()}
                   </div>
                 </div>
@@ -904,21 +1204,32 @@ export function FetsCalendarPremium() {
                 {/* Date and Candidate Count */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Date</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Date
+                    </label>
                     <input
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, date: e.target.value })
+                      }
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Candidate Count</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Candidate Count
+                    </label>
                     <input
                       type="number"
                       value={formData.candidate_count}
-                      onChange={(e) => setFormData({ ...formData, candidate_count: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          candidate_count: parseInt(e.target.value),
+                        })
+                      }
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       min="1"
                       required
@@ -929,21 +1240,29 @@ export function FetsCalendarPremium() {
                 {/* Time Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Start Time</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Start Time
+                    </label>
                     <input
                       type="time"
                       value={formData.start_time}
-                      onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, start_time: e.target.value })
+                      }
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">End Time</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      End Time
+                    </label>
                     <input
                       type="time"
                       value={formData.end_time}
-                      onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, end_time: e.target.value })
+                      }
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                       required
                     />
@@ -966,8 +1285,15 @@ export function FetsCalendarPremium() {
                   className="flex-1 px-6 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isMutating ? (
-                    <span className="flex items-center"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div> Saving...</span>
-                  ) : editingSession ? 'Update Session' : 'Create Session'}
+                    <span className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>{" "}
+                      Saving...
+                    </span>
+                  ) : editingSession ? (
+                    "Update Session"
+                  ) : (
+                    "Create Session"
+                  )}
                 </button>
               </div>
             </form>
@@ -984,7 +1310,7 @@ export function FetsCalendarPremium() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default FetsCalendarPremium
+export default FetsCalendarPremium;

@@ -1,25 +1,75 @@
-﻿
-> fets-point@4.0.0 lint E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point
+
+> fets-point@4.0.0 lint C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point
 > eslint .
 
 
-E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point\src\components\CalendarAnalysis.tsx
-  52:8   warning  React Hook useEffect has a missing dependency: 'fetchAnalysisData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  59:17  error    'startDate' is never reassigned. Use 'const' instead                                                                  prefer-const
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\AgentDossier.tsx
+  27:8  warning  React Hook useEffect has a missing dependency: 'fetchAgentDetails'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point\src\components\NewsTickerBar.tsx
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\CalendarAnalysis.tsx
+  100:8  warning  React Hook useEffect has a missing dependency: 'fetchSessionData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\CandidateAnalysis.tsx
+  81:8  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\ClientControl.tsx
+   75:8   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+  577:23  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\EventManager.tsx
+  105:6  warning  React Hook useEffect has missing dependencies: 'loadEvents' and 'loadStats'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\FetsIntelligence.tsx
+  57:6  warning  React Hook useEffect has a missing dependency: 'submitQuery'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\Frame.tsx
+  87:8  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\IncidentManager.tsx
+  120:8   warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  146:8   warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  278:13  error    'content' is never reassigned. Use 'const' instead                                                                prefer-const
+  288:58  error    Empty block statement                                                                                             no-empty
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\LostAndFound.tsx
+  121:8  warning  React Hook useEffect has a missing dependency: 'loadItems'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\MyDeskLivingBoard.tsx
+  235:21  error  Empty block statement  no-empty
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\NewsTickerBar.tsx
   45:6  warning  React Hook useEffect has a missing dependency: 'fetchActiveNews'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point\src\components\ResourceCentre.tsx
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\ResourceCentre.tsx
   193:6  warning  React Hook useEffect has a missing dependency: 'loadAllData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point\src\components\checklist\ChecklistAnalysis.tsx
-  50:8  warning  React Hook useEffect has a missing dependency: 'fetchSubmissions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\ToDoMatrix.tsx
+  92:8  warning  React Hook useEffect has a missing dependency: 'fetchTasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-E:\FETS LIVE ANTIGRAVITY\ETS.LIVE v04 2026\FETS.LIVE-v3.0\fets-point\src\utils\setupDatabase.ts
-  77:7  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\checklist\ChecklistAnalysis.tsx
+  47:8  warning  React Hook useEffect has a missing dependency: 'fetchSubmissions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-Γ£û 6 problems (2 errors, 4 warnings)
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\checklist\ChecklistFormModal.tsx
+  34:11  warning  The 'questions' logical expression could make the dependencies of useMemo Hook (at line 80) change on every render. To fix this, wrap the initialization of 'questions' in its own useMemo() Hook   react-hooks/exhaustive-deps
+  34:11  warning  The 'questions' logical expression could make the dependencies of useMemo Hook (at line 100) change on every render. To fix this, wrap the initialization of 'questions' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  88:8   warning  React Hook useEffect has a missing dependency: 'activeSection'. Either include it or remove the dependency array                                                                                    react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\contexts\BranchContext.tsx
+  185:6  warning  React Hook useCallback has an unnecessary dependency: 'viewMode'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  205:6  warning  React Hook useEffect has a missing dependency: 'activeBranch'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\contexts\CallContext.tsx
+  65:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\contexts\ChatContext.tsx
+  27:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\hooks\useWebRTC.ts
+   92:8  warning  React Hook useEffect has a missing dependency: 'handleSignal'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
+  165:8  warning  React Hook useCallback has missing dependencies: 'createOffer', 'endCall', and 'handleOffer'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  195:8  warning  React Hook useCallback has a missing dependency: 'endCall'. Either include it or remove the dependency array                                      react-hooks/exhaustive-deps
+
+Γ£û 28 problems (3 errors, 25 warnings)
   1 error and 0 warnings potentially fixable with the `--fix` option.
 
 ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

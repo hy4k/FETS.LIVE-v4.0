@@ -83,7 +83,7 @@
   .calendar-weekday-full {
     display: none;
   }
-  
+
   .calendar-weekday-short {
     display: inline;
   }
@@ -216,7 +216,11 @@
 
 /* Enhanced Modal Styles */
 .calendar-modal-enhanced {
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(0, 0, 0, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(17, 24, 39, 0.95) 0%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -254,8 +258,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
@@ -264,24 +272,24 @@
     min-height: 80px;
     padding: 4px;
   }
-  
+
   .calendar-day-number-enhanced {
     font-size: 1rem;
   }
-  
+
   .calendar-grid-professional {
     margin: 0 0.5rem;
   }
-  
+
   .calendar-navigation-professional {
     margin: 0 0.5rem;
     padding: 1rem 0.5rem;
   }
-  
+
   .calendar-nav-content {
     gap: 1rem;
   }
-  
+
   .calendar-month-title {
     font-size: 1.25rem;
   }
@@ -292,16 +300,16 @@
     min-height: 60px;
     padding: 2px;
   }
-  
+
   .calendar-day-number-enhanced {
     font-size: 0.875rem;
   }
-  
+
   .calendar-event-indicator {
     font-size: 8px;
     padding: 1px 3px;
   }
-  
+
   .calendar-event-count-badge {
     font-size: 8px !important;
     padding: 1px 3px !important;

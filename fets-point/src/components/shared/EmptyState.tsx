@@ -3,17 +3,17 @@
  * Provides consistent empty state UX across the application
  */
 
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
-  icon: LucideIcon
-  title: string
-  description: string
+  icon: LucideIcon;
+  title: string;
+  description: string;
   action?: {
-    label: string
-    onClick: () => void
-  }
-  className?: string
+    label: string;
+    onClick: () => void;
+  };
+  className?: string;
 }
 
 export function EmptyState({
@@ -21,30 +21,29 @@ export function EmptyState({
   title,
   description,
   action,
-  className = ''
+  className = "",
 }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center min-h-96 text-center px-4 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center min-h-96 text-center px-4 ${className}`}
+    >
       <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
         <Icon className="h-8 w-8 text-gray-400" />
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-6 max-w-md">{description}</p>
       {action && (
-        <button
-          onClick={action.onClick}
-          className="btn-primary-modern"
-        >
+        <button onClick={action.onClick} className="btn-primary-modern">
           {action.label}
         </button>
       )}
     </div>
-  )
+  );
 }
 
 interface NoResultsProps {
-  searchQuery?: string
-  onClear?: () => void
+  searchQuery?: string;
+  onClear?: () => void;
 }
 
 export function NoResults({ searchQuery, onClear }: NoResultsProps) {
@@ -57,7 +56,7 @@ export function NoResults({ searchQuery, onClear }: NoResultsProps) {
       <p className="text-gray-600 mb-4">
         {searchQuery
           ? `No results for "${searchQuery}". Try adjusting your search.`
-          : 'Try adjusting your filters or search criteria.'}
+          : "Try adjusting your filters or search criteria."}
       </p>
       {onClear && (
         <button
@@ -68,5 +67,5 @@ export function NoResults({ searchQuery, onClear }: NoResultsProps) {
         </button>
       )}
     </div>
-  )
+  );
 }

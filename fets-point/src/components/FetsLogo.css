@@ -1,103 +1,97 @@
 .fets-logo-3d-container {
-    display: flex;
-    align-items: center;
-    padding: 10px;
+  display: flex;
+  align-items: center;
+  padding: 10px;
 }
 
 .fets-logo-3d-wrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 5px 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 5px 0;
 }
 
 .logo-main-text {
-    display: flex;
-    align-items: baseline;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 900;
-    font-size: 2.2rem;
-    line-height: 0.9;
-    color: #000000;
-    /* Pure Black Text */
-    letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  line-height: 0.9;
+  color: #000000;
+  /* Pure Black Text */
+  letter-spacing: -0.02em;
 
-    /* 3D Extrusion Effect using text-shadow stack - Optimized for Black Text */
-    text-shadow:
-        1px 1px 0px #333333,
-        2px 2px 0px #222222,
-        3px 3px 0px #111111,
-        4px 4px 8px rgba(0, 0, 0, 0.4);
+  /* 3D Extrusion Effect using text-shadow stack - Optimized for Black Text */
+  text-shadow: 1px 1px 0px #333333, 2px 2px 0px #222222, 3px 3px 0px #111111,
+    4px 4px 8px rgba(0, 0, 0, 0.4);
 
-    transform: skew(-5deg);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: skew(-5deg);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .text-fets {
-    text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .text-live {
-    text-transform: uppercase;
-    font-weight: 700;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .text-dot {
-    color: #000000;
-    margin: 0 0.05em;
+  color: #000000;
+  margin: 0 0.05em;
 }
 
 .logo-accent-line {
-    height: 3px;
-    background: #000000;
-    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-    margin: 2px 0;
+  height: 3px;
+  background: #000000;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  margin: 2px 0;
 }
 
 .logo-accent-line.top {
-    width: 60%;
-    margin-left: 5px;
+  width: 60%;
+  margin-left: 5px;
 }
 
 .logo-accent-line.bottom {
-    width: 80%;
-    margin-left: 20px;
-    height: 4px;
-    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+  width: 80%;
+  margin-left: 20px;
+  height: 4px;
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
 }
 
 .logo-deco-dot {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: #000000;
-    border-radius: 50%;
-    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #000000;
+  border-radius: 50%;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .dot-1 {
-    top: -5px;
-    right: 25%;
+  top: -5px;
+  right: 25%;
 }
 
 .dot-2 {
-    bottom: -2px;
-    right: 0;
+  bottom: -2px;
+  right: 0;
 }
 
 /* Hover Enhancement */
 .fets-logo-3d-wrapper:hover .logo-main-text {
-    transform: skew(-5deg) translate(-2px, -2px);
-    text-shadow:
-        1px 1px 0px #333333,
-        2px 2px 0px #222222,
-        4px 4px 12px rgba(0, 0, 0, 0.6),
-        6px 6px 20px rgba(0, 0, 0, 0.4);
+  transform: skew(-5deg) translate(-2px, -2px);
+  text-shadow: 1px 1px 0px #333333, 2px 2px 0px #222222,
+    4px 4px 12px rgba(0, 0, 0, 0.6), 6px 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .fets-logo-3d-wrapper:hover .logo-accent-line {
-    width: 90%;
-    transition: width 0.6s ease;
+  width: 90%;
+  transition: width 0.6s ease;
 }

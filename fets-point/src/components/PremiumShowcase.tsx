@@ -1,15 +1,30 @@
-import { GlassCard } from './iCloud/GlassCard'
-import { Users, TrendingUp, AlertCircle, CheckCircle, Calendar, Shield } from 'lucide-react'
+import { GlassCard } from "./iCloud/GlassCard";
+import {
+  Users,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Calendar,
+  Shield,
+} from "lucide-react";
 
 export function PremiumShowcase() {
   return (
-    <div className="p-8 min-h-screen" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div
+      className="p-8 min-h-screen"
+      style={{
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      }}
+    >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="dashboard-title text-white mb-4">Premium Design Showcase</h1>
+          <h1 className="dashboard-title text-white mb-4">
+            Premium Design Showcase
+          </h1>
           <p className="dashboard-subtitle text-white/80">
-            Experience the new glassmorphic cards, premium typography, and micro-interactions
+            Experience the new glassmorphic cards, premium typography, and
+            micro-interactions
           </p>
         </div>
 
@@ -61,8 +76,9 @@ export function PremiumShowcase() {
             <div className="p-4">
               <h3 className="card-title mb-3">Standard Glass Card</h3>
               <p className="text-body text-gray-700">
-                This card uses the premium glassmorphic design with frosted blur effect and multi-layer shadows.
-                Hover over it to see the elevation effect!
+                This card uses the premium glassmorphic design with frosted blur
+                effect and multi-layer shadows. Hover over it to see the
+                elevation effect!
               </p>
             </div>
           </GlassCard>
@@ -71,8 +87,8 @@ export function PremiumShowcase() {
             <div className="p-4">
               <h3 className="card-title mb-3">Accent Glow Card</h3>
               <p className="text-body text-gray-700">
-                This variant features a purple glow effect on hover. Perfect for highlighting featured content
-                or important callouts.
+                This variant features a purple glow effect on hover. Perfect for
+                highlighting featured content or important callouts.
               </p>
             </div>
           </GlassCard>
@@ -107,7 +123,9 @@ export function PremiumShowcase() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-h1 mb-2">Heading 1 - Space Grotesk</h1>
-                <p className="text-sm text-gray-500">67.34px, Weight 800, Gradient Effect</p>
+                <p className="text-sm text-gray-500">
+                  67.34px, Weight 800, Gradient Effect
+                </p>
               </div>
               <div>
                 <h2 className="text-h2 mb-2">Heading 2 - Space Grotesk</h2>
@@ -119,14 +137,16 @@ export function PremiumShowcase() {
               </div>
               <div>
                 <p className="text-lead">
-                  Lead Paragraph - This is a larger body text used for introductions and important content.
-                  Inter font with 21.33px size.
+                  Lead Paragraph - This is a larger body text used for
+                  introductions and important content. Inter font with 21.33px
+                  size.
                 </p>
               </div>
               <div>
                 <p className="text-body">
-                  Body Text - Standard paragraph text using Inter font at 16px. Optimized for readability
-                  with antialiasing and font feature settings for better rendering.
+                  Body Text - Standard paragraph text using Inter font at 16px.
+                  Optimized for readability with antialiasing and font feature
+                  settings for better rendering.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -157,7 +177,8 @@ export function PremiumShowcase() {
             </div>
             <h4 className="text-h4 mb-2">Shadow Layering</h4>
             <p className="text-small text-gray-600">
-              5-level elevation system with multi-layer shadows for realistic depth
+              5-level elevation system with multi-layer shadows for realistic
+              depth
             </p>
           </div>
 
@@ -173,7 +194,7 @@ export function PremiumShowcase() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default PremiumShowcase
+export default PremiumShowcase;

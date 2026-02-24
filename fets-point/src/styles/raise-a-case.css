@@ -18,13 +18,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 45, 50, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(20, 45, 50, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border-radius: 1.5rem;
   border: 1px solid rgba(45, 80, 85, 0.5);
-  box-shadow:
-    0 4px 30px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(220, 38, 38, 0.1),
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(220, 38, 38, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -39,16 +41,14 @@
   height: 50px;
   width: auto;
   border-radius: 10px;
-  box-shadow:
-    0 4px 20px rgba(0, 128, 128, 0.3),
+  box-shadow: 0 4px 20px rgba(0, 128, 128, 0.3),
     0 2px 8px rgba(220, 38, 38, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .rac-brand-logo-img:hover {
   transform: scale(1.02);
-  box-shadow:
-    0 6px 30px rgba(0, 128, 128, 0.4),
+  box-shadow: 0 6px 30px rgba(0, 128, 128, 0.4),
     0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
@@ -76,8 +76,15 @@
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 /* Create Button */
@@ -95,23 +102,23 @@
   border: 1px solid rgba(220, 38, 38, 0.5);
   cursor: pointer;
   overflow: hidden;
-  box-shadow:
-    0 4px 20px rgba(220, 38, 38, 0.4),
-    0 0 30px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4), 0 0 30px rgba(220, 38, 38, 0.2);
   transition: all 0.3s ease;
 }
 
 .rac-create-btn:hover {
-  box-shadow:
-    0 6px 30px rgba(220, 38, 38, 0.6),
-    0 0 40px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 6px 30px rgba(220, 38, 38, 0.6), 0 0 40px rgba(220, 38, 38, 0.3);
   transform: translateY(-2px);
 }
 
 .rac-create-btn-glow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 50%
+  );
   pointer-events: none;
 }
 
@@ -126,7 +133,11 @@
 
 /* ========== SIDEBAR ========== */
 .rac-sidebar {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 45, 50, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(20, 45, 50, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border-radius: 1.5rem;
   border: 1px solid rgba(45, 80, 85, 0.5);
@@ -177,7 +188,11 @@
 }
 
 .rac-category-item.active {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(94, 234, 212, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.15) 0%,
+    rgba(94, 234, 212, 0.1) 100%
+  );
 }
 
 .rac-category-icon {
@@ -188,7 +203,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .rac-category-label {
@@ -215,7 +230,11 @@
 
 /* ========== LIST PANEL ========== */
 .rac-list-panel {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 45, 50, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(20, 45, 50, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border-radius: 1.5rem;
   border: 1px solid rgba(45, 80, 85, 0.5);
@@ -311,10 +330,13 @@
 }
 
 .rac-case-card.selected {
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(94, 234, 212, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.1) 0%,
+    rgba(94, 234, 212, 0.05) 100%
+  );
   border-color: rgba(220, 38, 38, 0.4);
-  box-shadow:
-    0 4px 20px rgba(220, 38, 38, 0.15),
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15),
     0 0 20px rgba(220, 38, 38, 0.1);
 }
 
@@ -385,12 +407,16 @@
   font-size: 0.6875rem;
   font-weight: 600;
   color: #5eead4;
-  font-family: 'Monaco', 'Consolas', monospace;
+  font-family: "Monaco", "Consolas", monospace;
 }
 
 /* ========== PLAYGROUND ========== */
 .rac-playground {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 45, 50, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(20, 45, 50, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border-radius: 1.5rem;
   border: 1px solid rgba(45, 80, 85, 0.5);
@@ -403,7 +429,11 @@
 /* Case Header in Playground */
 .rac-case-header-detail {
   padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(94, 234, 212, 0.03) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.05) 0%,
+    rgba(94, 234, 212, 0.03) 100%
+  );
   border-bottom: 1px solid rgba(45, 80, 85, 0.5);
 }
 
@@ -428,7 +458,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .rac-case-category-badge {
@@ -469,8 +499,12 @@
 }
 
 .rac-meta-id {
-  font-family: 'Monaco', 'Consolas', monospace;
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(94, 234, 212, 0.1) 100%);
+  font-family: "Monaco", "Consolas", monospace;
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.15) 0%,
+    rgba(94, 234, 212, 0.1) 100%
+  );
   color: #5eead4;
   border-color: rgba(94, 234, 212, 0.3);
 }
@@ -496,7 +530,11 @@
 .rac-vendor-card {
   margin: 0.75rem 1rem;
   padding: 1rem;
-  background: linear-gradient(135deg, rgba(132, 204, 22, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(132, 204, 22, 0.08) 0%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
   border-radius: 1rem;
   border: 1px solid rgba(132, 204, 22, 0.2);
 }
@@ -569,8 +607,15 @@
 }
 
 @keyframes ring-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
 
 .rac-empty-title {

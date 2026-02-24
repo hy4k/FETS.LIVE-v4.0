@@ -17,11 +17,11 @@
 }
 
 .glassmorphic-card {
-  background: rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  box-shadow: 0 6px 24px 0 rgba(31, 38, 135, 0.20);
+  box-shadow: 0 6px 24px 0 rgba(31, 38, 135, 0.2);
 }
 
 .glassmorphic-button {
@@ -48,7 +48,8 @@
 
 /* Enhanced Animations for Premium Experience */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
   33% {
@@ -95,10 +96,12 @@
 }
 
 .animation-shimmer {
-  background: linear-gradient(90deg, 
-    rgba(255,255,255,0) 0%, 
-    rgba(255,255,255,0.1) 50%, 
-    rgba(255,255,255,0) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
   background-size: 1000px 100%;
   animation: shimmer 3s infinite;
 }
@@ -138,9 +141,7 @@
 /* Apple-style borders */
 .apple-border {
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 /* Week dividers */
@@ -150,13 +151,18 @@
 }
 
 .week-divider::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.1),
+    transparent
+  );
 }
 
 /* Cell dividers */
@@ -175,7 +181,7 @@
 }
 
 .roster-strip::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -219,7 +225,7 @@
 }
 
 .premium-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;

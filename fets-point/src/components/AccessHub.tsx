@@ -1,793 +1,1044 @@
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    Shield, Key, Lock, Eye, EyeOff, Copy, ExternalLink, Search,
-    Plus, X, Minus, Globe, Server, Fingerprint,
-    ChevronRight, Layers, Database, Building2, Save
-} from 'lucide-react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../hooks/useAuth'
-import { toast } from 'react-hot-toast'
+  Shield,
+  Key,
+  Lock,
+  Eye,
+  EyeOff,
+  Copy,
+  ExternalLink,
+  Search,
+  Plus,
+  X,
+  Minus,
+  Globe,
+  Server,
+  Fingerprint,
+  ChevronRight,
+  Layers,
+  Database,
+  Building2,
+  Save,
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../hooks/useAuth";
+import { toast } from "react-hot-toast";
 
 interface VaultEntry {
-    id: string
-    user_id: string
-    title: string
-    category: string
-    username?: string
-    password?: string
-    url?: string
-    notes?: string
-    tags: string[]
-    site_id?: string
-    prof_email?: string
-    prof_email_password?: string
-    other_urls?: string
-    contact_numbers?: string
-    custom_fields?: { key: string; value: string }[] | any
-    created_at: string
+  id: string;
+  user_id: string;
+  title: string;
+  category: string;
+  username?: string;
+  password?: string;
+  url?: string;
+  notes?: string;
+  tags: string[];
+  site_id?: string;
+  prof_email?: string;
+  prof_email_password?: string;
+  other_urls?: string;
+  contact_numbers?: string;
+  custom_fields?: { key: string; value: string }[] | any;
+  created_at: string;
 }
 
 interface AccessHubPopupProps {
-    entry: VaultEntry
-    onClose: () => void
-    zIndex?: number
+  entry: VaultEntry;
+  onClose: () => void;
+  zIndex?: number;
 }
 
 // Popup Component for Full Vault Details
-const AccessHubPopup: React.FC<AccessHubPopupProps> = ({ entry, onClose, zIndex = 3000 }) => {
-    const [isMinimized, setIsMinimized] = useState(false)
-    const [revealMap, setRevealMap] = useState<Record<string, boolean>>({})
+const AccessHubPopup: React.FC<AccessHubPopupProps> = ({
+  entry,
+  onClose,
+  zIndex = 3000,
+}) => {
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [revealMap, setRevealMap] = useState<Record<string, boolean>>({});
 
-    const toggleReveal = (field: string) => {
-        setRevealMap(prev => ({ ...prev, [field]: !prev[field] }))
-    }
+  const toggleReveal = (field: string) => {
+    setRevealMap((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text)
-        toast.success(`${label} copied`, { icon: '✓', style: { background: '#1e293b', color: '#fff' } })
-    }
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied`, {
+      icon: "✓",
+      style: { background: "#1e293b", color: "#fff" },
+    });
+  };
 
-    const categoryColors: Record<string, string> = {
-        'Corporate': 'from-blue-600 to-blue-800',
-        'Financial': 'from-emerald-600 to-emerald-800',
-        'Personal': 'from-purple-600 to-purple-800',
-        'Emergency': 'from-rose-600 to-rose-800',
-        'General': 'from-slate-600 to-slate-800'
-    }
+  const categoryColors: Record<string, string> = {
+    Corporate: "from-blue-600 to-blue-800",
+    Financial: "from-emerald-600 to-emerald-800",
+    Personal: "from-purple-600 to-purple-800",
+    Emergency: "from-rose-600 to-rose-800",
+    General: "from-slate-600 to-slate-800",
+  };
 
-    const gradientClass = categoryColors[entry.category] || categoryColors['General']
+  const gradientClass =
+    categoryColors[entry.category] || categoryColors["General"];
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{
-                opacity: 1,
-                scale: 1,
-                y: 0,
-                height: isMinimized ? 56 : 'auto',
-                maxHeight: isMinimized ? 56 : '80vh'
-            }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            drag
-            dragMomentum={false}
-            style={{ zIndex }}
-            className="fixed bottom-8 right-8 w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200"
-        >
-            {/* Header */}
-            <div className={`bg-gradient-to-r ${gradientClass} px-5 py-4 flex items-center justify-between cursor-move`}>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <Shield size={20} className="text-white" />
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        height: isMinimized ? 56 : "auto",
+        maxHeight: isMinimized ? 56 : "80vh",
+      }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      drag
+      dragMomentum={false}
+      style={{ zIndex }}
+      className="fixed bottom-8 right-8 w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200"
+    >
+      {/* Header */}
+      <div
+        className={`bg-gradient-to-r ${gradientClass} px-5 py-4 flex items-center justify-between cursor-move`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <Shield size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-sm uppercase tracking-wide">
+              {entry.title}
+            </h3>
+            <span className="text-white/70 text-[10px] uppercase tracking-widest font-medium">
+              {entry.category}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <Minus size={16} />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {!isMinimized && (
+        <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50">
+          {/* Credentials Section */}
+          {(entry.username || entry.password) && (
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Key size={14} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Access Credentials
+                </span>
+              </div>
+              <div className="space-y-3">
+                {entry.username && (
+                  <div className="flex items-center justify-between group">
+                    <div className="flex-1">
+                      <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">
+                        Username / ID
+                      </label>
+                      <span className="text-sm font-mono text-slate-800">
+                        {entry.username}
+                      </span>
                     </div>
-                    <div>
-                        <h3 className="text-white font-bold text-sm uppercase tracking-wide">{entry.title}</h3>
-                        <span className="text-white/70 text-[10px] uppercase tracking-widest font-medium">{entry.category}</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setIsMinimized(!isMinimized)} className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                        <Minus size={16} />
-                    </button>
-                    <button onClick={onClose} className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                        <X size={16} />
-                    </button>
-                </div>
-            </div>
-
-            {!isMinimized && (
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50">
-                    {/* Credentials Section */}
-                    {(entry.username || entry.password) && (
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Key size={14} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Credentials</span>
-                            </div>
-                            <div className="space-y-3">
-                                {entry.username && (
-                                    <div className="flex items-center justify-between group">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">Username / ID</label>
-                                            <span className="text-sm font-mono text-slate-800">{entry.username}</span>
-                                        </div>
-                                        <button onClick={() => copyToClipboard(entry.username!, 'Username')} className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all">
-                                            <Copy size={14} />
-                                        </button>
-                                    </div>
-                                )}
-                                {entry.password && (
-                                    <div className="flex items-center justify-between group pt-3 border-t border-slate-100">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">Password</label>
-                                            <span className="text-sm font-mono text-slate-800 tracking-wider">
-                                                {revealMap['password'] ? entry.password : '••••••••••••'}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => toggleReveal('password')} className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
-                                                {revealMap['password'] ? <EyeOff size={14} /> : <Eye size={14} />}
-                                            </button>
-                                            <button onClick={() => copyToClipboard(entry.password!, 'Password')} className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all">
-                                                <Copy size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Professional Email */}
-                    {(entry.prof_email || entry.prof_email_password) && (
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Building2 size={14} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Professional Email</span>
-                            </div>
-                            <div className="space-y-3">
-                                {entry.prof_email && (
-                                    <div className="flex items-center justify-between group">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">Email</label>
-                                            <span className="text-sm text-slate-800">{entry.prof_email}</span>
-                                        </div>
-                                        <button onClick={() => copyToClipboard(entry.prof_email!, 'Email')} className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all">
-                                            <Copy size={14} />
-                                        </button>
-                                    </div>
-                                )}
-                                {entry.prof_email_password && (
-                                    <div className="flex items-center justify-between group pt-3 border-t border-slate-100">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">Email Password</label>
-                                            <span className="text-sm font-mono text-slate-800 tracking-wider">
-                                                {revealMap['emailPass'] ? entry.prof_email_password : '••••••••••••'}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <button onClick={() => toggleReveal('emailPass')} className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
-                                                {revealMap['emailPass'] ? <EyeOff size={14} /> : <Eye size={14} />}
-                                            </button>
-                                            <button onClick={() => copyToClipboard(entry.prof_email_password!, 'Email Password')} className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all">
-                                                <Copy size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* URLs */}
-                    {(entry.url || entry.other_urls) && (
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Globe size={14} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Links</span>
-                            </div>
-                            {entry.url && (
-                                <a
-                                    href={entry.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium group"
-                                >
-                                    <ExternalLink size={14} />
-                                    Open Portal
-                                    <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                                </a>
-                            )}
-                            {entry.other_urls && (
-                                <div className="mt-3 pt-3 border-t border-slate-100">
-                                    <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-2">Additional URLs</label>
-                                    <p className="text-xs text-slate-600 whitespace-pre-line break-all">{entry.other_urls}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Custom Fields */}
-                    {entry.custom_fields && Array.isArray(entry.custom_fields) && entry.custom_fields.length > 0 && (
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Database size={14} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Additional Data</span>
-                            </div>
-                            <div className="space-y-3">
-                                {entry.custom_fields.map((field: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between group">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">{field.key}</label>
-                                            <span className="text-sm text-slate-800">{field.value}</span>
-                                        </div>
-                                        <button onClick={() => copyToClipboard(field.value, field.key)} className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all">
-                                            <Copy size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Notes */}
-                    {entry.notes && (
-                        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                            <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-2">Notes</label>
-                            <p className="text-sm text-slate-600 whitespace-pre-line">{entry.notes}</p>
-                        </div>
-                    )}
-                </div>
-            )}
-        </motion.div>
-    )
-}
-
-// Add Entry Modal
-const AddEntryModal: React.FC<{ onClose: () => void; onSuccess: () => void; userId: string }> = ({ onClose, onSuccess, userId }) => {
-    const [saving, setSaving] = useState(false)
-    const [formData, setFormData] = useState({
-        title: '',
-        category: 'General',
-        username: '',
-        password: '',
-        url: '',
-        notes: ''
-    })
-
-    const categories = ['General', 'Corporate', 'Financial', 'Personal', 'Emergency']
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!formData.title.trim()) {
-            toast.error('Title is required')
-            return
-        }
-
-        setSaving(true)
-        try {
-            const { error } = await supabase.from('fets_vault').insert({
-                user_id: userId,
-                title: formData.title.trim(),
-                category: formData.category,
-                username: formData.username.trim() || null,
-                password: formData.password || null,
-                url: formData.url.trim() || null,
-                notes: formData.notes.trim() || null,
-                tags: []
-            })
-
-            if (error) throw error
-            toast.success('Credential saved!')
-            onSuccess()
-            onClose()
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to save')
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    return (
-        <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-            >
-                {/* Header */}
-                <div className="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                            <Plus size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-white font-bold text-sm uppercase tracking-wide">New Credential</h3>
-                            <span className="text-white/60 text-[10px] uppercase tracking-widest">Add to your vault</span>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Title *</label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="e.g., Gmail, Netflix, Bank Account"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Category</label>
-                        <select
-                            value={formData.category}
-                            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
-                        >
-                            {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Username / Email</label>
-                            <input
-                                type="text"
-                                value={formData.username}
-                                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                                placeholder="user@email.com"
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Password</label>
-                            <input
-                                type="password"
-                                value={formData.password}
-                                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                placeholder="••••••••"
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">URL</label>
-                        <input
-                            type="url"
-                            value={formData.url}
-                            onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                            placeholder="https://..."
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Notes</label>
-                        <textarea
-                            value={formData.notes}
-                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                            placeholder="Additional notes..."
-                            rows={3}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors resize-none"
-                        />
-                    </div>
-
                     <button
-                        type="submit"
-                        disabled={saving}
-                        className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-sm hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      onClick={() =>
+                        copyToClipboard(entry.username!, "Username")
+                      }
+                      className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
                     >
-                        {saving ? (
-                            <>Saving...</>
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                )}
+                {entry.password && (
+                  <div className="flex items-center justify-between group pt-3 border-t border-slate-100">
+                    <div className="flex-1">
+                      <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">
+                        Password
+                      </label>
+                      <span className="text-sm font-mono text-slate-800 tracking-wider">
+                        {revealMap["password"]
+                          ? entry.password
+                          : "••••••••••••"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleReveal("password")}
+                        className="p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                      >
+                        {revealMap["password"] ? (
+                          <EyeOff size={14} />
                         ) : (
-                            <>
-                                <Save size={16} />
-                                Save Credential
-                            </>
+                          <Eye size={14} />
                         )}
-                    </button>
-                </form>
-            </motion.div>
-        </div>
-    )
-}
+                      </button>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(entry.password!, "Password")
+                        }
+                        className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-// View All Vault Modal (Emerald Design)
-const ViewAllVaultModal: React.FC<{ entries: VaultEntry[]; onClose: () => void; onEntryClick: (entry: VaultEntry) => void }> = ({ entries, onClose, onEntryClick }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const filtered = entries.filter(e =>
-        e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const categoryIcons: Record<string, React.ReactNode> = {
-        'Corporate': <Building2 size={16} />,
-        'Financial': <Layers size={16} />,
-        'Personal': <Fingerprint size={16} />,
-        'Emergency': <Shield size={16} />,
-        'General': <Server size={16} />
-    };
-
-    return (
-        <div className="fixed inset-0 z-[3500] flex items-center justify-center p-6 bg-emerald-950/40 backdrop-blur-md" onClick={onClose}>
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                onClick={e => e.stopPropagation()}
-                className="w-full max-w-5xl bg-[#F0FDF4] rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/50 relative"
-            >
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-300/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
-
-                {/* Header */}
-                <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 px-8 py-6 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner border border-white/10">
-                            <Shield size={24} className="text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">F-Vault Secure</h2>
-                            <p className="text-emerald-100/80 text-[10px] font-bold uppercase tracking-widest">Full Credential Repository</p>
-                        </div>
+          {/* Professional Email */}
+          {(entry.prof_email || entry.prof_email_password) && (
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 size={14} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Professional Email
+                </span>
+              </div>
+              <div className="space-y-3">
+                {entry.prof_email && (
+                  <div className="flex items-center justify-between group">
+                    <div className="flex-1">
+                      <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">
+                        Email
+                      </label>
+                      <span className="text-sm text-slate-800">
+                        {entry.prof_email}
+                      </span>
                     </div>
                     <button
-                        onClick={onClose}
-                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                      onClick={() =>
+                        copyToClipboard(entry.prof_email!, "Email")
+                      }
+                      className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
                     >
-                        <X size={20} />
+                      <Copy size={14} />
                     </button>
-                </div>
-
-                {/* Search Bar */}
-                <div className="px-8 py-6 border-b border-emerald-100 bg-white/50 relative z-10">
-                    <div className="relative">
-                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search your secure vault..."
-                            autoFocus
-                            className="w-full bg-white border border-emerald-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-emerald-900 placeholder:text-emerald-300/70 outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 transition-all shadow-sm"
-                        />
+                  </div>
+                )}
+                {entry.prof_email_password && (
+                  <div className="flex items-center justify-between group pt-3 border-t border-slate-100">
+                    <div className="flex-1">
+                      <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">
+                        Email Password
+                      </label>
+                      <span className="text-sm font-mono text-slate-800 tracking-wider">
+                        {revealMap["emailPass"]
+                          ? entry.prof_email_password
+                          : "••••••••••••"}
+                      </span>
                     </div>
-                </div>
-
-                {/* Grid */}
-                <div className="flex-1 overflow-y-auto p-8 relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map(entry => (
-                            <motion.button
-                                key={entry.id}
-                                whileHover={{ scale: 1.02, y: -2 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => onEntryClick(entry)}
-                                className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all group text-left relative overflow-hidden"
-                            >
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-emerald-100 transition-colors" />
-
-                                <div className="flex items-start justify-between mb-3 relative">
-                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors shadow-sm">
-                                        {categoryIcons[entry.category] || <Shield size={18} />}
-                                    </div>
-                                    {entry.category === 'Corporate' && <Building2 size={14} className="text-emerald-200" />}
-                                </div>
-
-                                <h3 className="font-bold text-slate-800 text-sm mb-1 truncate group-hover:text-emerald-700 transition-colors">{entry.title}</h3>
-                                <p className="text-xs text-slate-400 font-mono truncate mb-3">{entry.username || '****'}</p>
-
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-400 uppercase tracking-wider group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                                        {entry.category}
-                                    </span>
-                                </div>
-                            </motion.button>
-                        ))}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleReveal("emailPass")}
+                        className="p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                      >
+                        {revealMap["emailPass"] ? (
+                          <EyeOff size={14} />
+                        ) : (
+                          <Eye size={14} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(
+                            entry.prof_email_password!,
+                            "Email Password"
+                          )
+                        }
+                        className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Copy size={14} />
+                      </button>
                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-                    {filtered.length === 0 && (
-                        <div className="text-center py-20 opacity-50">
-                            <Search size={48} className="mx-auto mb-4 text-emerald-300" />
-                            <p className="text-emerald-800 font-bold">No credentials found</p>
-                        </div>
-                    )}
+          {/* URLs */}
+          {(entry.url || entry.other_urls) && (
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe size={14} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Links
+                </span>
+              </div>
+              {entry.url && (
+                <a
+                  href={entry.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium group"
+                >
+                  <ExternalLink size={14} />
+                  Open Portal
+                  <ChevronRight
+                    size={12}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </a>
+              )}
+              {entry.other_urls && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-2">
+                    Additional URLs
+                  </label>
+                  <p className="text-xs text-slate-600 whitespace-pre-line break-all">
+                    {entry.other_urls}
+                  </p>
                 </div>
-            </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Custom Fields */}
+          {entry.custom_fields &&
+            Array.isArray(entry.custom_fields) &&
+            entry.custom_fields.length > 0 && (
+              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Database size={14} className="text-slate-400" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    Additional Data
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {entry.custom_fields.map((field: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between group"
+                    >
+                      <div className="flex-1">
+                        <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-1">
+                          {field.key}
+                        </label>
+                        <span className="text-sm text-slate-800">
+                          {field.value}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(field.value, field.key)}
+                        className="p-2 text-slate-300 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* Notes */}
+          {entry.notes && (
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+              <label className="text-[9px] text-slate-400 uppercase tracking-wider block mb-2">
+                Notes
+              </label>
+              <p className="text-sm text-slate-600 whitespace-pre-line">
+                {entry.notes}
+              </p>
+            </div>
+          )}
         </div>
-    );
+      )}
+    </motion.div>
+  );
 };
 
+// Add Entry Modal
+const AddEntryModal: React.FC<{
+  onClose: () => void;
+  onSuccess: () => void;
+  userId: string;
+}> = ({ onClose, onSuccess, userId }) => {
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "General",
+    username: "",
+    password: "",
+    url: "",
+    notes: "",
+  });
+
+  const categories = [
+    "General",
+    "Corporate",
+    "Financial",
+    "Personal",
+    "Emergency",
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("fets_vault").insert({
+        user_id: userId,
+        title: formData.title.trim(),
+        category: formData.category,
+        username: formData.username.trim() || null,
+        password: formData.password || null,
+        url: formData.url.trim() || null,
+        notes: formData.notes.trim() || null,
+        tags: [],
+      });
+
+      if (error) throw error;
+      toast.success("Credential saved!");
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-slate-700 to-slate-900 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <Plus size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm uppercase tracking-wide">
+                New Credential
+              </h3>
+              <span className="text-white/60 text-[10px] uppercase tracking-widest">
+                Add to your vault
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Title *
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="e.g., Gmail, Netflix, Bank Account"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, category: e.target.value }))
+              }
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                Username / Email
+              </label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, username: e.target.value }))
+                }
+                placeholder="user@email.com"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, password: e.target.value }))
+                }
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              URL
+            </label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, url: e.target.value }))
+              }
+              placeholder="https://..."
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Notes
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
+              placeholder="Additional notes..."
+              rows={3}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 transition-colors resize-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold py-3 rounded-xl uppercase tracking-widest text-sm hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>Saving...</>
+            ) : (
+              <>
+                <Save size={16} />
+                Save Credential
+              </>
+            )}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+// View All Vault Modal (Emerald Design)
+const ViewAllVaultModal: React.FC<{
+  entries: VaultEntry[];
+  onClose: () => void;
+  onEntryClick: (entry: VaultEntry) => void;
+}> = ({ entries, onClose, onEntryClick }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filtered = entries.filter(
+    (e) =>
+      e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const categoryIcons: Record<string, React.ReactNode> = {
+    Corporate: <Building2 size={16} />,
+    Financial: <Layers size={16} />,
+    Personal: <Fingerprint size={16} />,
+    Emergency: <Shield size={16} />,
+    General: <Server size={16} />,
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[3500] flex items-center justify-center p-6 bg-emerald-950/40 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-5xl bg-[#F0FDF4] rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/50 relative"
+      >
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-300/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 px-8 py-6 flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner border border-white/10">
+              <Shield size={24} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">
+                F-Vault Secure
+              </h2>
+              <p className="text-emerald-100/80 text-[10px] font-bold uppercase tracking-widest">
+                Full Credential Repository
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-8 py-6 border-b border-emerald-100 bg-white/50 relative z-10">
+          <div className="relative">
+            <Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400"
+            />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search your secure vault..."
+              autoFocus
+              className="w-full bg-white border border-emerald-100 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-emerald-900 placeholder:text-emerald-300/70 outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 transition-all shadow-sm"
+            />
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((entry) => (
+              <motion.button
+                key={entry.id}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onEntryClick(entry)}
+                className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100/50 hover:shadow-lg hover:border-emerald-200 transition-all group text-left relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-emerald-100 transition-colors" />
+
+                <div className="flex items-start justify-between mb-3 relative">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors shadow-sm">
+                    {categoryIcons[entry.category] || <Shield size={18} />}
+                  </div>
+                  {entry.category === "Corporate" && (
+                    <Building2 size={14} className="text-emerald-200" />
+                  )}
+                </div>
+
+                <h3 className="font-bold text-slate-800 text-sm mb-1 truncate group-hover:text-emerald-700 transition-colors">
+                  {entry.title}
+                </h3>
+                <p className="text-xs text-slate-400 font-mono truncate mb-3">
+                  {entry.username || "****"}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-400 uppercase tracking-wider group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                    {entry.category}
+                  </span>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="text-center py-20 opacity-50">
+              <Search size={48} className="mx-auto mb-4 text-emerald-300" />
+              <p className="text-emerald-800 font-bold">No credentials found</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 // Main Access Hub Widget Component
-export function AccessHub({ readOnly = false, variant = 'default' }: { readOnly?: boolean; variant?: 'default' | 'emerald' }) {
-    const { user } = useAuth()
-    const [entries, setEntries] = useState<VaultEntry[]>([])
-    const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [activePopup, setActivePopup] = useState<VaultEntry | null>(null)
-    const [hoveredId, setHoveredId] = useState<string | null>(null)
-    const [showAddModal, setShowAddModal] = useState(false)
-    const [showViewAll, setShowViewAll] = useState(false)
+export function AccessHub({
+  readOnly = false,
+  variant = "default",
+}: {
+  readOnly?: boolean;
+  variant?: "default" | "emerald" | "yellow";
+}) {
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<VaultEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activePopup, setActivePopup] = useState<VaultEntry | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewAll, setShowViewAll] = useState(false);
 
-    const fetchEntries = React.useCallback(async () => {
-        if (!user?.id) return
-        try {
-            // Fetch only entries belonging to the current user
-            const { data, error } = await supabase
-                .from('fets_vault')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('title', { ascending: true })
+  const fetchEntries = React.useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      // Fetch only entries belonging to the current user
+      const { data, error } = await supabase
+        .from("fets_vault")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("title", { ascending: true });
 
-            if (error) throw error
-            setEntries(data || [])
-        } catch (err: any) {
-            console.error('Vault fetch error:', err.message)
-        } finally {
-            setLoading(false)
-        }
-    }, [user?.id])
-
-    useEffect(() => {
-        if (user?.id) fetchEntries()
-    }, [user?.id, fetchEntries])
-
-    const filteredEntries = entries.filter(entry =>
-        entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entry.category.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    const categoryIcons: Record<string, React.ReactNode> = {
-        'Corporate': <Building2 size={16} />,
-        'Financial': <Layers size={16} />,
-        'Personal': <Fingerprint size={16} />,
-        'Emergency': <Shield size={16} />,
-        'General': <Server size={16} />
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (err: any) {
+      console.error("Vault fetch error:", err.message);
+    } finally {
+      setLoading(false);
     }
+  }, [user?.id]);
 
-    const categoryColors: Record<string, { bg: string; text: string; border: string }> = {
-        'Corporate': { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
-        'Financial': { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' },
-        'Personal': { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
-        'Emergency': { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
-        'General': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' }
-    }
+  useEffect(() => {
+    if (user?.id) fetchEntries();
+  }, [user?.id, fetchEntries]);
 
-    const containerClass = variant === 'emerald'
-        ? "bg-gradient-to-br from-[#F0FDF4] to-[#ECFDF5] border-2 border-emerald-100 shadow-[0_20px_50px_-12px_rgba(16,185,129,0.25)] ring-4 ring-emerald-50/50"
-        : "bg-[var(--dashboard-bg, #EEF2F9)] rounded-3xl shadow-[9px_9px_16px_var(--neu-dark-shadow,rgb(209,217,230)),-9px_-9px_16px_var(--neu-light-shadow,rgba(255,255,255,0.8))] border border-white/50"
+  const filteredEntries = entries.filter(
+    (entry) =>
+      entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    const headerIconClass = variant === 'emerald'
-        ? "bg-emerald-100 text-emerald-600 shadow-emerald-200/50"
-        : "bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-lg"
+  const categoryIcons: Record<string, React.ReactNode> = {
+    Corporate: <Building2 size={16} />,
+    Financial: <Layers size={16} />,
+    Personal: <Fingerprint size={16} />,
+    Emergency: <Shield size={16} />,
+    General: <Server size={16} />,
+  };
 
-    const headerTextClass = variant === 'emerald' ? "text-emerald-900" : "text-slate-800"
-    const subTextClass = variant === 'emerald' ? "text-emerald-600/70" : "text-slate-400"
+  const categoryColors: Record<
+    string,
+    { bg: string; text: string; border: string }
+  > = {
+    Corporate: {
+      bg: "bg-blue-50",
+      text: "text-blue-600",
+      border: "border-blue-200",
+    },
+    Financial: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-600",
+      border: "border-emerald-200",
+    },
+    Personal: {
+      bg: "bg-purple-50",
+      text: "text-purple-600",
+      border: "border-purple-200",
+    },
+    Emergency: {
+      bg: "bg-rose-50",
+      text: "text-rose-600",
+      border: "border-rose-200",
+    },
+    General: {
+      bg: "bg-slate-50",
+      text: "text-slate-600",
+      border: "border-slate-200",
+    },
+  };
 
-    return (
-        <>
-            <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-                className={`${containerClass} p-8 relative overflow-hidden rounded-[2.5rem]`}
+  const containerClass = variant === "emerald" 
+    ? "bg-gradient-to-br from-[#10B981] to-[#047857] shadow-lg text-white" 
+    : variant === "yellow" 
+    ? "bg-[#1A1D24]/90 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-[#353A47]"
+    : "bg-[#0D0E11] rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.5)] border border-[#353A47]";
+
+  const headerIconClass =
+    variant === "emerald"
+      ? "bg-emerald-100 text-emerald-600 shadow-emerald-200/50"
+      : variant === "yellow"
+      ? "bg-[#F59E0B]/10 text-[#F59E0B] shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+      : "bg-slate-800 text-white shadow-lg";
+
+  const headerTextClass =
+    variant === "yellow" ? "text-white" : "text-white";
+  const subTextClass =
+    variant === "yellow" ? "text-[#F59E0B]" : "text-slate-400";
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+        className={`${containerClass} p-8 relative overflow-hidden rounded-[2.5rem]`}
+      >
+        {/* Decorative Emerald Glow */}
+        {variant === "yellow" && (
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F59E0B]/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+        )}
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-5">
+            <div
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 duration-300 ${headerIconClass}`}
             >
-                {/* Decorative Emerald Glow */}
-                {variant === 'emerald' && (
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-                )}
+              <Shield size={28} />
+            </div>
+            <div>
+              <h3
+                className={`text-2xl font-black uppercase tracking-tight leading-none mb-1 ${headerTextClass}`}
+              >
+                F-Vault
+              </h3>
+              <p
+                className={`text-[10px] font-bold uppercase tracking-widest ${subTextClass}`}
+              >
+                {entries.length} Secured Credentials
+              </p>
+            </div>
+          </div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8 relative z-10">
-                    <div className="flex items-center gap-5">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 duration-300 ${headerIconClass}`}>
-                            <Shield size={28} />
-                        </div>
-                        <div>
-                            <h3 className={`text-2xl font-black uppercase tracking-tight leading-none mb-1 ${headerTextClass}`}>F-Vault</h3>
-                            <p className={`text-[10px] font-bold uppercase tracking-widest ${subTextClass}`}>{entries.length} Secured Credentials</p>
-                        </div>
-                    </div>
+          <div className="flex items-center gap-3">
+            {/* Add Button */}
+            {!readOnly && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+              >
+                <Plus size={16} />
+                Add New
+              </motion.button>
+            )}
 
-                    <div className="flex items-center gap-3">
-                        {/* Add Button */}
-                        {!readOnly && (
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setShowAddModal(true)}
-                                className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
-                            >
-                                <Plus size={16} />
-                                Add New
-                            </motion.button>
-                        )}
+            {/* Search */}
+            <div className="relative w-64">
+              <Search
+                size={16}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search credentials..."
+                className="w-full bg-white/60 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+        </div>
 
-                        {/* Search */}
-                        <div className="relative w-64">
-                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search credentials..."
-                                className="w-full bg-white/60 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Credential Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {loading ? (
-                        [...Array(4)].map((_, i) => (
-                            <div key={i} className="h-32 rounded-2xl bg-slate-100 animate-pulse" />
-                        ))
-                    ) : filteredEntries.length > 0 ? (
-                        filteredEntries.slice(0, 8).map((entry) => {
-                            const colors = categoryColors[entry.category] || categoryColors['General']
-                            return (
-                                <motion.div
-                                    key={entry.id}
-                                    whileHover={{ scale: 1.02, y: -4 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onHoverStart={() => setHoveredId(entry.id)}
-                                    onHoverEnd={() => setHoveredId(null)}
-                                    onClick={() => setActivePopup(entry)}
-                                    className={`
-                                        relative bg-white rounded-2xl p-5 cursor-pointer transition-all duration-300
+        {/* Credential Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            [...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 rounded-2xl bg-slate-100 animate-pulse"
+              />
+            ))
+          ) : filteredEntries.length > 0 ? (
+            filteredEntries.slice(0, 8).map((entry) => {
+              const colors =
+                categoryColors[entry.category] || categoryColors["General"];
+              return (
+                <motion.div
+                  key={entry.id}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                  onHoverStart={() => setHoveredId(entry.id)}
+                  onHoverEnd={() => setHoveredId(null)}
+                  onClick={() => setActivePopup(entry)}
+                  className={`
+                                        relative ${variant === "yellow" ? "bg-[#1A1D24] text-[#FDFFF8] border-[#353A47]" : "bg-white"} rounded-2xl p-5 cursor-pointer transition-all duration-300
                                         border ${colors.border} hover:shadow-xl hover:border-slate-300 group overflow-hidden
                                     `}
-                                >
-                                    {/* Background Gradient on Hover */}
-                                    <div className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                >
+                  {/* Background Gradient on Hover */}
+                  <div
+                    className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                  />
 
-                                    {/* Content */}
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center transition-colors`}>
-                                                {categoryIcons[entry.category] || categoryIcons['General']}
-                                            </div>
-                                            <span className={`text-[8px] font-black uppercase tracking-widest ${colors.text} px-2 py-1 rounded-full ${colors.bg}`}>
-                                                {entry.category}
-                                            </span>
-                                        </div>
-
-                                        <h4 className="text-sm font-bold text-slate-800 mb-1 truncate uppercase tracking-tight">
-                                            {entry.title}
-                                        </h4>
-
-                                        {entry.username && (
-                                            <p className="text-xs text-slate-500 truncate font-mono">
-                                                {entry.username}
-                                            </p>
-                                        )}
-
-                                        {/* Locked Indicator */}
-                                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-                                            <Lock size={10} className="text-slate-300" />
-                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                                                Click to unlock
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Hover Arrow */}
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: hoveredId === entry.id ? 1 : 0, x: hoveredId === entry.id ? 0 : -10 }}
-                                        className="absolute bottom-4 right-4"
-                                    >
-                                        <ChevronRight size={18} className={colors.text} />
-                                    </motion.div>
-                                </motion.div>
-                            )
-                        })
-                    ) : (
-                        <div className="col-span-full py-12 text-center">
-                            <Lock size={40} className="mx-auto mb-3 text-slate-200" />
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">No credentials yet</p>
-                            {!readOnly && (
-                                <button
-                                    onClick={() => setShowAddModal(true)}
-                                    className="text-xs font-bold text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors flex items-center gap-2 mx-auto"
-                                >
-                                    <Plus size={14} />
-                                    Add your first credential
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* View More Link */}
-                {filteredEntries.length > 8 && (
-                    <div className="mt-6 text-center">
-                        <button
-                            onClick={() => setShowViewAll(true)}
-                            className="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto"
-                        >
-                            View all {filteredEntries.length} credentials
-                            <ChevronRight size={14} />
-                        </button>
+                  {/* Content */}
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div
+                        className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.text} flex items-center justify-center transition-colors`}
+                      >
+                        {categoryIcons[entry.category] ||
+                          categoryIcons["General"]}
+                      </div>
+                      <span
+                        className={`text-[8px] font-black uppercase tracking-widest ${colors.text} px-2 py-1 rounded-full ${colors.bg}`}
+                      >
+                        {entry.category}
+                      </span>
                     </div>
-                )}
 
-                {/* Decorative Grid */}
-                <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
-            </motion.div>
+                    <h4 className={`text-sm font-bold ${variant === "yellow" ? "text-white" : "text-slate-800"} mb-1 truncate uppercase tracking-tight`}>
+                      {entry.title}
+                    </h4>
 
-            {/* Popup */}
-            <AnimatePresence>
-                {activePopup && (
-                    <AccessHubPopup
-                        entry={activePopup}
-                        onClose={() => setActivePopup(null)}
-                    />
-                )}
-            </AnimatePresence>
+                    {entry.username && (
+                      <p className="text-xs text-slate-500 truncate font-mono">
+                        {entry.username}
+                      </p>
+                    )}
 
-            {/* Add Modal */}
-            {/* Add Modal */}
-            <AnimatePresence>
-                {showAddModal && user?.id && (
-                    <AddEntryModal
-                        onClose={() => setShowAddModal(false)}
-                        onSuccess={fetchEntries}
-                        userId={user.id}
-                    />
-                )}
-            </AnimatePresence>
+                    {/* Locked Indicator */}
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                      <Lock size={10} className="text-slate-300" />
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                        Click to unlock
+                      </span>
+                    </div>
+                  </div>
 
-            {/* View All Modal */}
-            <AnimatePresence>
-                {
-                    showViewAll && (
-                        <ViewAllVaultModal
-                            entries={entries}
-                            onClose={() => setShowViewAll(false)}
-                            onEntryClick={(entry) => {
-                                setActivePopup(entry);
-                                // Keep view all open? Or close it? Usually user wants to see details then go back.
-                                // But popup is top level z-index.
-                                // Let's close view all? Or keep it behind?
-                                // If we keep it behind, we need z-index management.
-                                // activePopup zIndex defaults to 3000. ViewAll is 3500. 
-                                // So we should pass zIndex to popup or make ViewAll lower.
-                                // Or simpler: Open popup ON TOP of ViewAll.
-                                // Let's make ViewAll z-3500 and Popup z-4000.
-                                // But AccessHubPopup has default z=3000. We can pass zIndex prop.
-                            }}
-                        />
-                    )
-                }
-                {/* Re-render activePopup with higher z-index if ViewAll is open */}
-                {
-                    activePopup && showViewAll && (
-                        <AccessHubPopup
-                            entry={activePopup}
-                            onClose={() => setActivePopup(null)}
-                            zIndex={4000}
-                        />
-                    )
-                }
-            </AnimatePresence >
-        </>
-    )
+                  {/* Hover Arrow */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{
+                      opacity: hoveredId === entry.id ? 1 : 0,
+                      x: hoveredId === entry.id ? 0 : -10,
+                    }}
+                    className="absolute bottom-4 right-4"
+                  >
+                    <ChevronRight size={18} className={colors.text} />
+                  </motion.div>
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="col-span-full py-12 text-center">
+              <Lock size={40} className="mx-auto mb-3 text-slate-200" />
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
+                No credentials yet
+              </p>
+              {!readOnly && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="text-xs font-bold text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Plus size={14} />
+                  Add your first credential
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* View More Link */}
+        {filteredEntries.length > 8 && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowViewAll(true)}
+              className="text-xs font-bold text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto"
+            >
+              View all {filteredEntries.length} credentials
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Decorative Grid */}
+        <div
+          className="absolute inset-0 opacity-[0.02] pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(#000 0.5px, transparent 0.5px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+      </motion.div>
+
+      {/* Popup */}
+      <AnimatePresence>
+        {activePopup && (
+          <AccessHubPopup
+            entry={activePopup}
+            onClose={() => setActivePopup(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Add Modal */}
+      {/* Add Modal */}
+      <AnimatePresence>
+        {showAddModal && user?.id && (
+          <AddEntryModal
+            onClose={() => setShowAddModal(false)}
+            onSuccess={fetchEntries}
+            userId={user.id}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* View All Modal */}
+      <AnimatePresence>
+        {showViewAll && (
+          <ViewAllVaultModal
+            entries={entries}
+            onClose={() => setShowViewAll(false)}
+            onEntryClick={(entry) => {
+              setActivePopup(entry);
+              // Keep view all open? Or close it? Usually user wants to see details then go back.
+              // But popup is top level z-index.
+              // Let's close view all? Or keep it behind?
+              // If we keep it behind, we need z-index management.
+              // activePopup zIndex defaults to 3000. ViewAll is 3500.
+              // So we should pass zIndex to popup or make ViewAll lower.
+              // Or simpler: Open popup ON TOP of ViewAll.
+              // Let's make ViewAll z-3500 and Popup z-4000.
+              // But AccessHubPopup has default z=3000. We can pass zIndex prop.
+            }}
+          />
+        )}
+        {/* Re-render activePopup with higher z-index if ViewAll is open */}
+        {activePopup && showViewAll && (
+          <AccessHubPopup
+            entry={activePopup}
+            onClose={() => setActivePopup(null)}
+            zIndex={4000}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
 }
 
-export default AccessHub
+export default AccessHub;

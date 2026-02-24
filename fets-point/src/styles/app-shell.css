@@ -1,4 +1,3 @@
-
 /* 
   MOBILE APP SHELL OPTIMIZATIONS
   Transforms the web feel into a native app experience
@@ -12,31 +11,34 @@
   --safe-area-inset-right: env(safe-area-inset-right);
 }
 
-html, body {
+html,
+body {
   /* Prevent scrolling of the entire page - we want fixed app feel */
   overflow: hidden;
   height: 100%;
   width: 100%;
   position: fixed;
-  
+
   /* Disable system-level "pull to refresh" and "overscroll glow" */
   overscroll-behavior: none;
-  
+
   /* Disable touch selection of UI elements */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  
+
   /* Disable the default grey highlight on tap in mobile safari/chrome */
   -webkit-tap-highlight-color: transparent;
-  
+
   /* Ensure text looks smooth */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Allow selection only in specific input areas */
-input, textarea, [contenteditable="true"] {
+input,
+textarea,
+[contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
 }

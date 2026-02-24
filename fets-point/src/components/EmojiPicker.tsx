@@ -1,37 +1,163 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Smile } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Smile } from "lucide-react";
 
 interface EmojiPickerProps {
   onEmojiSelect: (emoji: string) => void;
 }
 
 const EMOJI_CATEGORIES = {
-  'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳'],
-  'Gestures': ['👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '👌', '🤌', '🤏', '👈', '👉', '👆', '👇', '☝️', '👏', '🙌', '👐', '🤲', '🤝', '🙏'],
-  'Hearts': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
-  'Celebration': ['🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🥈', '🥉', '⭐', '🌟', '✨', '💫', '🔥', '💥'],
-  'Work': ['💼', '📊', '📈', '📉', '📋', '📝', '📌', '📍', '✅', '❌', '⚠️', '💡', '🔔', '📢', '📣'],
-  'Objects': ['📱', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '📷', '📹', '🎥', '📞', '☎️', '📧', '📨', '📩', '📮'],
+  Smileys: [
+    "😀",
+    "😃",
+    "😄",
+    "😁",
+    "😅",
+    "😂",
+    "🤣",
+    "😊",
+    "😇",
+    "🙂",
+    "🙃",
+    "😉",
+    "😌",
+    "😍",
+    "🥰",
+    "😘",
+    "😗",
+    "😙",
+    "😚",
+    "😋",
+    "😛",
+    "😝",
+    "😜",
+    "🤪",
+    "🤨",
+    "🧐",
+    "🤓",
+    "😎",
+    "🥸",
+    "🤩",
+    "🥳",
+  ],
+  Gestures: [
+    "👍",
+    "👎",
+    "👊",
+    "✊",
+    "🤛",
+    "🤜",
+    "🤞",
+    "✌️",
+    "🤟",
+    "🤘",
+    "👌",
+    "🤌",
+    "🤏",
+    "👈",
+    "👉",
+    "👆",
+    "👇",
+    "☝️",
+    "👏",
+    "🙌",
+    "👐",
+    "🤲",
+    "🤝",
+    "🙏",
+  ],
+  Hearts: [
+    "❤️",
+    "🧡",
+    "💛",
+    "💚",
+    "💙",
+    "💜",
+    "🖤",
+    "🤍",
+    "🤎",
+    "💔",
+    "❣️",
+    "💕",
+    "💞",
+    "💓",
+    "💗",
+    "💖",
+    "💘",
+    "💝",
+  ],
+  Celebration: [
+    "🎉",
+    "🎊",
+    "🎈",
+    "🎁",
+    "🏆",
+    "🥇",
+    "🥈",
+    "🥉",
+    "⭐",
+    "🌟",
+    "✨",
+    "💫",
+    "🔥",
+    "💥",
+  ],
+  Work: [
+    "💼",
+    "📊",
+    "📈",
+    "📉",
+    "📋",
+    "📝",
+    "📌",
+    "📍",
+    "✅",
+    "❌",
+    "⚠️",
+    "💡",
+    "🔔",
+    "📢",
+    "📣",
+  ],
+  Objects: [
+    "📱",
+    "💻",
+    "⌨️",
+    "🖥️",
+    "🖨️",
+    "🖱️",
+    "📷",
+    "📹",
+    "🎥",
+    "📞",
+    "☎️",
+    "📧",
+    "📨",
+    "📩",
+    "📮",
+  ],
 };
 
 const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Smileys');
+  const [selectedCategory, setSelectedCategory] = useState("Smileys");
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
@@ -61,8 +187,8 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect }) => {
                 onClick={() => setSelectedCategory(category)}
                 className={`px-3 py-2 text-xs font-medium whitespace-nowrap ${
                   selectedCategory === category
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-slate-600 hover:text-slate-800'
+                    ? "text-blue-600 border-b-2 border-blue-600"
+                    : "text-slate-600 hover:text-slate-800"
                 }`}
               >
                 {category}

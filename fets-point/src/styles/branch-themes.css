@@ -41,10 +41,10 @@
   --kannur-focus-ring: rgba(255, 214, 0, 0.3);
 
   /* Dashboard Yellow Essence - Unified Base */
-  --dashboard-bg: #FCF8E8;
+  --dashboard-bg: #fcf8e8;
   /* Very light cream/yellow essence */
-  --neu-dark-shadow: #DEDAB8;
-  --neu-light-shadow: #FFFFFF;
+  --neu-dark-shadow: #dedab8;
+  --neu-light-shadow: #ffffff;
 
   /* Global Mode - Blue-Purple Gradient */
   --global-primary: #3b82f6;
@@ -115,7 +115,11 @@
 }
 
 .branch-calicut .btn-primary {
-  background: linear-gradient(135deg, var(--calicut-primary) 0%, var(--calicut-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--calicut-primary) 0%,
+    var(--calicut-secondary) 100%
+  );
   border-color: var(--calicut-primary);
 }
 
@@ -125,15 +129,17 @@
 
 /* Page-Level Background Theming */
 .branch-calicut::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right,
-      var(--calicut-bg-tint) 0%,
-      transparent 50%);
+  background: radial-gradient(
+    circle at top right,
+    var(--calicut-bg-tint) 0%,
+    transparent 50%
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -178,7 +184,6 @@
   border-bottom: 3px solid var(--calicut-primary) !important;
   box-shadow: 0 4px 20px rgba(231, 187, 90, 0.08) !important;
 }
-
 
 /* ==========================================================================
    COCHIN BRANCH THEME - SUBTLE ACCENT STYLING
@@ -229,7 +234,11 @@
 }
 
 .branch-cochin .btn-primary {
-  background: linear-gradient(135deg, var(--cochin-primary) 0%, var(--cochin-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--cochin-primary) 0%,
+    var(--cochin-secondary) 100%
+  );
   border-color: var(--cochin-primary);
 }
 
@@ -239,15 +248,17 @@
 
 /* Page-Level Background Theming */
 .branch-cochin::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right,
-      var(--cochin-bg-tint) 0%,
-      transparent 50%);
+  background: radial-gradient(
+    circle at top right,
+    var(--cochin-bg-tint) 0%,
+    transparent 50%
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -285,7 +296,6 @@
 .branch-cochin .active-tab {
   box-shadow: 0 0 20px var(--cochin-glow) !important;
 }
-
 
 /* ==========================================================================
    KANNUR BRANCH THEME - SUBTLE ACCENT STYLING
@@ -336,7 +346,11 @@
 }
 
 .branch-kannur .btn-primary {
-  background: linear-gradient(135deg, var(--kannur-primary) 0%, var(--kannur-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--kannur-primary) 0%,
+    var(--kannur-secondary) 100%
+  );
   border-color: var(--kannur-primary);
 }
 
@@ -346,15 +360,17 @@
 
 /* Page-Level Background Theming */
 .branch-kannur::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right,
-      var(--kannur-bg-tint) 0%,
-      transparent 50%);
+  background: radial-gradient(
+    circle at top right,
+    var(--kannur-bg-tint) 0%,
+    transparent 50%
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -399,7 +415,6 @@
   border-bottom: 3px solid var(--kannur-primary) !important;
   box-shadow: 0 4px 20px rgba(255, 214, 0, 0.08) !important;
 }
-
 
 /* ==========================================================================
    GLOBAL MODE THEME
@@ -460,7 +475,11 @@
 }
 
 .branch-global .btn-primary {
-  background: linear-gradient(135deg, var(--global-primary) 0%, var(--global-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--global-primary) 0%,
+    var(--global-secondary) 100%
+  );
   border-color: var(--global-primary);
 }
 
@@ -470,15 +489,17 @@
 
 /* Page-Level Background Theming */
 .branch-global::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right,
-      var(--global-bg-tint) 0%,
-      transparent 50%);
+  background: radial-gradient(
+    circle at top right,
+    var(--global-bg-tint) 0%,
+    transparent 50%
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -523,7 +544,6 @@
   border-bottom-color: var(--global-border) !important;
 }
 
-
 /* ==========================================================================
    BRANCH TOGGLE COMPONENT STYLES
    ========================================================================== */
@@ -563,19 +583,35 @@
 }
 
 .branch-indicator.calicut {
-  background: linear-gradient(135deg, var(--calicut-primary) 0%, var(--calicut-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--calicut-primary) 0%,
+    var(--calicut-secondary) 100%
+  );
 }
 
 .branch-indicator.cochin {
-  background: linear-gradient(135deg, var(--cochin-primary) 0%, var(--cochin-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--cochin-primary) 0%,
+    var(--cochin-secondary) 100%
+  );
 }
 
 .branch-indicator.kannur {
-  background: linear-gradient(135deg, var(--kannur-primary) 0%, var(--kannur-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--kannur-primary) 0%,
+    var(--kannur-secondary) 100%
+  );
 }
 
 .branch-indicator.global {
-  background: linear-gradient(135deg, var(--global-primary) 0%, var(--global-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--global-primary) 0%,
+    var(--global-secondary) 100%
+  );
 }
 
 .branch-dropdown {
@@ -673,15 +709,27 @@
 }
 
 .dual-view-header.calicut {
-  background: linear-gradient(135deg, var(--calicut-light) 0%, rgba(231, 187, 90, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--calicut-light) 0%,
+    rgba(231, 187, 90, 0.1) 100%
+  );
 }
 
 .dual-view-header.cochin {
-  background: linear-gradient(135deg, var(--cochin-light) 0%, rgba(74, 222, 128, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--cochin-light) 0%,
+    rgba(74, 222, 128, 0.1) 100%
+  );
 }
 
 .dual-view-header.kannur {
-  background: linear-gradient(135deg, var(--kannur-light) 0%, rgba(244, 63, 94, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--kannur-light) 0%,
+    rgba(244, 63, 94, 0.1) 100%
+  );
 }
 
 .dual-view-content {
@@ -746,7 +794,6 @@
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

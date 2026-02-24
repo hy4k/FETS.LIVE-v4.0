@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
-import { Camera, Upload, X } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-import { toast } from 'react-hot-toast'
+import React, { useState } from "react";
+import { Camera, Upload, X } from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { toast } from "react-hot-toast";
 
 interface ProfilePictureUploadProps {
-  currentAvatarUrl?: string | null
-  staffId: string
-  staffName: string
-  onAvatarUpdate: (newAvatarUrl: string | null) => void
-  size?: 'sm' | 'md' | 'lg'
+  currentAvatarUrl?: string | null;
+  staffId: string;
+  staffName: string;
+  onAvatarUpdate: (newAvatarUrl: string | null) => void;
+  size?: "sm" | "md" | "lg";
 }
 
 export function ProfilePictureUpload({
@@ -16,139 +16,154 @@ export function ProfilePictureUpload({
   staffId,
   staffName,
   onAvatarUpdate,
-  size = 'md'
+  size = "md",
 }: ProfilePictureUploadProps) {
-  const [uploading, setUploading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-20 h-20',
-    lg: 'w-32 h-32'
-  }
+    sm: "w-12 h-12",
+    md: "w-20 h-20",
+    lg: "w-32 h-32",
+  };
 
   const getAvatarUrl = () => {
-    if (previewUrl) return previewUrl
-    if (currentAvatarUrl) return currentAvatarUrl
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(staffName)}&background=3B82F6&color=FFFFFF&size=128`
-  }
+    if (previewUrl) return previewUrl;
+    if (currentAvatarUrl) return currentAvatarUrl;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      staffName
+    )}&background=3B82F6&color=FFFFFF&size=128`;
+  };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size must be less than 2MB')
-      return
+      toast.error("Image size must be less than 2MB");
+      return;
     }
 
-    setUploading(true)
+    setUploading(true);
     try {
       // Create preview
-      const preview = URL.createObjectURL(file)
-      setPreviewUrl(preview)
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
 
       // Generate unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${staffId}-${Date.now()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${staffId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
       // Try multiple buckets for upload
-      const bucketsToTry = ['profile-pictures', 'avatars', 'public', 'attachments']
-      let successBucket = ''
-      let publicUrl = ''
+      const bucketsToTry = [
+        "profile-pictures",
+        "avatars",
+        "public",
+        "attachments",
+      ];
+      let successBucket = "";
+      let publicUrl = "";
 
       for (const bucketName of bucketsToTry) {
-        console.log(`📸 Trying to upload profile picture to bucket: ${bucketName}`)
+        console.log(
+          `📸 Trying to upload profile picture to bucket: ${bucketName}`
+        );
         const { error: uploadError } = await supabase.storage
           .from(bucketName)
           .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: true
-          })
+            cacheControl: "3600",
+            upsert: true,
+          });
 
         if (!uploadError) {
-          successBucket = bucketName
-          const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath)
-          publicUrl = data.publicUrl
-          console.log(`✅ Upload successful to bucket: ${bucketName}`)
-          break
+          successBucket = bucketName;
+          const { data } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+          publicUrl = data.publicUrl;
+          console.log(`✅ Upload successful to bucket: ${bucketName}`);
+          break;
         } else {
-          console.log(`❌ Bucket ${bucketName} failed:`, uploadError.message)
+          console.log(`❌ Bucket ${bucketName} failed:`, uploadError.message);
         }
       }
 
       if (!successBucket || !publicUrl) {
-        throw new Error('All storage buckets failed. Please ensure a storage bucket exists in Supabase.')
+        throw new Error(
+          "All storage buckets failed. Please ensure a storage bucket exists in Supabase."
+        );
       }
 
       // Update staff profile
       const { error: updateError } = await supabase
-        .from('staff_profiles')
+        .from("staff_profiles")
         .update({ avatar_url: publicUrl })
-        .eq('id', staffId)
+        .eq("id", staffId);
 
       if (updateError) {
-        console.error('❌ Profile update failed:', updateError)
-        throw updateError
+        console.error("❌ Profile update failed:", updateError);
+        throw updateError;
       }
 
-      onAvatarUpdate(publicUrl)
-      setPreviewUrl(null) // Clear preview since we have real URL now
-      toast.success('Profile picture updated successfully')
+      onAvatarUpdate(publicUrl);
+      setPreviewUrl(null); // Clear preview since we have real URL now
+      toast.success("Profile picture updated successfully");
     } catch (error: any) {
-      console.error('Error uploading avatar:', error)
-      toast.error(error.message || 'Failed to upload profile picture')
-      setPreviewUrl(null)
+      console.error("Error uploading avatar:", error);
+      toast.error(error.message || "Failed to upload profile picture");
+      setPreviewUrl(null);
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const handleRemoveAvatar = async () => {
-    setUploading(true)
+    setUploading(true);
     try {
       // If there's a current avatar URL, try to delete it from storage
-      if (currentAvatarUrl && currentAvatarUrl.includes('profile-pictures')) {
-        const urlParts = currentAvatarUrl.split('/')
-        const fileName = urlParts[urlParts.length - 1]
-        const filePath = `avatars/${fileName}`
+      if (currentAvatarUrl && currentAvatarUrl.includes("profile-pictures")) {
+        const urlParts = currentAvatarUrl.split("/");
+        const fileName = urlParts[urlParts.length - 1];
+        const filePath = `avatars/${fileName}`;
 
         // Delete from storage (don't throw error if file doesn't exist)
-        await supabase.storage
-          .from('profile-pictures')
-          .remove([filePath])
+        await supabase.storage.from("profile-pictures").remove([filePath]);
       }
 
       // Update staff profile to remove avatar
       const { error } = await supabase
-        .from('staff_profiles')
+        .from("staff_profiles")
         .update({ avatar_url: null })
-        .eq('id', staffId)
+        .eq("id", staffId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      onAvatarUpdate(null)
-      setPreviewUrl(null)
-      toast.success('Profile picture removed')
+      onAvatarUpdate(null);
+      setPreviewUrl(null);
+      toast.success("Profile picture removed");
     } catch (error: any) {
-      console.error('Error removing avatar:', error)
-      toast.error('Failed to remove profile picture')
+      console.error("Error removing avatar:", error);
+      toast.error("Failed to remove profile picture");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   return (
     <div className="relative group">
-      <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 relative`}>
+      <div
+        className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 relative`}
+      >
         <img
           src={getAvatarUrl()}
           alt={`${staffName}'s profile`}
@@ -187,5 +202,5 @@ export function ProfilePictureUpload({
         </div>
       </div>
     </div>
-  )
+  );
 }

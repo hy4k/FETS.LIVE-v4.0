@@ -1,9 +1,9 @@
 // Session capacity validation utilities
 
 interface CapacityValidationResult {
-  isValid: boolean
-  warning?: string
-  error?: string
+  isValid: boolean;
+  warning?: string;
+  error?: string;
 }
 
 /**
@@ -11,18 +11,18 @@ interface CapacityValidationResult {
  * @param branch - Branch location ('calicut', 'cochin', or 'global')
  * @returns Maximum capacity for the branch
  */
-export const getBranchCapacity = (branch: string = 'calicut'): number => {
+export const getBranchCapacity = (branch: string = "calicut"): number => {
   switch (branch.toLowerCase()) {
-    case 'calicut':
-      return 40
-    case 'cochin':
-      return 30
-    case 'kannur':
-      return 50
+    case "calicut":
+      return 40;
+    case "cochin":
+      return 30;
+    case "kannur":
+      return 50;
     default:
-      return 40 // Default to Calicut capacity
+      return 40; // Default to Calicut capacity
   }
-}
+};
 
 /**
  * Validate session capacity with warnings and errors
@@ -32,27 +32,31 @@ export const getBranchCapacity = (branch: string = 'calicut'): number => {
  */
 export const validateSessionCapacity = (
   candidateCount: number,
-  branch: string = 'calicut'
+  branch: string = "calicut"
 ): CapacityValidationResult => {
-  const MAX_CAPACITY = getBranchCapacity(branch)
-  const WARNING_THRESHOLD = Math.floor(MAX_CAPACITY * 0.75) // 75% of capacity
+  const MAX_CAPACITY = getBranchCapacity(branch);
+  const WARNING_THRESHOLD = Math.floor(MAX_CAPACITY * 0.75); // 75% of capacity
 
   if (candidateCount > MAX_CAPACITY) {
     return {
       isValid: false,
-      error: `Session exceeds maximum capacity of ${MAX_CAPACITY} candidates for ${branch.charAt(0).toUpperCase() + branch.slice(1)} center`
-    }
+      error: `Session exceeds maximum capacity of ${MAX_CAPACITY} candidates for ${
+        branch.charAt(0).toUpperCase() + branch.slice(1)
+      } center`,
+    };
   }
 
   if (candidateCount >= WARNING_THRESHOLD) {
     return {
       isValid: true,
-      warning: `Session approaching capacity (${candidateCount}/${MAX_CAPACITY} candidates) for ${branch.charAt(0).toUpperCase() + branch.slice(1)} center`
-    }
+      warning: `Session approaching capacity (${candidateCount}/${MAX_CAPACITY} candidates) for ${
+        branch.charAt(0).toUpperCase() + branch.slice(1)
+      } center`,
+    };
   }
 
-  return { isValid: true }
-}
+  return { isValid: true };
+};
 
 /**
  * Get capacity status color class for UI
@@ -60,14 +64,18 @@ export const validateSessionCapacity = (
  * @param branch - Branch location for capacity limits
  * @returns CSS color classes
  */
-export const getCapacityStatusColor = (candidateCount: number, branch: string = 'calicut'): string => {
-  const MAX_CAPACITY = getBranchCapacity(branch)
-  const WARNING_THRESHOLD = Math.floor(MAX_CAPACITY * 0.75)
+export const getCapacityStatusColor = (
+  candidateCount: number,
+  branch: string = "calicut"
+): string => {
+  const MAX_CAPACITY = getBranchCapacity(branch);
+  const WARNING_THRESHOLD = Math.floor(MAX_CAPACITY * 0.75);
 
-  if (candidateCount >= MAX_CAPACITY) return 'text-red-600 bg-red-100'
-  if (candidateCount >= WARNING_THRESHOLD) return 'text-orange-600 bg-orange-100'
-  return 'text-green-600 bg-green-100'
-}
+  if (candidateCount >= MAX_CAPACITY) return "text-red-600 bg-red-100";
+  if (candidateCount >= WARNING_THRESHOLD)
+    return "text-orange-600 bg-orange-100";
+  return "text-green-600 bg-green-100";
+};
 
 /**
  * Format capacity display text
@@ -75,7 +83,10 @@ export const getCapacityStatusColor = (candidateCount: number, branch: string = 
  * @param branch - Branch location for capacity limits
  * @returns Formatted display text
  */
-export const formatCapacityDisplay = (candidateCount: number, branch: string = 'calicut'): string => {
-  const MAX_CAPACITY = getBranchCapacity(branch)
-  return `${candidateCount}/${MAX_CAPACITY} candidates`
-}
+export const formatCapacityDisplay = (
+  candidateCount: number,
+  branch: string = "calicut"
+): string => {
+  const MAX_CAPACITY = getBranchCapacity(branch);
+  return `${candidateCount}/${MAX_CAPACITY} candidates`;
+};

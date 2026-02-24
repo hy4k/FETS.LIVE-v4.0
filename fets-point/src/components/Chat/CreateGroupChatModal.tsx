@@ -1,25 +1,31 @@
-import React, { useState } from 'react';
-import { useAllStaff } from '../../hooks/useFetsConnect';
-import { useCreateGroupConversation } from '../../hooks/useChat';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useState } from "react";
+import { useAllStaff } from "../../hooks/useFetsConnect";
+import { useCreateGroupConversation } from "../../hooks/useChat";
+import { useAuth } from "../../hooks/useAuth";
 
 const CreateGroupChatModal = ({ setIsModalOpen }) => {
   const { user } = useAuth();
   const { data: users, isLoading } = useAllStaff();
   const createGroupConversation = useCreateGroupConversation();
-  const [groupName, setGroupName] = useState('');
+  const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const handleCreateGroup = () => {
     if (groupName.trim() && selectedMembers.length > 0) {
-      createGroupConversation.mutate({ name: groupName, memberIds: [...selectedMembers, user.id], createdBy: user.id });
+      createGroupConversation.mutate({
+        name: groupName,
+        memberIds: [...selectedMembers, user.id],
+        createdBy: user.id,
+      });
       setIsModalOpen(false);
     }
   };
 
   const handleMemberSelection = (memberId: string) => {
     setSelectedMembers((prev) =>
-      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+      prev.includes(memberId)
+        ? prev.filter((id) => id !== memberId)
+        : [...prev, memberId]
     );
   };
 
@@ -45,12 +51,17 @@ const CreateGroupChatModal = ({ setIsModalOpen }) => {
               <div
                 key={user.id}
                 className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer ${
-                  selectedMembers.includes(user.id) ? 'bg-blue-200' : 'hover:bg-gray-200'
+                  selectedMembers.includes(user.id)
+                    ? "bg-blue-200"
+                    : "hover:bg-gray-200"
                 }`}
                 onClick={() => handleMemberSelection(user.id)}
               >
                 <img
-                  src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.full_name}&background=random`}
+                  src={
+                    user.avatar_url ||
+                    `https://ui-avatars.com/api/?name=${user.full_name}&background=random`
+                  }
                   alt={user.full_name}
                   className="w-10 h-10 rounded-full"
                 />
@@ -59,10 +70,16 @@ const CreateGroupChatModal = ({ setIsModalOpen }) => {
             ))}
         </div>
         <div className="flex justify-end gap-4 mt-4">
-          <button className="p-2 bg-gray-300 rounded-md" onClick={() => setIsModalOpen(false)}>
+          <button
+            className="p-2 bg-gray-300 rounded-md"
+            onClick={() => setIsModalOpen(false)}
+          >
             Cancel
           </button>
-          <button className="p-2 bg-blue-500 text-white rounded-md" onClick={handleCreateGroup}>
+          <button
+            className="p-2 bg-blue-500 text-white rounded-md"
+            onClick={handleCreateGroup}
+          >
             Create
           </button>
         </div>

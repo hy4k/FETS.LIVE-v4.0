@@ -114,7 +114,7 @@
     max-width: 150px;
     width: 150px;
   }
-  
+
   .roster-grid-container .date-cell,
   .roster-grid-container .shift-cell {
     min-width: 60px;
@@ -126,13 +126,13 @@
   .roster-grid-container {
     font-size: 0.875rem;
   }
-  
+
   .roster-grid-container .staff-name-cell {
     min-width: 120px;
     max-width: 120px;
     width: 120px;
   }
-  
+
   .roster-grid-container .date-cell,
   .roster-grid-container .shift-cell {
     min-width: 50px;
@@ -161,14 +161,14 @@
 
 /* Premium typography */
 .premium-title {
-  font-family: 'Playfair Display', 'Georgia', serif;
+  font-family: "Playfair Display", "Georgia", serif;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 
 .premium-body {
-  font-family: 'Inter', 'system-ui', '-apple-system', sans-serif;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-family: "Inter", "system-ui", "-apple-system", sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 /* Elegant button styles */
@@ -179,7 +179,8 @@
 
 .elegant-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Notification styles */

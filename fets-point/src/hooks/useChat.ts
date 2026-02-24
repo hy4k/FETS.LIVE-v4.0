@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import { useEffect, useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 // =====================================================
 // CONVERSATIONS
@@ -10,17 +10,17 @@ import { toast } from 'react-hot-toast';
 // Fetch all conversations for the current user
 export const useConversations = (userId: string) => {
   return useQuery({
-    queryKey: ['conversations', userId],
+    queryKey: ["conversations", userId],
     queryFn: async () => {
       // First get conversation IDs where user is a member
       const { data: memberData, error: memberError } = await supabase
-        .from('conversation_members')
-        .select('conversation_id')
-        .eq('user_id', userId);
+        .from("conversation_members")
+        .select("conversation_id")
+        .eq("user_id", userId);
 
       if (memberError) throw new Error(memberError.message);
 
-      const conversationIds = memberData?.map(m => m.conversation_id) || [];
+      const conversationIds = memberData?.map((m) => m.conversation_id) || [];
 
       if (conversationIds.length === 0) {
         return [];
@@ -28,16 +28,18 @@ export const useConversations = (userId: string) => {
 
       // Then get conversations with full details
       const { data, error } = await supabase
-        .from('conversations')
-        .select(`
+        .from("conversations")
+        .select(
+          `
           *,
           members:conversation_members(
             *,
             user:staff_profiles(id, full_name, avatar_url, role, department)
           )
-        `)
-        .in('id', conversationIds)
-        .order('last_message_at', { ascending: false, nullsFirst: false });
+        `
+        )
+        .in("id", conversationIds)
+        .order("last_message_at", { ascending: false, nullsFirst: false });
 
       if (error) throw new Error(error.message);
       return data || [];
@@ -49,11 +51,12 @@ export const useConversations = (userId: string) => {
 // Fetch a single conversation by ID
 export const useConversation = (conversationId: string) => {
   return useQuery({
-    queryKey: ['conversation', conversationId],
+    queryKey: ["conversation", conversationId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('conversations')
-        .select(`
+        .from("conversations")
+        .select(
+          `
           *,
           members:conversation_members(
             id,
@@ -61,8 +64,9 @@ export const useConversation = (conversationId: string) => {
             is_admin,
             user:staff_profiles(id, full_name, avatar_url, role)
           )
-        `)
-        .eq('id', conversationId)
+        `
+        )
+        .eq("id", conversationId)
         .single();
 
       if (error) throw new Error(error.message);
@@ -79,21 +83,23 @@ export const useConversation = (conversationId: string) => {
 // Fetch messages for a specific conversation
 export const useMessages = (conversationId: string) => {
   return useQuery({
-    queryKey: ['messages', conversationId],
+    queryKey: ["messages", conversationId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('messages')
-        .select(`
+        .from("messages")
+        .select(
+          `
           *,
           sender:staff_profiles(id, full_name, avatar_url),
           read_receipts:message_read_receipts(
             *,
             user:staff_profiles(id, full_name)
           )
-        `)
-        .eq('conversation_id', conversationId)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: true });
+        `
+        )
+        .eq("conversation_id", conversationId)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: true });
 
       if (error) throw new Error(error.message);
       return data || [];
@@ -110,7 +116,7 @@ export const useSendMessage = () => {
     mutationFn: async ({
       conversationId,
       senderId,
-      content
+      content,
     }: {
       conversationId: string;
       senderId: string;
@@ -118,11 +124,11 @@ export const useSendMessage = () => {
     }) => {
       // Insert the message
       const { data, error } = await supabase
-        .from('messages')
+        .from("messages")
         .insert({
           conversation_id: conversationId,
           sender_id: senderId,
-          content
+          content,
         })
         .select()
         .single();
@@ -131,19 +137,23 @@ export const useSendMessage = () => {
 
       // Update conversation's last_message_at and preview
       await supabase
-        .from('conversations')
+        .from("conversations")
         .update({
           last_message_at: new Date().toISOString(),
-          last_message_preview: content.substring(0, 100)
+          last_message_preview: content.substring(0, 100),
         })
-        .eq('id', conversationId);
+        .eq("id", conversationId);
 
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['conversation', variables.conversationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.conversationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["conversation", variables.conversationId],
+      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to send message: ${error.message}`);
@@ -159,20 +169,20 @@ export const useUpdateMessage = () => {
     mutationFn: async ({
       messageId,
       content,
-      conversationId
+      conversationId,
     }: {
       messageId: string;
       content: string;
       conversationId: string;
     }) => {
       const { data, error } = await supabase
-        .from('messages')
+        .from("messages")
         .update({
           content,
           is_edited: true,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', messageId)
+        .eq("id", messageId)
         .select()
         .single();
 
@@ -180,8 +190,10 @@ export const useUpdateMessage = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] });
-      toast.success('Message updated!');
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.conversationId],
+      });
+      toast.success("Message updated!");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update message: ${error.message}`);
@@ -196,15 +208,15 @@ export const useDeleteMessage = () => {
   return useMutation({
     mutationFn: async ({
       messageId,
-      conversationId
+      conversationId,
     }: {
       messageId: string;
       conversationId: string;
     }) => {
       const { data, error } = await supabase
-        .from('messages')
+        .from("messages")
         .update({ is_deleted: true })
-        .eq('id', messageId)
+        .eq("id", messageId)
         .select()
         .single();
 
@@ -212,8 +224,10 @@ export const useDeleteMessage = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] });
-      toast.success('Message deleted!');
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.conversationId],
+      });
+      toast.success("Message deleted!");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete message: ${error.message}`);
@@ -232,20 +246,22 @@ export const useGetOrCreateDM = () => {
   return useMutation({
     mutationFn: async ({
       userId1,
-      userId2
+      userId2,
     }: {
       userId1: string;
       userId2: string;
     }) => {
       // Check if conversation already exists using RPC function
-      const { data: existing, error: searchError } = await supabase
-        .rpc('get_direct_conversation' as any, {
+      const { data: existing, error: searchError } = await supabase.rpc(
+        "get_direct_conversation" as any,
+        {
           user1_id: userId1,
-          user2_id: userId2
-        });
+          user2_id: userId2,
+        }
+      );
 
       if (searchError) {
-        console.error('Error searching for DM:', searchError);
+        console.error("Error searching for DM:", searchError);
         // If RPC doesn't exist, create conversation directly
       }
 
@@ -255,7 +271,7 @@ export const useGetOrCreateDM = () => {
 
       // Create new 1:1 conversation
       const { data: conversation, error: convError } = await supabase
-        .from('conversations')
+        .from("conversations")
         .insert({
           is_group: false,
           created_by: userId1,
@@ -267,10 +283,10 @@ export const useGetOrCreateDM = () => {
 
       // Add both members
       const { error: membersError } = await supabase
-        .from('conversation_members')
+        .from("conversation_members")
         .insert([
           { conversation_id: conversation.id, user_id: userId1 },
-          { conversation_id: conversation.id, user_id: userId2 }
+          { conversation_id: conversation.id, user_id: userId2 },
         ]);
 
       if (membersError) throw new Error(membersError.message);
@@ -278,7 +294,7 @@ export const useGetOrCreateDM = () => {
       return conversation;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to create conversation: ${error.message}`);
@@ -294,7 +310,7 @@ export const useCreateGroupConversation = () => {
     mutationFn: async ({
       name,
       memberIds,
-      createdBy
+      createdBy,
     }: {
       name: string;
       memberIds: string[];
@@ -302,11 +318,11 @@ export const useCreateGroupConversation = () => {
     }) => {
       // Create the group conversation
       const { data: conversation, error: convError } = await supabase
-        .from('conversations')
+        .from("conversations")
         .insert({
           name,
           is_group: true,
-          created_by: createdBy
+          created_by: createdBy,
         })
         .select()
         .single();
@@ -318,11 +334,11 @@ export const useCreateGroupConversation = () => {
       const members = uniqueMemberIds.map((userId, index) => ({
         conversation_id: conversation.id,
         user_id: userId,
-        is_admin: userId === createdBy // Creator is admin
+        is_admin: userId === createdBy, // Creator is admin
       }));
 
       const { error: membersError } = await supabase
-        .from('conversation_members')
+        .from("conversation_members")
         .insert(members);
 
       if (membersError) throw new Error(membersError.message);
@@ -330,8 +346,8 @@ export const useCreateGroupConversation = () => {
       return conversation;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      toast.success('Group chat created!');
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Group chat created!");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create group: ${error.message}`);
@@ -346,16 +362,16 @@ export const useAddMemberToConversation = () => {
   return useMutation({
     mutationFn: async ({
       conversationId,
-      userId
+      userId,
     }: {
       conversationId: string;
       userId: string;
     }) => {
       const { data, error } = await supabase
-        .from('conversation_members')
+        .from("conversation_members")
         .insert({
           conversation_id: conversationId,
-          user_id: userId
+          user_id: userId,
         })
         .select()
         .single();
@@ -364,9 +380,11 @@ export const useAddMemberToConversation = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['conversation', variables.conversationId] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      toast.success('Member added!');
+      queryClient.invalidateQueries({
+        queryKey: ["conversation", variables.conversationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Member added!");
     },
     onError: (error: Error) => {
       toast.error(`Failed to add member: ${error.message}`);
@@ -386,33 +404,38 @@ export const useMarkMessagesAsRead = () => {
     mutationFn: async ({
       messageIds,
       userId,
-      conversationId
+      conversationId,
     }: {
       messageIds: string[];
       userId: string;
       conversationId: string;
     }) => {
       // Insert read receipts for messages that don't have them
-      const receipts = messageIds.map(msgId => ({
+      const receipts = messageIds.map((msgId) => ({
         message_id: msgId,
-        user_id: userId
+        user_id: userId,
       }));
 
       const { error } = await supabase
-        .from('message_read_receipts')
-        .upsert(receipts, { onConflict: 'message_id,user_id', ignoreDuplicates: true });
+        .from("message_read_receipts")
+        .upsert(receipts, {
+          onConflict: "message_id,user_id",
+          ignoreDuplicates: true,
+        });
 
       if (error) throw new Error(error.message);
 
       // Update last_read_at for this user in conversation_members
       await supabase
-        .from('conversation_members')
+        .from("conversation_members")
         .update({ last_read_at: new Date().toISOString() })
-        .eq('conversation_id', conversationId)
-        .eq('user_id', userId);
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.conversationId],
+      });
     },
   });
 };
@@ -437,22 +460,26 @@ export const usePresence = (conversationId: string, currentUserId: string) => {
     });
 
     channel
-      .on('presence', { event: 'sync' }, () => {
+      .on("presence", { event: "sync" }, () => {
         const presenceState = channel.presenceState();
-        const users = Object.keys(presenceState).map(key => {
-          const presence = presenceState[key];
-          return (presence[0] as any)?.user_id;
-        }).filter(Boolean);
+        const users = Object.keys(presenceState)
+          .map((key) => {
+            const presence = presenceState[key];
+            return (presence[0] as any)?.user_id;
+          })
+          .filter(Boolean);
         setOnlineUsers(users);
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+        if (status === "SUBSCRIBED") {
           // Get current user session
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (user) {
             await channel.track({
               user_id: currentUserId,
-              online_at: new Date().toISOString()
+              online_at: new Date().toISOString(),
             });
           }
         }
@@ -483,16 +510,18 @@ export const useMessagesSubscription = (
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          queryClient.invalidateQueries({
+            queryKey: ["messages", conversationId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
           if (onNewMessage) {
             onNewMessage(payload.new);
           }
@@ -515,18 +544,19 @@ export const useSetTyping = () => {
   return useMutation({
     mutationFn: async ({
       conversationId,
-      userId
+      userId,
     }: {
       conversationId: string;
       userId: string;
     }) => {
-      const { error } = await supabase
-        .from('typing_indicators')
-        .upsert({
+      const { error } = await supabase.from("typing_indicators").upsert(
+        {
           conversation_id: conversationId,
           user_id: userId,
-          started_at: new Date().toISOString()
-        }, { onConflict: 'conversation_id,user_id' });
+          started_at: new Date().toISOString(),
+        },
+        { onConflict: "conversation_id,user_id" }
+      );
 
       if (error) throw new Error(error.message);
     },
@@ -538,16 +568,16 @@ export const useClearTyping = () => {
   return useMutation({
     mutationFn: async ({
       conversationId,
-      userId
+      userId,
     }: {
       conversationId: string;
       userId: string;
     }) => {
       const { error } = await supabase
-        .from('typing_indicators')
+        .from("typing_indicators")
         .delete()
-        .eq('conversation_id', conversationId)
-        .eq('user_id', userId);
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
 
       if (error) throw new Error(error.message);
     },
@@ -555,7 +585,10 @@ export const useClearTyping = () => {
 };
 
 // Subscribe to typing indicators
-export const useTypingIndicators = (conversationId: string, currentUserId: string) => {
+export const useTypingIndicators = (
+  conversationId: string,
+  currentUserId: string
+) => {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   useEffect(() => {
@@ -564,31 +597,31 @@ export const useTypingIndicators = (conversationId: string, currentUserId: strin
     const channel = supabase
       .channel(`typing:${conversationId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'typing_indicators',
-          filter: `conversation_id=eq.${conversationId}`
+          event: "*",
+          schema: "public",
+          table: "typing_indicators",
+          filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload) => {
           // Fetch all typing indicators for this conversation
           const { data } = await supabase
-            .from('typing_indicators')
-            .select('user_id, started_at')
-            .eq('conversation_id', conversationId);
+            .from("typing_indicators")
+            .select("user_id, started_at")
+            .eq("conversation_id", conversationId);
 
           if (data) {
             // Filter out old indicators (>5 seconds) and current user
             const now = new Date().getTime();
             const activeTyping = data
-              .filter(t => {
+              .filter((t) => {
                 const startTime = new Date(t.started_at).getTime();
-                const isRecent = (now - startTime) < 5000;
+                const isRecent = now - startTime < 5000;
                 const isNotCurrentUser = t.user_id !== currentUserId;
                 return isRecent && isNotCurrentUser;
               })
-              .map(t => t.user_id);
+              .map((t) => t.user_id);
 
             setTypingUsers(activeTyping);
           }

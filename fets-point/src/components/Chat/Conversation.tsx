@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { useMessages, useSendMessage } from '../../hooks/useChat';
-import { useAuth } from '../../hooks/useAuth';
-import Message from './Message';
-import MessageInput from './MessageInput';
-import { supabase } from '../../lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
-import { Conversation as ConversationType } from '../../types';
+import React, { useEffect, useRef } from "react";
+import { useMessages, useSendMessage } from "../../hooks/useChat";
+import { useAuth } from "../../hooks/useAuth";
+import Message from "./Message";
+import MessageInput from "./MessageInput";
+import { supabase } from "../../lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
+import { Conversation as ConversationType } from "../../types";
 
 interface ConversationProps {
   conversation: ConversationType;
@@ -19,7 +19,7 @@ const Conversation: React.FC<ConversationProps> = ({ conversation }) => {
   const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -30,10 +30,18 @@ const Conversation: React.FC<ConversationProps> = ({ conversation }) => {
     const channel = supabase
       .channel(`messages:${conversation.id}`)
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversation.id}` },
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
         (payload: any) => {
-          queryClient.setQueryData(['messages', conversation.id], (oldData: any) => [...(oldData || []), payload.new]);
+          queryClient.setQueryData(
+            ["messages", conversation.id],
+            (oldData: any) => [...(oldData || []), payload.new]
+          );
         }
       )
       .subscribe();
@@ -45,7 +53,11 @@ const Conversation: React.FC<ConversationProps> = ({ conversation }) => {
 
   const handleSendMessage = (content: string) => {
     if (user?.id) {
-      sendMessage.mutate({ conversationId: conversation.id, senderId: user.id, content });
+      sendMessage.mutate({
+        conversationId: conversation.id,
+        senderId: user.id,
+        content,
+      });
     }
   };
 

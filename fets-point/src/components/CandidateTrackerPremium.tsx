@@ -1,69 +1,96 @@
-import { useState, useMemo, memo, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useMemo, memo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, Plus, Search, Edit, UserCheck, UserX, Phone, X, Calendar,
-  Trash2, FileText, Download, ChevronLeft, ChevronRight,
-  CheckCircle, Grid, List, FileSpreadsheet, MapPin, Activity, TrendingUp, RefreshCw
-} from 'lucide-react'
-import { CandidateAnalysis } from './CandidateAnalysis'
-import { useAuth } from '../hooks/useAuth'
-import { useBranch } from '../hooks/useBranch'
-import { useBranchFilter } from '../hooks/useBranchFilter'
+  Users,
+  Plus,
+  Search,
+  Edit,
+  UserCheck,
+  UserX,
+  Phone,
+  X,
+  Calendar,
+  Trash2,
+  FileText,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Grid,
+  List,
+  FileSpreadsheet,
+  MapPin,
+  Activity,
+  TrendingUp,
+  RefreshCw,
+} from "lucide-react";
+import { CandidateAnalysis } from "./CandidateAnalysis";
+import { useAuth } from "../hooks/useAuth";
+import { useBranch } from "../hooks/useBranch";
+import { useBranchFilter } from "../hooks/useBranchFilter";
 import {
   useCandidates,
   useCreateCandidate,
   useUpdateCandidateStatus,
   useUpdateCandidate,
   useDeleteCandidate,
-  useTotalCandidatesCount
-} from '../hooks/useQueries'
-import { useClients, useClientExams } from '../hooks/useClients'
-import { toast } from 'react-hot-toast'
-import * as XLSX from 'xlsx'
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+  useTotalCandidatesCount,
+} from "../hooks/useQueries";
+import { useClients, useClientExams } from "../hooks/useClients";
+import { toast } from "react-hot-toast";
+import * as XLSX from "xlsx";
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Candidate {
-  id: string
-  fullName: string
-  address: string
-  phone?: string
-  examDate?: Date
-  examName?: string
-  status: 'registered' | 'completed' | 'no_show'
-  confirmationNumber: string
-  notes?: string
-  createdAt: Date
-  clientName?: string
-  branchLocation?: string
+  id: string;
+  fullName: string;
+  address: string;
+  phone?: string;
+  examDate?: Date;
+  examName?: string;
+  status: "registered" | "completed" | "no_show";
+  confirmationNumber: string;
+  notes?: string;
+  createdAt: Date;
+  clientName?: string;
+  branchLocation?: string;
 }
 
 const CLIENT_LOGOS: Record<string, string> = {
-  'PROMETRIC': '/client-logos/prometric.png',
-  'PSI': '/client-logos/psi.png',
-  'ITTS': '/client-logos/itts.png',
-  'PEARSON VUE': '/client-logos/pearson_vue.png'
-}
+  PROMETRIC: "/client-logos/prometric.png",
+  PSI: "/client-logos/psi.png",
+  ITTS: "/client-logos/itts.png",
+  "PEARSON VUE": "/client-logos/pearson_vue.png",
+};
 
 // Simple Clean Card Component
 // Compact Button Card Component
 const CandidateCard = memo(({ candidate, onClick }: any) => {
-  const clientLogo = candidate.clientName ? CLIENT_LOGOS[candidate.clientName.toUpperCase()] : '/fets-point-logo.png'
+  const clientLogo = candidate.clientName
+    ? CLIENT_LOGOS[candidate.clientName.toUpperCase()]
+    : "/fets-point-logo.png";
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02, backgroundColor: '#f8fafc' }}
+      whileHover={{ scale: 1.02, backgroundColor: "#f8fafc" }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick(candidate)}
       className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-amber-400 group transition-all duration-200"
     >
       <div className="flex items-center space-x-4 overflow-hidden">
         <div className="w-10 h-10 flex-shrink-0 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center p-1.5 grayscale group-hover:grayscale-0 transition-all">
-          <img src={clientLogo} alt="" className="w-full h-full object-contain" />
+          <img
+            src={clientLogo}
+            alt=""
+            className="w-full h-full object-contain"
+          />
         </div>
         <div className="text-left overflow-hidden">
-          <div className="text-sm font-bold text-slate-800 truncate">{candidate.fullName}</div>
+          <div className="text-sm font-bold text-slate-800 truncate">
+            {candidate.fullName}
+          </div>
           <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider truncate">
             {candidate.clientName} • {candidate.examName}
           </div>
@@ -71,132 +98,167 @@ const CandidateCard = memo(({ candidate, onClick }: any) => {
       </div>
       <div className="flex-shrink-0 ml-4">
         <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
-          <ChevronRight size={16} className="text-slate-400 group-hover:text-amber-600" />
+          <ChevronRight
+            size={16}
+            className="text-slate-400 group-hover:text-amber-600"
+          />
         </div>
       </div>
     </motion.button>
-  )
-})
-
-
+  );
+});
 
 export function CandidateTrackerPremium() {
-  const { user, profile } = useAuth()
-  const { activeBranch } = useBranch()
-  const { isGlobalView } = useBranchFilter()
+  const { user, profile } = useAuth();
+  const { activeBranch } = useBranch();
+  const { isGlobalView } = useBranchFilter();
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [activeTab, setActiveTab] = useState<'register' | 'analysis'>('register')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterClient, setFilterClient] = useState('all')
-  const [filterExam, setFilterExam] = useState('all')
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [locationFilter, setLocationFilter] = useState(activeBranch || 'all')
-  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [activeTab, setActiveTab] = useState<"register" | "analysis">(
+    "register"
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterClient, setFilterClient] = useState("all");
+  const [filterExam, setFilterExam] = useState("all");
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [locationFilter, setLocationFilter] = useState(activeBranch || "all");
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
-    setLocationFilter(activeBranch || 'all')
-  }, [activeBranch])
+    setLocationFilter(activeBranch || "all");
+  }, [activeBranch]);
 
-  const [showModal, setShowModal] = useState(false)
-  const [isEdit, setIsEdit] = useState(false)
-  const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
+  const [showModal, setShowModal] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
 
   const [formData, setFormData] = useState({
-    fullName: '', phone: '', address: '',
+    fullName: "",
+    phone: "",
+    address: "",
     examDate: new Date().toISOString().slice(0, 10),
-    examName: '', clientName: '', notes: ''
-  })
+    examName: "",
+    clientName: "",
+    notes: "",
+  });
 
   // Queries
-  const filters = useMemo(() => ({
-    branch_location: locationFilter !== 'all' ? locationFilter : undefined,
-    startDate: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
-    endDate: format(endOfMonth(currentDate), 'yyyy-MM-dd')
-  }), [locationFilter, currentDate])
+  const filters = useMemo(
+    () => ({
+      branch_location: locationFilter !== "all" ? locationFilter : undefined,
+      startDate: format(startOfMonth(currentDate), "yyyy-MM-dd"),
+      endDate: format(endOfMonth(currentDate), "yyyy-MM-dd"),
+    }),
+    [locationFilter, currentDate]
+  );
 
-  const { data: rawCandidates, isLoading, refetch } = useCandidates(filters)
+  const { data: rawCandidates, isLoading, refetch } = useCandidates(filters);
 
   // Fetch clients and exams from database
-  const { data: dbClients = [] } = useClients()
-  const { data: dbExams = [] } = useClientExams()
+  const { data: dbClients = [] } = useClients();
+  const { data: dbExams = [] } = useClientExams();
 
   // Mutations
-  const createMutation = useCreateCandidate()
-  const updateStatusMutation = useUpdateCandidateStatus()
-  const updateMutation = useUpdateCandidate()
-  const deleteMutation = useDeleteCandidate()
+  const createMutation = useCreateCandidate();
+  const updateStatusMutation = useUpdateCandidateStatus();
+  const updateMutation = useUpdateCandidate();
+  const deleteMutation = useDeleteCandidate();
 
   // Process data
-  const candidates: Candidate[] = useMemo(() => rawCandidates?.map(c => ({
-    id: c.id, fullName: c.full_name, address: c.address, phone: c.phone || '',
-    examDate: c.exam_date ? new Date(c.exam_date) : undefined,
-    examName: c.exam_name || 'General Exam',
-    status: (c.status as Candidate['status']) || 'registered',
-    confirmationNumber: c.confirmation_number || 'N/A',
-    createdAt: new Date(c.created_at), clientName: c.client_name,
-    branchLocation: c.branch_location, notes: c.notes || ''
-  })) || [], [rawCandidates])
+  const candidates: Candidate[] = useMemo(
+    () =>
+      rawCandidates?.map((c) => ({
+        id: c.id,
+        fullName: c.full_name,
+        address: c.address,
+        phone: c.phone || "",
+        examDate: c.exam_date ? new Date(c.exam_date) : undefined,
+        examName: c.exam_name || "General Exam",
+        status: (c.status as Candidate["status"]) || "registered",
+        confirmationNumber: c.confirmation_number || "N/A",
+        createdAt: new Date(c.created_at),
+        clientName: c.client_name,
+        branchLocation: c.branch_location,
+        notes: c.notes || "",
+      })) || [],
+    [rawCandidates]
+  );
 
   const filteredCandidates = useMemo(() => {
     const s = searchQuery.toLowerCase();
-    return candidates.filter(c => {
-      const matchSearch = c.fullName.toLowerCase().includes(s) || c.confirmationNumber.toLowerCase().includes(s);
-      const matchClient = filterClient === 'all' || (c.clientName || '').toUpperCase() === filterClient.toUpperCase();
-      const matchExam = filterExam === 'all' || (c.examName || '').toLowerCase().includes(filterExam.toLowerCase());
-      const matchDay = format(c.examDate || new Date(), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd');
+    return candidates.filter((c) => {
+      const matchSearch =
+        c.fullName.toLowerCase().includes(s) ||
+        c.confirmationNumber.toLowerCase().includes(s);
+      const matchClient =
+        filterClient === "all" ||
+        (c.clientName || "").toUpperCase() === filterClient.toUpperCase();
+      const matchExam =
+        filterExam === "all" ||
+        (c.examName || "").toLowerCase().includes(filterExam.toLowerCase());
+      const matchDay =
+        format(c.examDate || new Date(), "yyyy-MM-dd") ===
+        format(currentDate, "yyyy-MM-dd");
       return matchSearch && matchClient && matchExam && matchDay;
-    })
-  }, [candidates, searchQuery, filterClient, filterExam, currentDate])
+    });
+  }, [candidates, searchQuery, filterClient, filterExam, currentDate]);
 
   // New Stats Logic
   const dayRegistry = useMemo(() => {
-    const day = format(currentDate, 'yyyy-MM-dd');
-    return candidates.filter(c => format(c.examDate || new Date(), 'yyyy-MM-dd') === day).length;
+    const day = format(currentDate, "yyyy-MM-dd");
+    return candidates.filter(
+      (c) => format(c.examDate || new Date(), "yyyy-MM-dd") === day
+    ).length;
   }, [candidates, currentDate]);
 
   const monthTotal = useMemo(() => {
-    const currentMonth = format(currentDate, 'yyyy-MM');
-    return candidates.filter(c => format(c.examDate || new Date(), 'yyyy-MM') === currentMonth).length;
+    const currentMonth = format(currentDate, "yyyy-MM");
+    return candidates.filter(
+      (c) => format(c.examDate || new Date(), "yyyy-MM") === currentMonth
+    ).length;
   }, [candidates, currentDate]);
 
   const { data: grandTotal = 0 } = useTotalCandidatesCount(locationFilter);
 
   // Handlers
   const handleOpenAdd = () => {
-    setIsEdit(false)
+    setIsEdit(false);
     setFormData({
-      fullName: '', phone: '', address: '',
+      fullName: "",
+      phone: "",
+      address: "",
       examDate: new Date().toISOString().slice(0, 10),
-      examName: '', clientName: '', notes: ''
-    })
-    setShowModal(true)
-  }
+      examName: "",
+      clientName: "",
+      notes: "",
+    });
+    setShowModal(true);
+  };
 
   const handleOpenEdit = (c: Candidate) => {
-    setIsEdit(true)
-    setSelectedCandidate(c)
+    setIsEdit(true);
+    setSelectedCandidate(c);
     setFormData({
       fullName: c.fullName,
-      phone: c.phone || '',
-      address: c.address || '',
-      examDate: c.examDate ? format(c.examDate, 'yyyy-MM-dd') : '',
-      examName: c.examName || '',
-      clientName: c.clientName || '',
-      notes: c.notes || ''
-    })
-    setShowModal(true)
-  }
+      phone: c.phone || "",
+      address: c.address || "",
+      examDate: c.examDate ? format(c.examDate, "yyyy-MM-dd") : "",
+      examName: c.examName || "",
+      clientName: c.clientName || "",
+      notes: c.notes || "",
+    });
+    setShowModal(true);
+  };
 
   const handleDelete = (id: string) => {
     if (confirm("Delete this candidate entry?")) {
-      deleteMutation.mutate(id, { onSuccess: () => refetch() })
+      deleteMutation.mutate(id, { onSuccess: () => refetch() });
     }
-  }
+  };
 
   const handleSave = () => {
     if (!formData.fullName || !formData.clientName) {
-      return toast.error("Please fill in Full Name and Client Name")
+      return toast.error("Please fill in Full Name and Client Name");
     }
 
     const payload: any = {
@@ -208,58 +270,63 @@ export function CandidateTrackerPremium() {
       client_name: formData.clientName,
       notes: formData.notes,
       branch_location: activeBranch,
-      user_id: user?.id
-    }
+      user_id: user?.id,
+    };
 
     if (isEdit) {
-      updateMutation.mutate({ id: selectedCandidate.id, updates: payload }, {
-        onSuccess: () => {
-          setShowModal(false);
-          refetch();
+      updateMutation.mutate(
+        { id: selectedCandidate.id, updates: payload },
+        {
+          onSuccess: () => {
+            setShowModal(false);
+            refetch();
+          },
         }
-      })
+      );
     } else {
-      payload.status = 'registered';
-      payload.confirmation_number = `FETS-${Math.floor(100000 + Math.random() * 900000)}`;
+      payload.status = "registered";
+      payload.confirmation_number = `FETS-${Math.floor(
+        100000 + Math.random() * 900000
+      )}`;
       createMutation.mutate(payload, {
         onSuccess: () => {
           setShowModal(false);
           refetch();
-        }
-      })
+        },
+      });
     }
-  }
+  };
 
   const exportToExcel = () => {
-    const data = filteredCandidates.map(c => ({
-      'Date': c.examDate ? format(c.examDate, 'dd/MM/yyyy') : '',
-      'Name': c.fullName,
-      'Phone no': c.phone || 'N/A',
-      'Place': c.address || 'N/A'
-    }))
-    const ws = XLSX.utils.json_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Candidates")
-    XLSX.writeFile(wb, `FETS_Register_${format(new Date(), 'ddMMyyyy')}.xlsx`)
-    toast.success("Excel file downloaded")
-  }
+    const data = filteredCandidates.map((c) => ({
+      Date: c.examDate ? format(c.examDate, "dd/MM/yyyy") : "",
+      Name: c.fullName,
+      "Phone no": c.phone || "N/A",
+      Place: c.address || "N/A",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Candidates");
+    XLSX.writeFile(wb, `FETS_Register_${format(new Date(), "ddMMyyyy")}.xlsx`);
+    toast.success("Excel file downloaded");
+  };
 
   const exportToPDF = () => {
-    const doc = new jsPDF()
-    const tableData = filteredCandidates.map(c => [
-      c.examDate ? format(c.examDate, 'dd/MM/yyyy') : '',
+    const doc = new jsPDF();
+    const tableData = filteredCandidates.map((c) => [
+      c.examDate ? format(c.examDate, "dd/MM/yyyy") : "",
       c.fullName,
-      c.phone || 'N/A',
-      c.address || 'N/A'
-    ])
+      c.phone || "N/A",
+      c.address || "N/A",
+    ]);
     autoTable(doc, {
-      head: [['Date', 'Name', 'Phone no', 'Place']],
+      head: [["Date", "Name", "Phone no", "Place"]],
       body: tableData,
-      styles: { fontSize: 8 }
-    })
-    doc.save(`FETS_Register_${format(new Date(), 'ddMMyyyy')}.pdf`)
-    toast.success("PDF report downloaded")
-  }
+      styles: { fontSize: 8 },
+    });
+    doc.save(`FETS_Register_${format(new Date(), "ddMMyyyy")}.pdf`);
+    toast.success("PDF report downloaded");
+  };
 
   if (isLoading) {
     return (
@@ -269,11 +336,14 @@ export function CandidateTrackerPremium() {
           <p className="text-gray-600 font-medium">Loading candidates...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div
+      className="min-h-screen -mt-32 pt-56 bg-[#e0e5ec]"
+      style={{ fontFamily: "'Montserrat', sans-serif" }}
+    >
       {/* Functional Notification Banner Spacer */}
       <div className="h-6 -mx-8 -mt-8 mb-8"></div>
 
@@ -289,12 +359,22 @@ export function CandidateTrackerPremium() {
               FETS Register
             </h1>
             <p className="text-lg text-gray-600 font-medium">
-              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Candidate Tracking & Management
+              {activeBranch && activeBranch !== "global"
+                ? `${
+                    activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)
+                  } · `
+                : ""}
+              Candidate Tracking & Management
             </p>
           </div>
           <div className="text-right">
             <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
-              {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {new Date().toLocaleDateString("en-GB", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
             </p>
           </div>
         </motion.div>
@@ -302,22 +382,30 @@ export function CandidateTrackerPremium() {
         {/* Tab Navigation */}
         <div className="flex space-x-2 mb-8 p-1.5 bg-slate-200/50 rounded-2xl w-fit shadow-inner">
           <button
-            onClick={() => setActiveTab('register')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'register' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
+            onClick={() => setActiveTab("register")}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${
+              activeTab === "register"
+                ? "bg-white shadow-md text-slate-800 transform scale-105"
+                : "text-slate-500 hover:bg-white/50"
+            }`}
           >
             <List size={14} />
             Register
           </button>
           <button
-            onClick={() => setActiveTab('analysis')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${activeTab === 'analysis' ? 'bg-white shadow-md text-slate-800 transform scale-105' : 'text-slate-500 hover:bg-white/50'}`}
+            onClick={() => setActiveTab("analysis")}
+            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${
+              activeTab === "analysis"
+                ? "bg-white shadow-md text-slate-800 transform scale-105"
+                : "text-slate-500 hover:bg-white/50"
+            }`}
           >
             <Activity size={14} />
             Analysis
           </button>
         </div>
 
-        {activeTab === 'register' ? (
+        {activeTab === "register" ? (
           <>
             {/* Control Toolbar - Neumorphic */}
             <div className="neomorphic-card p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -348,7 +436,7 @@ export function CandidateTrackerPremium() {
                     <ChevronLeft className="h-5 w-5 text-gray-600" />
                   </button>
                   <div className="text-xl font-bold text-gray-700 min-w-[200px] text-center">
-                    {format(currentDate, 'MMMM yyyy')}
+                    {format(currentDate, "MMMM yyyy")}
                   </div>
                   <button
                     onClick={() => setCurrentDate(subMonths(currentDate, -1))}
@@ -383,14 +471,22 @@ export function CandidateTrackerPremium() {
                 {/* View Mode Toggle */}
                 <div className="flex items-center bg-slate-100 p-1 rounded-xl">
                   <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === "grid"
+                        ? "bg-white shadow-sm text-amber-600"
+                        : "text-gray-400 hover:text-gray-600"
+                    }`}
                   >
                     <Grid size={18} />
                   </button>
                   <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === "list"
+                        ? "bg-white shadow-sm text-amber-600"
+                        : "text-gray-400 hover:text-gray-600"
+                    }`}
                   >
                     <List size={18} />
                   </button>
@@ -428,37 +524,55 @@ export function CandidateTrackerPremium() {
             {/* Stats Section - Premium Chips */}
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="px-6 py-4 bg-[#002147] rounded-2xl shadow-lg flex flex-col min-w-[180px]">
-                <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Today's Registry</span>
-                <span className="text-3xl font-black text-white">{dayRegistry}</span>
+                <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">
+                  Today's Registry
+                </span>
+                <span className="text-3xl font-black text-white">
+                  {dayRegistry}
+                </span>
               </div>
               <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-w-[180px]">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Monthly Total</span>
-                <span className="text-3xl font-black text-slate-800">{monthTotal}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Monthly Total
+                </span>
+                <span className="text-3xl font-black text-slate-800">
+                  {monthTotal}
+                </span>
               </div>
               <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-w-[180px]">
-                <span className="text-[10px] font-black text-[#C5A023] uppercase tracking-widest mb-1">Grand Total</span>
-                <span className="text-3xl font-black text-slate-800">{grandTotal}</span>
+                <span className="text-[10px] font-black text-[#C5A023] uppercase tracking-widest mb-1">
+                  Grand Total
+                </span>
+                <span className="text-3xl font-black text-slate-800">
+                  {grandTotal}
+                </span>
               </div>
             </div>
 
             {/* Enhanced Filters */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Client:</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Client:
+                </span>
                 <select
                   value={filterClient}
                   onChange={(e) => setFilterClient(e.target.value)}
                   className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-amber-500 transition-all"
                 >
                   <option value="all">All Clients</option>
-                  {['PROMETRIC', 'PSI', 'ITTS', 'PEARSON VUE'].map(c => (
-                    <option key={c} value={c}>{c}</option>
+                  {["PROMETRIC", "PSI", "ITTS", "PEARSON VUE"].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Exam:</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Exam:
+                </span>
                 <input
                   type="text"
                   placeholder="Filter by exam..."
@@ -469,10 +583,12 @@ export function CandidateTrackerPremium() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Day:</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Day:
+                </span>
                 <input
                   type="date"
-                  value={format(currentDate, 'yyyy-MM-dd')}
+                  value={format(currentDate, "yyyy-MM-dd")}
                   onChange={(e) => setCurrentDate(new Date(e.target.value))}
                   className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-amber-500 transition-all"
                 />
@@ -481,9 +597,9 @@ export function CandidateTrackerPremium() {
 
             {/* Candidates Grid/List Content */}
             <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.8),9px_9px_16px_#bec3c9] min-h-[600px] border border-white/60">
-              {viewMode === 'grid' ? (
+              {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredCandidates.map(candidate => (
+                  {filteredCandidates.map((candidate) => (
                     <CandidateCard
                       key={candidate.id}
                       candidate={candidate}
@@ -495,8 +611,13 @@ export function CandidateTrackerPremium() {
                   ))}
                   {filteredCandidates.length === 0 && (
                     <div className="col-span-full py-20 text-center opacity-60">
-                      <Search size={48} className="mx-auto mb-4 text-slate-300" />
-                      <p className="text-xl font-bold text-slate-400">No candidates found matching your criteria</p>
+                      <Search
+                        size={48}
+                        className="mx-auto mb-4 text-slate-300"
+                      />
+                      <p className="text-xl font-bold text-slate-400">
+                        No candidates found matching your criteria
+                      </p>
                     </div>
                   )}
                 </div>
@@ -505,22 +626,37 @@ export function CandidateTrackerPremium() {
                   <table className="w-full">
                     <thead className="bg-[#002147] border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">Name</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">Phone</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">Client</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">Exam</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">Place</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-amber-400 uppercase tracking-widest">Actions</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Name
+                        </th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Phone
+                        </th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Client
+                        </th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Exam
+                        </th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Place
+                        </th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {filteredCandidates.map(candidate => (
-                        <tr key={candidate.id} className="hover:bg-slate-50 transition-colors group">
+                      {filteredCandidates.map((candidate) => (
+                        <tr
+                          key={candidate.id}
+                          className="hover:bg-slate-50 transition-colors group"
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
                             {candidate.fullName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600">
-                            {candidate.phone || 'N/A'}
+                            {candidate.phone || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
                             {candidate.clientName}
@@ -529,11 +665,14 @@ export function CandidateTrackerPremium() {
                             {candidate.examName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-medium">
-                            {candidate.address || 'N/A'}
+                            {candidate.address || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                             <button
-                              onClick={() => { setSelectedCandidate(candidate); setShowDetailModal(true); }}
+                              onClick={() => {
+                                setSelectedCandidate(candidate);
+                                setShowDetailModal(true);
+                              }}
                               className="text-[#002147] hover:text-amber-600 font-bold transition-colors"
                             >
                               View
@@ -549,8 +688,13 @@ export function CandidateTrackerPremium() {
                       ))}
                       {filteredCandidates.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-6 py-20 text-center opacity-60">
-                            <p className="text-sm font-bold text-slate-400">No candidates found matching your criteria</p>
+                          <td
+                            colSpan={6}
+                            className="px-6 py-20 text-center opacity-60"
+                          >
+                            <p className="text-sm font-bold text-slate-400">
+                              No candidates found matching your criteria
+                            </p>
                           </td>
                         </tr>
                       )}
@@ -561,7 +705,7 @@ export function CandidateTrackerPremium() {
             </div>
           </>
         ) : (
-          <CandidateAnalysis onClose={() => setActiveTab('register')} />
+          <CandidateAnalysis onClose={() => setActiveTab("register")} />
         )}
       </div>
 
@@ -585,13 +729,21 @@ export function CandidateTrackerPremium() {
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-16 h-16 bg-white rounded-2xl p-3 flex items-center justify-center">
                     <img
-                      src={selectedCandidate.clientName ? CLIENT_LOGOS[selectedCandidate.clientName.toUpperCase()] : '/fets-point-logo.png'}
+                      src={
+                        selectedCandidate.clientName
+                          ? CLIENT_LOGOS[
+                              selectedCandidate.clientName.toUpperCase()
+                            ]
+                          : "/fets-point-logo.png"
+                      }
                       alt=""
                       className="w-full h-full object-contain"
                     />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{selectedCandidate.fullName}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {selectedCandidate.fullName}
+                    </h2>
                     <p className="text-amber-400 text-xs font-black uppercase tracking-widest">
                       {selectedCandidate.clientName} Candidate
                     </p>
@@ -602,33 +754,55 @@ export function CandidateTrackerPremium() {
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Phone Number</label>
-                    <p className="font-bold text-slate-800">{selectedCandidate.phone || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Confirmation</label>
-                    <p className="font-mono font-bold text-amber-600">{selectedCandidate.confirmationNumber}</p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exam Name</label>
-                    <p className="font-bold text-slate-800">{selectedCandidate.examName}</p>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Exam Date</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Phone Number
+                    </label>
                     <p className="font-bold text-slate-800">
-                      {selectedCandidate.examDate ? format(selectedCandidate.examDate, 'dd MMMM yyyy') : 'N/A'}
+                      {selectedCandidate.phone || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Confirmation
+                    </label>
+                    <p className="font-mono font-bold text-amber-600">
+                      {selectedCandidate.confirmationNumber}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Exam Name
+                    </label>
+                    <p className="font-bold text-slate-800">
+                      {selectedCandidate.examName}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Exam Date
+                    </label>
+                    <p className="font-bold text-slate-800">
+                      {selectedCandidate.examDate
+                        ? format(selectedCandidate.examDate, "dd MMMM yyyy")
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Placement/Address</label>
-                  <p className="font-bold text-slate-800">{selectedCandidate.address || 'N/A'}</p>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                    Placement/Address
+                  </label>
+                  <p className="font-bold text-slate-800">
+                    {selectedCandidate.address || "N/A"}
+                  </p>
                 </div>
 
                 {selectedCandidate.notes && (
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Administrative Notes</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                      Administrative Notes
+                    </label>
                     <div className="bg-slate-50 p-4 rounded-xl text-sm text-slate-600 leading-relaxed italic border border-slate-100">
                       "{selectedCandidate.notes}"
                     </div>
@@ -638,13 +812,19 @@ export function CandidateTrackerPremium() {
 
               <div className="p-8 pt-0 flex gap-3">
                 <button
-                  onClick={() => { setShowDetailModal(false); handleOpenEdit(selectedCandidate); }}
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleOpenEdit(selectedCandidate);
+                  }}
                   className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
                 >
                   <Edit size={16} /> Edit Entry
                 </button>
                 <button
-                  onClick={() => { setShowDetailModal(false); handleDelete(selectedCandidate.id); }}
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleDelete(selectedCandidate.id);
+                  }}
                   className="px-6 py-4 bg-rose-50 text-rose-600 font-bold rounded-2xl hover:bg-rose-100 transition-all"
                 >
                   <Trash2 size={16} />
@@ -669,7 +849,7 @@ export function CandidateTrackerPremium() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-3xl font-bold tracking-tight">
-                      {isEdit ? 'Update Candidate' : 'New Registration'}
+                      {isEdit ? "Update Candidate" : "New Registration"}
                     </h2>
                     <p className="text-amber-400 text-[10px] font-black uppercase tracking-widest mt-2">
                       FETS Operational Platform Registry
@@ -694,7 +874,9 @@ export function CandidateTrackerPremium() {
                       type="text"
                       placeholder="e.g. John Doe"
                       value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, fullName: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     />
                   </div>
@@ -707,7 +889,9 @@ export function CandidateTrackerPremium() {
                       type="text"
                       placeholder="+91..."
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     />
                   </div>
@@ -718,13 +902,21 @@ export function CandidateTrackerPremium() {
                     </label>
                     <select
                       value={formData.clientName}
-                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value, examName: '' })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          clientName: e.target.value,
+                          examName: "",
+                        })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     >
                       <option value="">Select client...</option>
                       {dbClients.length > 0 ? (
-                        dbClients.map(client => (
-                          <option key={client.id} value={client.name}>{client.name}</option>
+                        dbClients.map((client) => (
+                          <option key={client.id} value={client.name}>
+                            {client.name}
+                          </option>
                         ))
                       ) : (
                         <>
@@ -742,18 +934,31 @@ export function CandidateTrackerPremium() {
                       Exam Name
                     </label>
                     {(() => {
-                      const selectedClient = dbClients.find(c => c.name === formData.clientName)
-                      const clientExams = selectedClient ? dbExams.filter(e => e.client_id === selectedClient.id) : []
+                      const selectedClient = dbClients.find(
+                        (c) => c.name === formData.clientName
+                      );
+                      const clientExams = selectedClient
+                        ? dbExams.filter(
+                            (e) => e.client_id === selectedClient.id
+                          )
+                        : [];
 
                       return clientExams.length > 0 ? (
                         <select
                           value={formData.examName}
-                          onChange={(e) => setFormData({ ...formData, examName: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              examName: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                         >
                           <option value="">Select exam...</option>
-                          {clientExams.map(exam => (
-                            <option key={exam.id} value={exam.name}>{exam.name}</option>
+                          {clientExams.map((exam) => (
+                            <option key={exam.id} value={exam.name}>
+                              {exam.name}
+                            </option>
                           ))}
                         </select>
                       ) : (
@@ -761,10 +966,15 @@ export function CandidateTrackerPremium() {
                           type="text"
                           placeholder="e.g. TOEFL iBT"
                           value={formData.examName}
-                          onChange={(e) => setFormData({ ...formData, examName: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              examName: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                         />
-                      )
+                      );
                     })()}
                   </div>
 
@@ -775,7 +985,9 @@ export function CandidateTrackerPremium() {
                     <input
                       type="date"
                       value={formData.examDate}
-                      onChange={(e) => setFormData({ ...formData, examDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, examDate: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     />
                   </div>
@@ -788,7 +1000,9 @@ export function CandidateTrackerPremium() {
                       type="text"
                       placeholder="City, State"
                       value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     />
                   </div>
@@ -800,7 +1014,9 @@ export function CandidateTrackerPremium() {
                     <textarea
                       placeholder="Additional requirements..."
                       value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
                     />
@@ -819,7 +1035,7 @@ export function CandidateTrackerPremium() {
                   onClick={handleSave}
                   className="px-10 py-4 bg-[#002147] text-white rounded-2xl hover:bg-slate-800 font-bold shadow-lg hover:shadow-xl transition-all"
                 >
-                  {isEdit ? 'Save Changes' : 'Confirm Registration'}
+                  {isEdit ? "Save Changes" : "Confirm Registration"}
                 </button>
               </div>
             </motion.div>
@@ -827,7 +1043,7 @@ export function CandidateTrackerPremium() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
-export default CandidateTrackerPremium
+export default CandidateTrackerPremium;

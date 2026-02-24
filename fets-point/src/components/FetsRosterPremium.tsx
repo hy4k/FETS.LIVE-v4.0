@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,239 +19,305 @@ import {
   RefreshCw,
   Zap,
   Target,
-  Filter
-} from 'lucide-react'
-import { motion } from 'framer-motion'
-import { MonthlyRosterTimeline } from './MonthlyRosterTimeline'
-import { ShiftCellPopup } from './ShiftCellPopup'
-import { EnhancedQuickAddModal } from './EnhancedQuickAddModal'
-import { EnhancedRequestsModal } from './EnhancedRequestsModal'
-import { RosterListView } from './RosterListView'
-import { EnhancedAnalysisView } from './EnhancedAnalysisView'
-import { MobileRosterView } from './MobileRosterView'
-import { useAuth } from '../hooks/useAuth'
-import { useBranch } from '../hooks/useBranch'
-import { supabase } from '../lib/supabase'
-import { formatDateForIST } from '../utils/dateUtils'
-import { LeaveRequest, Schedule, StaffProfile, SHIFT_CODES, ShiftCode } from '../types/shared'
-import { useIsMobile } from '../hooks/use-mobile'
+  Filter,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { MonthlyRosterTimeline } from "./MonthlyRosterTimeline";
+import { ShiftCellPopup } from "./ShiftCellPopup";
+import { EnhancedQuickAddModal } from "./EnhancedQuickAddModal";
+import { EnhancedRequestsModal } from "./EnhancedRequestsModal";
+import { RosterListView } from "./RosterListView";
+import { EnhancedAnalysisView } from "./EnhancedAnalysisView";
+import { MobileRosterView } from "./MobileRosterView";
+import { useAuth } from "../hooks/useAuth";
+import { useBranch } from "../hooks/useBranch";
+import { supabase } from "../lib/supabase";
+import { formatDateForIST } from "../utils/dateUtils";
+import {
+  LeaveRequest,
+  Schedule,
+  StaffProfile,
+  SHIFT_CODES,
+  ShiftCode,
+} from "../types/shared";
+import { useIsMobile } from "../hooks/use-mobile";
 
-import '../styles/glassmorphism.css'
+import "../styles/glassmorphism.css";
 
-type ViewMode = 'month' | 'list'
+type ViewMode = "month" | "list";
 
 export function FetsRosterPremium() {
-  const { user, profile } = useAuth()
-  const { activeBranch } = useBranch()
-  const isMobile = useIsMobile()
+  const { user, profile } = useAuth();
+  const { activeBranch } = useBranch();
+  const isMobile = useIsMobile();
 
   // Core state
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([])
-  const [requests, setRequests] = useState<LeaveRequest[]>([])
-  const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([]);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
 
   // UI state
-  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false)
-  const [drawerMode, setDrawerMode] = useState<'edit' | 'requests' | 'analysis' | 'generate'>('edit')
-  const [selectedCell, setSelectedCell] = useState<{ profileId: string; date: string } | null>(null)
-  const [otHours, setOtHours] = useState(0)
-  const [lastEditInfo, setLastEditInfo] = useState<{ by: string; date: string } | null>(null)
-  const [selectedStaffFilter, setSelectedStaffFilter] = useState<string>('')
-  const [showQuickAddModal, setShowQuickAddModal] = useState(false)
-  const [showFilter, setShowFilter] = useState(false)
+  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<
+    "edit" | "requests" | "analysis" | "generate"
+  >("edit");
+  const [selectedCell, setSelectedCell] = useState<{
+    profileId: string;
+    date: string;
+  } | null>(null);
+  const [otHours, setOtHours] = useState(0);
+  const [lastEditInfo, setLastEditInfo] = useState<{
+    by: string;
+    date: string;
+  } | null>(null);
+  const [selectedStaffFilter, setSelectedStaffFilter] = useState<string>("");
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   // New modal states for enhanced functionality
-  const [showShiftCellPopup, setShowShiftCellPopup] = useState(false)
-  const [showRequestsModal, setShowRequestsModal] = useState(false)
-  const [currentView, setCurrentView] = useState<'roster' | 'analysis'>('roster')
+  const [showShiftCellPopup, setShowShiftCellPopup] = useState(false);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [currentView, setCurrentView] = useState<"roster" | "analysis">(
+    "roster"
+  );
   const [selectedCellData, setSelectedCellData] = useState<{
-    profileId: string
-    date: string
-    staffName: string
-    currentShift?: string
-    currentOvertimeHours?: number
-  } | null>(null)
+    profileId: string;
+    date: string;
+    staffName: string;
+    currentShift?: string;
+    currentOvertimeHours?: number;
+  } | null>(null);
 
-  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+  const [notification, setNotification] = useState<{
+    type: "success" | "error" | "warning";
+    message: string;
+  } | null>(null);
 
-  const { hasPermission } = useAuth()
-  const canEdit = hasPermission('can_edit_roster')
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission("can_edit_roster");
 
   // Notification system
-  const showNotification = useCallback((type: 'success' | 'error' | 'warning', message: string) => {
-    setNotification({ type, message })
-    setTimeout(() => setNotification(null), 5000)
-  }, [])
+  const showNotification = useCallback(
+    (type: "success" | "error" | "warning", message: string) => {
+      setNotification({ type, message });
+      setTimeout(() => setNotification(null), 5000);
+    },
+    []
+  );
 
   const getViewDateRange = useCallback(() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
     // Use UTC dates to avoid timezone issues
     // Create dates at noon UTC to ensure correct date regardless of timezone
-    const startDate = new Date(Date.UTC(year, month, 1, 12, 0, 0))
-    const endDate = new Date(Date.UTC(year, month + 1, 0, 12, 0, 0))
-    return { startDate, endDate }
-  }, [currentDate])
+    const startDate = new Date(Date.UTC(year, month, 1, 12, 0, 0));
+    const endDate = new Date(Date.UTC(year, month + 1, 0, 12, 0, 0));
+    return { startDate, endDate };
+  }, [currentDate]);
 
   // Data loading
   const loadData = useCallback(async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       let profileQuery = supabase
-        .from('staff_profiles')
-        .select('id, user_id, full_name, role, email, department, branch_assigned')
-        .not('full_name', 'in', '("MITHUN","NIYAS","Mithun","Niyas")')
+        .from("staff_profiles")
+        .select(
+          "id, user_id, full_name, role, email, department, branch_assigned"
+        )
+        .not("full_name", "in", '("MITHUN","NIYAS","Mithun","Niyas")');
 
-      if (activeBranch === 'calicut') {
-        console.log('🔍 Filtering for Calicut branch')
-        profileQuery = profileQuery.eq('branch_assigned', 'calicut')
-      } else if (activeBranch === 'cochin') {
-        console.log('🔍 Filtering for Cochin branch')
-        profileQuery = profileQuery.eq('branch_assigned', 'cochin')
+      if (activeBranch === "calicut") {
+        console.log("🔍 Filtering for Calicut branch");
+        profileQuery = profileQuery.eq("branch_assigned", "calicut");
+      } else if (activeBranch === "cochin") {
+        console.log("🔍 Filtering for Cochin branch");
+        profileQuery = profileQuery.eq("branch_assigned", "cochin");
       } else {
-        console.log('🔍 Loading all branches (Global mode)')
+        console.log("🔍 Loading all branches (Global mode)");
       }
 
-      const { data: profiles, error: profilesError } = await profileQuery.order('full_name')
+      const { data: profiles, error: profilesError } = await profileQuery.order(
+        "full_name"
+      );
 
-      console.log(`📊 Loaded ${profiles?.length || 0} staff profiles for ${activeBranch} branch`)
+      console.log(
+        `📊 Loaded ${
+          profiles?.length || 0
+        } staff profiles for ${activeBranch} branch`
+      );
 
-      if (profilesError) throw profilesError
+      if (profilesError) throw profilesError;
 
-      const mappedProfiles: StaffProfile[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        user_id: profile.user_id,
-        full_name: profile.full_name,
-        role: profile.role,
-        email: profile.email || '',
-        department: profile.department,
-        branch_assigned: profile.branch_assigned
-      } as StaffProfile))
+      const mappedProfiles: StaffProfile[] = (profiles || []).map(
+        (profile) =>
+          ({
+            id: profile.id,
+            user_id: profile.user_id,
+            full_name: profile.full_name,
+            role: profile.role,
+            email: profile.email || "",
+            department: profile.department,
+            branch_assigned: profile.branch_assigned,
+          } as StaffProfile)
+      );
 
-      setStaffProfiles(mappedProfiles)
+      setStaffProfiles(mappedProfiles);
 
-      const { startDate, endDate } = getViewDateRange()
+      const { startDate, endDate } = getViewDateRange();
 
       const { data: scheduleData, error: scheduleError } = await supabase
-        .from('roster_schedules')
-        .select('id, profile_id, date, shift_code, overtime_hours, status, created_at, updated_at')
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
-        .order('date')
+        .from("roster_schedules")
+        .select(
+          "id, profile_id, date, shift_code, overtime_hours, status, created_at, updated_at"
+        )
+        .gte("date", startDate.toISOString().split("T")[0])
+        .lte("date", endDate.toISOString().split("T")[0])
+        .order("date");
 
-      if (scheduleError) throw scheduleError
-      setSchedules(scheduleData || [])
+      if (scheduleError) throw scheduleError;
+      setSchedules(scheduleData || []);
 
       const { data: requestData, error: requestError } = await supabase
-        .from('leave_requests')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("leave_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (requestError) throw requestError
-      setRequests(requestData || [])
-
+      if (requestError) throw requestError;
+      setRequests(requestData || []);
     } catch (error) {
-      console.error('Error loading data:', error)
-      showNotification('error', `Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error("Error loading data:", error);
+      showNotification(
+        "error",
+        `Failed to load data: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [activeBranch, getViewDateRange, showNotification])
+  }, [activeBranch, getViewDateRange, showNotification]);
 
   const getViewTitle = () => {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ]
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
 
     switch (viewMode) {
-      case 'month':
-      case 'list':
+      case "month":
+      case "list":
       default:
-        return `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+        return `${
+          monthNames[currentDate.getMonth()]
+        } ${currentDate.getFullYear()}`;
     }
-  }
+  };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate)
+  const navigateDate = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
 
     switch (viewMode) {
-      case 'month':
-      case 'list':
+      case "month":
+      case "list":
       default:
-        newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1))
-        break
+        newDate.setMonth(
+          currentDate.getMonth() + (direction === "next" ? 1 : -1)
+        );
+        break;
     }
 
-    setCurrentDate(newDate)
-  }
+    setCurrentDate(newDate);
+  };
 
   const getStaffName = (profileId: string): string => {
-    const staff = staffProfiles.find(s => s.id === profileId)
-    return staff?.full_name || 'Unknown Staff'
-  }
+    const staff = staffProfiles.find((s) => s.id === profileId);
+    return staff?.full_name || "Unknown Staff";
+  };
 
   const updateVersionTracking = async (action: string) => {
     try {
-      await supabase
-        .from('roster_audit_log')
-        .insert({
-          action,
-          performed_by: profile?.id || user?.id,
-          performed_at: new Date().toISOString()
-        })
+      await supabase.from("roster_audit_log").insert({
+        action,
+        performed_by: profile?.id || user?.id,
+        performed_at: new Date().toISOString(),
+      });
     } catch (error) {
-      console.error('Error in version tracking:', error)
+      console.error("Error in version tracking:", error);
     }
-  }
+  };
 
   const handleCellClick = (profileId: string, date: Date) => {
-    const dateStr = formatDateForIST(date)
-    const staffMember = staffProfiles.find(s => s.id === profileId)
-    const existingSchedule = schedules.find(s => s.profile_id === profileId && s.date === dateStr)
+    const dateStr = formatDateForIST(date);
+    const staffMember = staffProfiles.find((s) => s.id === profileId);
+    const existingSchedule = schedules.find(
+      (s) => s.profile_id === profileId && s.date === dateStr
+    );
 
     setSelectedCellData({
       profileId,
       date: dateStr,
-      staffName: staffMember?.full_name || 'Unknown',
-      currentShift: existingSchedule?.shift_code || '',
-      currentOvertimeHours: existingSchedule?.overtime_hours || 0
-    })
-    setShowShiftCellPopup(true)
-  }
+      staffName: staffMember?.full_name || "Unknown",
+      currentShift: existingSchedule?.shift_code || "",
+      currentOvertimeHours: existingSchedule?.overtime_hours || 0,
+    });
+    setShowShiftCellPopup(true);
+  };
 
-  const handleShiftCellSave = async (shiftData: { shift_code: string; overtime_hours: number }) => {
+  const handleShiftCellSave = async (shiftData: {
+    shift_code: string;
+    overtime_hours: number;
+  }) => {
     if (!selectedCellData || !user || !canEdit || !profile) {
-      showNotification('warning', 'Unable to save shift - permission or context issue')
-      return
+      showNotification(
+        "warning",
+        "Unable to save shift - permission or context issue"
+      );
+      return;
     }
 
     // RBAC: Restricted Roster Management Logic
-    // Only Super Admins can skip approval checks. 
+    // Only Super Admins can skip approval checks.
     // Roster Handlers (rotating) must have an approved request flag.
-    const isMithun = profile?.email === 'mithun@fets.in';
-    const isSuperAdminRole = profile?.role === 'super_admin';
+    const isMithun = profile?.email === "mithun@fets.in";
+    const isSuperAdminRole = profile?.role === "super_admin";
     // If permission is explicitly assigned in User Management, allow bypass of approval check
-    const hasExplicitPermission = profile?.permissions &&
-      ((profile.permissions as any).can_edit_roster === true || (profile.permissions as any).roster_edit === true);
+    const hasExplicitPermission =
+      profile?.permissions &&
+      ((profile.permissions as any).can_edit_roster === true ||
+        (profile.permissions as any).roster_edit === true);
 
-    const bypassApproval = isMithun || isSuperAdminRole || hasExplicitPermission;
+    const bypassApproval =
+      isMithun || isSuperAdminRole || hasExplicitPermission;
 
     if (!bypassApproval) {
       // Check for approved leave/shift-change request for this specific user and date
-      const approvedRequest = requests.find(req =>
-        req.user_id === selectedCellData.profileId &&
-        req.requested_date === selectedCellData.date &&
-        req.status === 'approved'
+      const approvedRequest = requests.find(
+        (req) =>
+          req.user_id === selectedCellData.profileId &&
+          req.requested_date === selectedCellData.date &&
+          req.status === "approved"
       );
 
       if (!approvedRequest) {
-        showNotification('error', 'LOCK TRIGGERED: No approved Super Admin request found for this change.');
+        showNotification(
+          "error",
+          "LOCK TRIGGERED: No approved Super Admin request found for this change."
+        );
         return;
       }
     }
@@ -261,91 +327,116 @@ export function FetsRosterPremium() {
       date: selectedCellData.date,
       shift_code: shiftData.shift_code,
       overtime_hours: shiftData.overtime_hours,
-      status: 'confirmed',
-      updated_at: new Date().toISOString()
-    }
+      status: "confirmed",
+      updated_at: new Date().toISOString(),
+    };
 
-    const existingIndex = schedules.findIndex(s =>
-      s.profile_id === selectedCellData.profileId && s.date === selectedCellData.date
-    )
+    const existingIndex = schedules.findIndex(
+      (s) =>
+        s.profile_id === selectedCellData.profileId &&
+        s.date === selectedCellData.date
+    );
 
-    const newSchedules = [...schedules]
+    const newSchedules = [...schedules];
 
     if (existingIndex > -1) {
-      const existingSchedule = newSchedules[existingIndex]
-      newSchedules[existingIndex] = { ...existingSchedule, ...scheduleData }
+      const existingSchedule = newSchedules[existingIndex];
+      newSchedules[existingIndex] = { ...existingSchedule, ...scheduleData };
     } else {
-      newSchedules.push({ ...scheduleData, id: 'temp-' + Date.now(), created_at: new Date().toISOString() })
+      newSchedules.push({
+        ...scheduleData,
+        id: "temp-" + Date.now(),
+        created_at: new Date().toISOString(),
+      });
     }
 
-    setSchedules(newSchedules)
+    setSchedules(newSchedules);
 
     try {
       if (existingIndex > -1) {
         const { error } = await supabase
-          .from('roster_schedules')
+          .from("roster_schedules")
           .update(scheduleData)
-          .eq('id', schedules[existingIndex].id)
+          .eq("id", schedules[existingIndex].id);
 
-        if (error) throw error
+        if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('roster_schedules')
-          .insert([{ ...scheduleData, created_at: new Date().toISOString() }])
+          .from("roster_schedules")
+          .insert([{ ...scheduleData, created_at: new Date().toISOString() }]);
 
-        if (error) throw error
+        if (error) throw error;
       }
 
-      await updateVersionTracking(`Updated shift for ${selectedCellData.staffName}`)
-      showNotification('success', 'Shift updated successfully!')
-      loadData()
+      await updateVersionTracking(
+        `Updated shift for ${selectedCellData.staffName}`
+      );
+      showNotification("success", "Shift updated successfully!");
+      loadData();
     } catch (error) {
-      console.error('Error saving shift:', error)
-      showNotification('error', `Failed to save shift: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      setSchedules(schedules)
+      console.error("Error saving shift:", error);
+      showNotification(
+        "error",
+        `Failed to save shift: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+      setSchedules(schedules);
     }
-  }
+  };
 
   const handleShiftCellDelete = async () => {
     if (!selectedCellData || !user || !canEdit) {
-      showNotification('warning', 'Unable to delete shift - permission or context issue')
-      return
+      showNotification(
+        "warning",
+        "Unable to delete shift - permission or context issue"
+      );
+      return;
     }
 
     try {
-      const existing = schedules.find(s =>
-        s.profile_id === selectedCellData.profileId && s.date === selectedCellData.date
-      )
+      const existing = schedules.find(
+        (s) =>
+          s.profile_id === selectedCellData.profileId &&
+          s.date === selectedCellData.date
+      );
 
       if (existing) {
         const { error } = await supabase
-          .from('roster_schedules')
+          .from("roster_schedules")
           .delete()
-          .eq('id', existing.id)
+          .eq("id", existing.id);
 
-        if (error) throw error
+        if (error) throw error;
 
-        await updateVersionTracking(`Deleted shift for ${selectedCellData.staffName} on ${selectedCellData.date}`)
-        await loadData()
-        showNotification('success', 'Shift deleted successfully!')
+        await updateVersionTracking(
+          `Deleted shift for ${selectedCellData.staffName} on ${selectedCellData.date}`
+        );
+        await loadData();
+        showNotification("success", "Shift deleted successfully!");
       }
     } catch (error) {
-      console.error('Error deleting shift:', error)
-      showNotification('error', `Failed to delete shift: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error("Error deleting shift:", error);
+      showNotification(
+        "error",
+        `Failed to delete shift: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-  }
+  };
 
   // Filter staff for current view
-  const filteredStaff = staffProfiles.filter(staff => {
+  const filteredStaff = staffProfiles.filter((staff) => {
     if (selectedStaffFilter && staff.id !== selectedStaffFilter) {
-      return false
+      return false;
     }
-    return true
-  })
+    return true;
+  });
 
   useEffect(() => {
-    loadData()
-  }, [activeBranch, currentDate, viewMode, loadData])
+    loadData();
+  }, [activeBranch, currentDate, viewMode, loadData]);
 
   if (loading) {
     return (
@@ -355,11 +446,16 @@ export function FetsRosterPremium() {
           <p className="text-gray-600 font-medium">Loading roster data...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className={`min-h-screen bg-[#e0e5ec] ${isMobile ? 'pt-8 pb-32 px-4' : '-mt-32 pt-56 px-6'}`} style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div
+      className={`min-h-screen bg-[#e0e5ec] ${
+        isMobile ? "pt-8 pb-32 px-4" : "-mt-32 pt-56 px-6"
+      }`}
+      style={{ fontFamily: "'Montserrat', sans-serif" }}
+    >
       {/* Functional Notification Banner Spacer */}
       {!isMobile && <div className="h-6 -mx-8 -mt-8 mb-8"></div>}
 
@@ -368,20 +464,40 @@ export function FetsRosterPremium() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`${isMobile ? 'mb-6' : 'mb-8'} flex flex-col md:flex-row justify-between items-start md:items-end gap-4`}
+          className={`${
+            isMobile ? "mb-6" : "mb-8"
+          } flex flex-col md:flex-row justify-between items-start md:items-end gap-4`}
         >
           <div>
-            <h1 className={`${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl'} font-bold tracking-tight text-gold-gradient mb-2 uppercase italic`}>
+            <h1
+              className={`${
+                isMobile ? "text-3xl" : "text-4xl md:text-5xl"
+              } font-bold tracking-tight text-gold-gradient mb-2 uppercase italic`}
+            >
               FETS Roster
             </h1>
-            <p className={`${isMobile ? 'text-sm' : 'text-lg'} text-gray-600 font-medium`}>
-              {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}Staff Scheduling
+            <p
+              className={`${
+                isMobile ? "text-sm" : "text-lg"
+              } text-gray-600 font-medium`}
+            >
+              {activeBranch && activeBranch !== "global"
+                ? `${
+                    activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)
+                  } · `
+                : ""}
+              Staff Scheduling
             </p>
           </div>
           {!isMobile && (
             <div className="text-right">
               <p className="text-gray-500 font-semibold uppercase tracking-wider text-sm">
-                {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {new Date().toLocaleDateString("en-GB", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </p>
             </div>
           )}
@@ -389,14 +505,23 @@ export function FetsRosterPremium() {
 
         {/* Notification System */}
         {notification && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl neomorphic-card ${notification.type === 'success' ? 'border-l-4 border-l-green-500 text-green-700' :
-            notification.type === 'error' ? 'border-l-4 border-l-red-500 text-red-700' :
-              'border-l-4 border-l-yellow-500 text-yellow-700'
-            }`}>
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-xl neomorphic-card ${
+              notification.type === "success"
+                ? "border-l-4 border-l-green-500 text-green-700"
+                : notification.type === "error"
+                ? "border-l-4 border-l-red-500 text-red-700"
+                : "border-l-4 border-l-yellow-500 text-yellow-700"
+            }`}
+          >
             <div className="flex items-center space-x-3">
-              {notification.type === 'success' && <CheckCircle className="h-5 w-5" />}
-              {notification.type === 'error' && <XCircle className="h-5 w-5" />}
-              {notification.type === 'warning' && <AlertTriangle className="h-5 w-5" />}
+              {notification.type === "success" && (
+                <CheckCircle className="h-5 w-5" />
+              )}
+              {notification.type === "error" && <XCircle className="h-5 w-5" />}
+              {notification.type === "warning" && (
+                <AlertTriangle className="h-5 w-5" />
+              )}
               <span className="font-medium">{notification.message}</span>
             </div>
           </div>
@@ -408,15 +533,17 @@ export function FetsRosterPremium() {
             {/* Date Navigation */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => navigateDate('prev')}
+                onClick={() => navigateDate("prev")}
                 className="neomorphic-btn-icon"
                 title="Previous month"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-600" />
               </button>
-              <h2 className="text-xl font-bold text-gray-700 min-w-[200px] text-center">{getViewTitle()}</h2>
+              <h2 className="text-xl font-bold text-gray-700 min-w-[200px] text-center">
+                {getViewTitle()}
+              </h2>
               <button
-                onClick={() => navigateDate('next')}
+                onClick={() => navigateDate("next")}
                 className="neomorphic-btn-icon"
                 title="Next month"
               >
@@ -435,14 +562,22 @@ export function FetsRosterPremium() {
             {/* View Mode Toggle */}
             <div className="neomorphic-inset p-1 rounded-xl flex items-center">
               <button
-                onClick={() => setViewMode('month')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'month' ? 'neomorphic-card text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => setViewMode("month")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  viewMode === "month"
+                    ? "neomorphic-card text-amber-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 Timeline
               </button>
               <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${viewMode === 'list' ? 'neomorphic-card text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => setViewMode("list")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  viewMode === "list"
+                    ? "neomorphic-card text-amber-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 List
               </button>
@@ -452,7 +587,9 @@ export function FetsRosterPremium() {
             <div className="relative">
               <button
                 onClick={() => setShowFilter(!showFilter)}
-                className={`neomorphic-btn-icon ${showFilter ? 'text-amber-600' : 'text-gray-600'}`}
+                className={`neomorphic-btn-icon ${
+                  showFilter ? "text-amber-600" : "text-gray-600"
+                }`}
                 title="Filter staff"
               >
                 <Filter className="h-5 w-5" />
@@ -460,22 +597,24 @@ export function FetsRosterPremium() {
               {showFilter && (
                 <div className="absolute right-0 mt-2 w-64 neomorphic-card z-20 max-h-96 overflow-y-auto">
                   <div className="p-4">
-                    <div className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">Filter by Staff</div>
+                    <div className="text-xs font-bold text-gray-400 uppercase mb-3 tracking-wide">
+                      Filter by Staff
+                    </div>
                     <button
                       onClick={() => {
-                        setSelectedStaffFilter('')
-                        setShowFilter(false)
+                        setSelectedStaffFilter("");
+                        setShowFilter(false);
                       }}
                       className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg mb-2 font-medium transition-colors"
                     >
                       All Staff
                     </button>
-                    {staffProfiles.map(staff => (
+                    {staffProfiles.map((staff) => (
                       <button
                         key={staff.id}
                         onClick={() => {
-                          setSelectedStaffFilter(staff.id)
-                          setShowFilter(false)
+                          setSelectedStaffFilter(staff.id);
+                          setShowFilter(false);
                         }}
                         className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                       >
@@ -498,8 +637,14 @@ export function FetsRosterPremium() {
             </button>
 
             <button
-              onClick={() => setCurrentView(currentView === 'analysis' ? 'roster' : 'analysis')}
-              className={`neomorphic-btn px-4 py-2 flex items-center space-x-2 font-bold ${currentView === 'analysis' ? 'text-amber-700' : 'text-gray-600'}`}
+              onClick={() =>
+                setCurrentView(
+                  currentView === "analysis" ? "roster" : "analysis"
+                )
+              }
+              className={`neomorphic-btn px-4 py-2 flex items-center space-x-2 font-bold ${
+                currentView === "analysis" ? "text-amber-700" : "text-gray-600"
+              }`}
             >
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analysis</span>
@@ -509,8 +654,9 @@ export function FetsRosterPremium() {
 
         {/* Main Content - Dynamic Views */}
         <div className={isMobile ? "" : "neomorphic-card p-6 min-h-[600px]"}>
-          {currentView === 'roster' && viewMode === 'month' && (
-            isMobile ? (
+          {currentView === "roster" &&
+            viewMode === "month" &&
+            (isMobile ? (
               <MobileRosterView
                 staffProfiles={filteredStaff}
                 schedules={schedules}
@@ -525,16 +671,15 @@ export function FetsRosterPremium() {
                 currentDate={currentDate}
                 onCellClick={handleCellClick}
               />
-            )
-          )}
-          {currentView === 'roster' && viewMode === 'list' && (
+            ))}
+          {currentView === "roster" && viewMode === "list" && (
             <RosterListView
               schedules={schedules}
               staffProfiles={staffProfiles}
             />
           )}
 
-          {currentView === 'analysis' && (
+          {currentView === "analysis" && (
             <EnhancedAnalysisView
               schedules={schedules}
               staffProfiles={filteredStaff}
@@ -569,11 +714,11 @@ export function FetsRosterPremium() {
         onDelete={handleShiftCellDelete}
         currentShift={selectedCellData?.currentShift}
         currentOvertimeHours={selectedCellData?.currentOvertimeHours}
-        staffName={selectedCellData?.staffName || ''}
-        date={selectedCellData?.date || ''}
+        staffName={selectedCellData?.staffName || ""}
+        date={selectedCellData?.date || ""}
       />
     </div>
-  )
+  );
 }
 
-export default FetsRosterPremium
+export default FetsRosterPremium;

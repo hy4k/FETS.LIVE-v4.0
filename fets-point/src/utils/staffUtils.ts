@@ -1,12 +1,12 @@
 // Staff filtering utilities for roster management
 
 interface StaffProfile {
-  id: string
-  user_id?: string
-  full_name: string
-  role: string
-  email: string
-  department?: string
+  id: string;
+  user_id?: string;
+  full_name: string;
+  role: string;
+  email: string;
+  department?: string;
 }
 
 /**
@@ -16,23 +16,25 @@ interface StaffProfile {
  * @returns Filtered array excluding super admins
  */
 export const filterStaffForRoster = (staff: StaffProfile[]): StaffProfile[] => {
-  return staff.filter(person => {
+  return staff.filter((person) => {
     // Remove super admins by role and specific names
-    if (person.role === 'super_admin') {
-      return false
+    if (person.role === "super_admin") {
+      return false;
     }
-    
+
     // Additional filter for specific super admin names
-    const superAdminNames = ['Mithun', 'Niyas']
-    if (superAdminNames.some(name => 
-      person.full_name.toLowerCase().includes(name.toLowerCase())
-    )) {
-      return false
+    const superAdminNames = ["Mithun", "Niyas"];
+    if (
+      superAdminNames.some((name) =>
+        person.full_name.toLowerCase().includes(name.toLowerCase())
+      )
+    ) {
+      return false;
     }
-    
-    return true
-  })
-}
+
+    return true;
+  });
+};
 
 /**
  * Check if a staff member is a super admin
@@ -40,13 +42,13 @@ export const filterStaffForRoster = (staff: StaffProfile[]): StaffProfile[] => {
  * @returns True if staff is super admin
  */
 export const isSuperAdminUser = (staff: StaffProfile): boolean => {
-  if (staff.role === 'super_admin') return true
-  
-  const superAdminNames = ['Mithun', 'Niyas']
-  return superAdminNames.some(name => 
+  if (staff.role === "super_admin") return true;
+
+  const superAdminNames = ["Mithun", "Niyas"];
+  return superAdminNames.some((name) =>
     staff.full_name.toLowerCase().includes(name.toLowerCase())
-  )
-}
+  );
+};
 
 /**
  * Get display role for UI (shows super_admin as admin)
@@ -54,5 +56,5 @@ export const isSuperAdminUser = (staff: StaffProfile): boolean => {
  * @returns Display role for UI
  */
 export const getDisplayRole = (role: string): string => {
-  return role === 'super_admin' ? 'admin' : role
-}
+  return role === "super_admin" ? "admin" : role;
+};

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useConversations } from '../../hooks/useChat';
-import { useAuth } from '../../hooks/useAuth';
-import CreateGroupChatModal from './CreateGroupChatModal';
+import React, { useState } from "react";
+import { useConversations } from "../../hooks/useChat";
+import { useAuth } from "../../hooks/useAuth";
+import CreateGroupChatModal from "./CreateGroupChatModal";
 
 const ConversationList = ({ setSelectedConversation }) => {
   const { user } = useAuth();

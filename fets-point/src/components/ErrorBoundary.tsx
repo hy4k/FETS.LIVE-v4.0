@@ -1,78 +1,80 @@
-import { Component, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
+import { Component, ReactNode } from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
-  onError?: (error: Error, errorInfo: any) => void
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: any) => void;
 }
 
 interface State {
-  hasError: boolean
-  error?: Error
-  errorId?: string
+  hasError: boolean;
+  error?: Error;
+  errorId?: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
-    this.state = { hasError: false }
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    return { hasError: true, error, errorId }
+    const errorId = `error_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    return { hasError: true, error, errorId };
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     // Call custom error handler if provided
-    this.props.onError?.(error, errorInfo)
-    
+    this.props.onError?.(error, errorInfo);
+
     // Send error to monitoring service (Sentry, LogRocket, etc.)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // Log error to console with additional context
-      console.group(`🔴 Error Boundary - ${this.state.errorId}`)
-      console.error('Error:', error)
-      console.error('Component Stack:', errorInfo.componentStack)
-      console.error('Error Boundary State:', this.state)
-      console.groupEnd()
-      
+      console.group(`🔴 Error Boundary - ${this.state.errorId}`);
+      console.error("Error:", error);
+      console.error("Component Stack:", errorInfo.componentStack);
+      console.error("Error Boundary State:", this.state);
+      console.groupEnd();
+
       // Send to external monitoring if available
       if ((window as any).Sentry) {
         (window as any).Sentry.captureException(error, {
           contexts: {
             react: {
-              componentStack: errorInfo.componentStack
-            }
+              componentStack: errorInfo.componentStack,
+            },
           },
           tags: {
             errorBoundary: true,
-            errorId: this.state.errorId
-          }
-        })
+            errorId: this.state.errorId,
+          },
+        });
       }
     }
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorId: undefined })
-  }
+    this.setState({ hasError: false, error: undefined, errorId: undefined });
+  };
 
   handleReload = () => {
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   handleGoHome = () => {
-    window.location.href = '/'
-  }
+    window.location.href = "/";
+  };
 
   render() {
     if (this.state.hasError) {
       // Use custom fallback if provided
       if (this.props.fallback) {
-        return this.props.fallback
+        return this.props.fallback;
       }
 
       // Default error UI
@@ -85,9 +87,10 @@ export class ErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </h1>
               <p className="text-gray-600 mb-4">
-                We're sorry, but something unexpected happened. Our team has been notified.
+                We're sorry, but something unexpected happened. Our team has
+                been notified.
               </p>
-              
+
               {this.state.errorId && (
                 <div className="mb-4 p-3 bg-gray-100 rounded-lg">
                   <p className="text-sm text-gray-700">
@@ -99,22 +102,24 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
               )}
             </div>
-            
+
             {/* Development error details - ALWAYS SHOW FOR DEBUGGING */}
             {this.state.error && (
               <div className="mb-6 p-4 bg-red-50 rounded-lg text-left border border-red-200">
-                <p className="text-sm font-medium text-red-800">Technical Details:</p>
+                <p className="text-sm font-medium text-red-800">
+                  Technical Details:
+                </p>
                 <p className="text-xs text-red-700 font-mono bg-red-100 p-2 rounded break-words">
                   {this.state.error.message}
                 </p>
                 {this.state.error.stack && (
                   <pre className="mt-2 text-[8px] text-red-600 bg-red-50 p-2 rounded overflow-auto max-h-40">
-                    {this.state.error.stack.split('\n').slice(0, 5).join('\n')}
+                    {this.state.error.stack.split("\n").slice(0, 5).join("\n")}
                   </pre>
                 )}
               </div>
             )}
-            
+
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
@@ -138,20 +143,21 @@ export class ErrorBoundary extends Component<Props, State> {
                 Reload Page
               </button>
             </div>
-            
+
             {/* Help text */}
             <div className="mt-6 pt-4 border-t border-gray-200">
               <p className="text-xs text-gray-500">
-                If this problem persists, please contact support with the error ID above.
+                If this problem persists, please contact support with the error
+                ID above.
               </p>
             </div>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
-export default ErrorBoundary
+export default ErrorBoundary;

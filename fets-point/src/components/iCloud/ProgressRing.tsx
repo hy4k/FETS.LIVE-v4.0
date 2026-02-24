@@ -1,31 +1,34 @@
-import { motion } from 'framer-motion'
+import { motion } from "framer-motion";
 
 interface ProgressRingProps {
-  progress: number // 0-100
-  size?: number
-  strokeWidth?: number
-  className?: string
-  showPercentage?: boolean
-  color?: string
-  backgroundColor?: string
+  progress: number; // 0-100
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+  showPercentage?: boolean;
+  color?: string;
+  backgroundColor?: string;
 }
 
-export function ProgressRing({ 
-  progress, 
-  size = 60, 
+export function ProgressRing({
+  progress,
+  size = 60,
   strokeWidth = 4,
-  className = '',
+  className = "",
   showPercentage = false,
-  color = 'var(--fets-primary-yellow)',
-  backgroundColor = 'rgba(255, 255, 255, 0.2)'
+  color = "var(--fets-primary-yellow)",
+  backgroundColor = "rgba(255, 255, 255, 0.2)",
 }: ProgressRingProps) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = radius * 2 * Math.PI
-  const strokeDasharray = circumference
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-  
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
   return (
-    <div className={`progress-ring ${className}`} style={{ width: size, height: size }}>
+    <div
+      className={`progress-ring ${className}`}
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="progress-ring__svg">
         {/* Background circle */}
         <circle
@@ -37,7 +40,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           className="progress-ring__background"
         />
-        
+
         {/* Progress circle */}
         <motion.circle
           cx={size / 2}
@@ -52,18 +55,18 @@ export function ProgressRing({
           className="progress-ring__progress"
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
-          transition={{ 
-            duration: 1.5, 
+          transition={{
+            duration: 1.5,
             ease: "easeOut",
-            delay: 0.5
+            delay: 0.5,
           }}
           style={{
             transformOrigin: `${size / 2}px ${size / 2}px`,
-            transform: 'rotate(-90deg)'
+            transform: "rotate(-90deg)",
           }}
         />
       </svg>
-      
+
       {showPercentage && (
         <div className="progress-ring__text">
           <motion.span
@@ -76,5 +79,5 @@ export function ProgressRing({
         </div>
       )}
     </div>
-  )
+  );
 }

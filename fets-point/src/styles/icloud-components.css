@@ -47,7 +47,7 @@
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 4px 0;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .timeline-title p {
@@ -326,7 +326,7 @@
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 4px 0;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .workflow-info p {
@@ -394,7 +394,7 @@
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: 4px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .stat-label {
@@ -577,7 +577,7 @@
   font-weight: 700;
   color: var(--fets-text-primary);
   margin: 0 0 8px 0;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 .quick-actions-header p {
@@ -948,42 +948,42 @@
   .timeline-days {
     gap: 12px;
   }
-  
+
   .timeline-day {
     min-width: 180px;
     padding: 12px;
   }
-  
+
   .workflow-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .actions-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .notification-panel {
     left: 12px;
     right: 12px;
     width: auto;
   }
-  
+
   .tasks-progress {
     flex-direction: column;
     text-align: center;
     gap: 16px;
   }
-  
+
   .incident-stats {
     gap: 8px;
   }
-  
+
   .stat-item {
     padding: 8px 4px;
   }
-  
+
   .stat-value {
     font-size: 20px;
   }
@@ -994,33 +994,33 @@
     min-width: 160px;
     padding: 10px;
   }
-  
+
   .day-name {
     font-size: 14px;
   }
-  
+
   .day-date {
     font-size: 12px;
   }
-  
+
   .action-button {
     padding: 12px;
     gap: 12px;
   }
-  
+
   .action-icon {
     width: 36px;
     height: 36px;
   }
-  
+
   .action-label {
     font-size: 14px;
   }
-  
+
   .action-description {
     font-size: 12px;
   }
-  
+
   .notification-panel {
     top: 70px;
   }

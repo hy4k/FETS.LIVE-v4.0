@@ -1,0 +1,10 @@
+
+C:\Dev\antigravity\fets.live 2028\FETS.LIVE-v4.0\fets-point\src\components\IncidentManager.tsx
+  174:6   warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  210:6   warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  359:9   error    'content' is never reassigned. Use 'const' instead                                                                prefer-const
+  373:17  error    Empty block statement                                                                                             no-empty
+
+Γ£û 4 problems (2 errors, 2 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

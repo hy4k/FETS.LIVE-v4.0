@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
-import { toast } from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { toast } from "react-hot-toast";
 
 export interface VaultEntry {
   id: string;
@@ -23,14 +23,14 @@ export interface VaultEntry {
 
 export const useVaultEntries = (userId?: string) => {
   return useQuery({
-    queryKey: ['vault-entries', userId],
+    queryKey: ["vault-entries", userId],
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('fets_vault')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .from("fets_vault")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as VaultEntry[];
@@ -45,7 +45,7 @@ export const useCreateVaultEntry = () => {
   return useMutation({
     mutationFn: async (entry: Partial<VaultEntry>) => {
       const { data, error } = await supabase
-        .from('fets_vault')
+        .from("fets_vault")
         .insert([entry])
         .select()
         .single();
@@ -54,11 +54,13 @@ export const useCreateVaultEntry = () => {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['vault-entries', variables.user_id] });
-      toast.success('Asset secured in vault! 🔐');
+      queryClient.invalidateQueries({
+        queryKey: ["vault-entries", variables.user_id],
+      });
+      toast.success("Asset secured in vault! 🔐");
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to secure asset');
+      toast.error(error.message || "Failed to secure asset");
     },
   });
 };
@@ -68,17 +70,14 @@ export const useDeleteVaultEntry = (userId?: string) => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('fets_vault')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from("fets_vault").delete().eq("id", id);
 
       if (error) throw error;
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vault-entries', userId] });
-      toast.success('Asset removed from vault');
+      queryClient.invalidateQueries({ queryKey: ["vault-entries", userId] });
+      toast.success("Asset removed from vault");
     },
   });
 };

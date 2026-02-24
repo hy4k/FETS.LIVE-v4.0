@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface DayCellProps {
   date: Date;
@@ -11,47 +11,47 @@ const DayCell: React.FC<DayCellProps> = ({
   date,
   staff,
   dayData,
-  onCellClick
+  onCellClick,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Map shift codes to the new color system
   const getStatusColor = (shiftCode: string) => {
     switch (shiftCode?.toUpperCase()) {
-      case 'D':
-      case 'HD':
-      case 'OT':
-        return 'bg-green-500'; // Working
-      case 'RD':
-      case 'TOIL':
-        return 'bg-yellow-500'; // Off
-      case 'L':
-        return 'bg-red-500'; // Leave
-      case 'TRAINING':
-        return 'bg-blue-500'; // Training
+      case "D":
+      case "HD":
+      case "OT":
+        return "bg-green-500"; // Working
+      case "RD":
+      case "TOIL":
+        return "bg-yellow-500"; // Off
+      case "L":
+        return "bg-red-500"; // Leave
+      case "TRAINING":
+        return "bg-blue-500"; // Training
       default:
-        return 'bg-gray-200'; // No schedule
+        return "bg-gray-200"; // No schedule
     }
   };
 
   const getStatusName = (shiftCode: string) => {
     switch (shiftCode?.toUpperCase()) {
-      case 'D':
-        return 'Day Shift';
-      case 'HD':
-        return 'Half Day';
-      case 'OT':
-        return 'Overtime';
-      case 'RD':
-        return 'Rest Day';
-      case 'TOIL':
-        return 'Time Off';
-      case 'L':
-        return 'Leave';
-      case 'TRAINING':
-        return 'Training';
+      case "D":
+        return "Day Shift";
+      case "HD":
+        return "Half Day";
+      case "OT":
+        return "Overtime";
+      case "RD":
+        return "Rest Day";
+      case "TOIL":
+        return "Time Off";
+      case "L":
+        return "Leave";
+      case "TRAINING":
+        return "Training";
       default:
-        return 'No Schedule';
+        return "No Schedule";
     }
   };
 
@@ -67,51 +67,45 @@ const DayCell: React.FC<DayCellProps> = ({
   const statusName = getStatusName(dayData.shift_code);
 
   return (
-    <div 
-      className={`day-cell ${
-        isWeekend ? 'weekend' : ''
-      } ${
-        isToday ? 'today' : ''
+    <div
+      className={`day-cell ${isWeekend ? "weekend" : ""} ${
+        isToday ? "today" : ""
       } ${statusColorClass}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCellClick}
-      title={`${staff.full_name} - ${date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'short', 
-        day: 'numeric' 
-      })} - ${statusName}${dayData.overtime_hours ? ` (+${dayData.overtime_hours}h OT)` : ''}`}
+      title={`${staff.full_name} - ${date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      })} - ${statusName}${
+        dayData.overtime_hours ? ` (+${dayData.overtime_hours}h OT)` : ""
+      }`}
     >
       {/* Status indicator (color block only, no text) */}
       <div className="status-block"></div>
-      
+
       {/* Warning dot for overlapping leaves */}
-      {dayData.hasWarning && (
-        <div className="warning-dot"></div>
-      )}
-      
+      {dayData.hasWarning && <div className="warning-dot"></div>}
+
       {/* Overtime indicator */}
       {dayData.overtime_hours && dayData.overtime_hours > 0 && (
         <div className="overtime-indicator"></div>
       )}
-      
+
       {/* Hover tooltip */}
       {isHovered && (
         <div className="hover-tooltip">
           <div className="tooltip-date">
-            {date.toLocaleDateString('en-US', { 
-              weekday: 'short', 
-              month: 'short', 
-              day: 'numeric' 
+            {date.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
             })}
           </div>
-          <div className="tooltip-status">
-            {statusName}
-          </div>
+          <div className="tooltip-status">{statusName}</div>
           {dayData.overtime_hours && (
-            <div className="tooltip-hours">
-              +{dayData.overtime_hours}h OT
-            </div>
+            <div className="tooltip-hours">+{dayData.overtime_hours}h OT</div>
           )}
         </div>
       )}

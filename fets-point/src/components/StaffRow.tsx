@@ -1,5 +1,5 @@
-import React from 'react';
-import DayCell from './DayCell';
+import React from "react";
+import DayCell from "./DayCell";
 
 interface StaffRowProps {
   staff: any;
@@ -14,20 +14,20 @@ const StaffRow: React.FC<StaffRowProps> = ({
   weekDays,
   weekData,
   onCellClick,
-  getCurrentUserStaffProfile
+  getCurrentUserStaffProfile,
 }) => {
   const currentStaffProfile = getCurrentUserStaffProfile();
   const isMyRow = currentStaffProfile?.id === staff.id;
 
   const handleStaffNameClick = () => {
     // TODO: Open bulk operations modal
-    console.log('Opening bulk operations for:', staff.full_name);
+    console.log("Opening bulk operations for:", staff.full_name);
   };
 
   return (
-    <div className={`staff-row ${isMyRow ? 'my-row' : ''}`}>
+    <div className={`staff-row ${isMyRow ? "my-row" : ""}`}>
       {/* Staff name */}
-      <div 
+      <div
         className="staff-name"
         onClick={handleStaffNameClick}
         title="Click to open bulk operations"
@@ -37,13 +37,13 @@ const StaffRow: React.FC<StaffRowProps> = ({
           <div className="staff-department">{staff.department}</div>
         </div>
       </div>
-      
+
       {/* Day cells for this staff member */}
       <div className="day-cells">
-        {weekDays.map(date => {
-          const dateKey = date.toISOString().split('T')[0];
+        {weekDays.map((date) => {
+          const dateKey = date.toISOString().split("T")[0];
           const dayData = weekData[dateKey] || {};
-          
+
           return (
             <DayCell
               key={dateKey}

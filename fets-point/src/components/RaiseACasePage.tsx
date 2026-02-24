@@ -1,5 +1,5 @@
-import React from 'react'
-import IncidentManager from './IncidentManager'
+import React from "react";
+import IncidentManager from "./IncidentManager";
 
 /**
  * RaiseACasePage - Minimal wrapper for the redesigned Raise A Case feature.
@@ -11,7 +11,7 @@ export function RaiseACasePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 font-['Montserrat']">
       <IncidentManager />
     </div>
-  )
+  );
 }
 
-export default RaiseACasePage
+export default RaiseACasePage;

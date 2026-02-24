@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { AuthContext } from './AuthContextValue';
-import { canEditRoster as checkRosterEditPermission } from '../utils/authUtils';
+import React, { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
+import { AuthContext } from "./AuthContextValue";
+import { canEditRoster as checkRosterEditPermission } from "../utils/authUtils";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -12,24 +12,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Load user profile function
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log('🔄 Loading user profile for:', userId);
+      console.log("🔄 Loading user profile for:", userId);
       // CRITICAL FIX: Load from staff_profiles instead of profiles
       // This ensures profile.id matches the foreign key constraints in posts, comments, etc.
       const { data: profileData, error: profileError } = await supabase
-        .from('staff_profiles')
-        .select('*')
-        .eq('user_id', userId)
+        .from("staff_profiles")
+        .select("*")
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (profileError) {
-        console.error('❌ Error loading profile:', profileError.message);
+        console.error("❌ Error loading profile:", profileError.message);
         setProfile(null);
       } else {
-        console.log('✅ Profile loaded:', profileData ? 'Found' : 'Not found');
+        console.log("✅ Profile loaded:", profileData ? "Found" : "Not found");
         setProfile(profileData);
       }
     } catch (error: any) {
-      console.error('❌ Exception loading profile:', error.message);
+      console.error("❌ Exception loading profile:", error.message);
       setProfile(null);
     }
   };
@@ -40,26 +40,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function loadUser() {
       try {
-        console.log('🔄 Loading initial user session...');
-        const { data: { user }, error } = await supabase.auth.getUser();
+        console.log("🔄 Loading initial user session...");
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
         if (!mounted) return;
 
         if (error) {
-          console.error('❌ Error loading user:', error.message);
+          console.error("❌ Error loading user:", error.message);
           setUser(null);
           setProfile(null);
           return;
         }
 
-        console.log('✅ User loaded:', user ? 'Authenticated' : 'Not authenticated');
+        console.log(
+          "✅ User loaded:",
+          user ? "Authenticated" : "Not authenticated"
+        );
         setUser(user);
 
         if (user) {
           await loadUserProfile(user.id);
         }
       } catch (error: any) {
-        console.error('❌ Exception loading user:', error.message);
+        console.error("❌ Exception loading user:", error.message);
         if (mounted) {
           setUser(null);
           setProfile(null);
@@ -74,24 +80,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
 
     // Set up auth listener - CRITICAL: No async operations in callback
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
 
-        console.log('🔄 Auth state changed:', event);
+      console.log("🔄 Auth state changed:", event);
 
-        // Update user state immediately
-        const newUser = session?.user || null;
-        setUser(newUser);
+      // Update user state immediately
+      const newUser = session?.user || null;
+      setUser(newUser);
 
-        // Handle profile loading separately
-        if (newUser) {
-          loadUserProfile(newUser.id);
-        } else {
-          setProfile(null);
-        }
+      // Handle profile loading separately
+      if (newUser) {
+        loadUserProfile(newUser.id);
+      } else {
+        setProfile(null);
       }
-    );
+    });
 
     return () => {
       mounted = false;
@@ -101,25 +107,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signIn(email: string, password: string) {
     try {
-      console.log('🔄 Attempting sign in for:', email);
-      const result = await supabase.auth.signInWithPassword({ email, password });
+      console.log("🔄 Attempting sign in for:", email);
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (result.error) {
-        console.error('❌ Sign in error:', result.error.message);
+        console.error("❌ Sign in error:", result.error.message);
       } else {
-        console.log('✅ Sign in successful');
+        console.log("✅ Sign in successful");
       }
 
       return result;
     } catch (error: any) {
-      console.error('❌ Sign in exception:', error.message);
+      console.error("❌ Sign in exception:", error.message);
       return { error };
     }
   }
 
   async function signOut() {
     try {
-      console.log('🔄 Signing out...');
+      console.log("🔄 Signing out...");
 
       // Clear state immediately
       setUser(null);
@@ -129,14 +138,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await supabase.auth.signOut();
 
       if (result.error) {
-        console.error('❌ Sign out error:', result.error.message);
+        console.error("❌ Sign out error:", result.error.message);
       } else {
-        console.log('✅ Sign out successful');
+        console.log("✅ Sign out successful");
       }
 
       return result;
     } catch (error: any) {
-      console.error('❌ Sign out exception:', error.message);
+      console.error("❌ Sign out exception:", error.message);
       return { error };
     }
   }
@@ -145,23 +154,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!profile) return false;
 
     // Super admins have all permissions by default
-    if (profile.role === 'super_admin') return true;
+    if (profile.role === "super_admin") return true;
 
     // These specific permissions are still restricted and must be explicitly granted
-    const restrictedPermissions = ['user_management_edit'];
+    const restrictedPermissions = ["user_management_edit"];
 
-    if (permission === 'can_edit_roster') {
+    if (permission === "can_edit_roster") {
       if (checkRosterEditPermission(profile.email, profile.role)) return true;
-      const permissions = typeof profile.permissions === 'object' && profile.permissions !== null
-        ? (profile.permissions as Record<string, boolean>)
-        : {};
-      return !!(permissions['can_edit_roster'] || permissions['roster_edit']);
+      const permissions =
+        typeof profile.permissions === "object" && profile.permissions !== null
+          ? (profile.permissions as Record<string, boolean>)
+          : {};
+      return !!(permissions["can_edit_roster"] || permissions["roster_edit"]);
     }
 
     if (restrictedPermissions.includes(permission)) {
-      const permissions = typeof profile.permissions === 'object' && profile.permissions !== null
-        ? (profile.permissions as Record<string, boolean>)
-        : {};
+      const permissions =
+        typeof profile.permissions === "object" && profile.permissions !== null
+          ? (profile.permissions as Record<string, boolean>)
+          : {};
       return !!permissions[permission];
     }
 
@@ -171,7 +182,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, profile, hasPermission }}>
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signOut, profile, hasPermission }}
+    >
       {children}
     </AuthContext.Provider>
   );

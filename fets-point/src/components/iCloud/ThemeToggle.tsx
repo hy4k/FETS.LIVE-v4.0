@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion'
-import { Sun, Moon } from 'lucide-react'
+import { motion } from "framer-motion";
+import { Sun, Moon } from "lucide-react";
 
 interface ThemeToggleProps {
-  isDark: boolean
-  onToggle: () => void
+  isDark: boolean;
+  onToggle: () => void;
 }
 
 export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
@@ -24,7 +24,7 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
           transition={{
             type: "spring",
             stiffness: 500,
-            damping: 30
+            damping: 30,
           }}
         >
           <motion.div
@@ -39,5 +39,5 @@ export function ThemeToggle({ isDark, onToggle }: ThemeToggleProps) {
         </motion.div>
       </div>
     </motion.button>
-  )
+  );
 }

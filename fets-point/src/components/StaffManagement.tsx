@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   Search,
@@ -13,123 +13,136 @@ import {
   Building,
   UserCheck,
   Trash2,
-  AlertTriangle
-} from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
-import { useBranch } from '../hooks/useBranch'
-import { toast } from 'react-hot-toast'
-import { useStaff, useStaffMutations } from '../hooks/useStaffManagement'
-import { ProfilePictureUpload } from './ProfilePictureUpload'
-import { Database } from '../types/database.types'
-type StaffProfile = Database['public']['Tables']['staff_profiles']['Row']
+  AlertTriangle,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { useBranch } from "../hooks/useBranch";
+import { toast } from "react-hot-toast";
+import { useStaff, useStaffMutations } from "../hooks/useStaffManagement";
+import { ProfilePictureUpload } from "./ProfilePictureUpload";
+import { Database } from "../types/database.types";
+type StaffProfile = Database["public"]["Tables"]["staff_profiles"]["Row"];
 
 interface BaseCentreBadgeProps {
-  centre: string | null
-  size?: 'sm' | 'md'
+  centre: string | null;
+  size?: "sm" | "md";
 }
 
-function BaseCentreBadge({ centre, size = 'sm' }: BaseCentreBadgeProps) {
+function BaseCentreBadge({ centre, size = "sm" }: BaseCentreBadgeProps) {
   if (!centre) {
     return (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
         <Shield className="w-3 h-3 mr-1" />
         Global Access
       </span>
-    )
+    );
   }
 
-  const configMap: Record<string, { bg: string; text: string; border: string; name: string }> = {
+  const configMap: Record<
+    string,
+    { bg: string; text: string; border: string; name: string }
+  > = {
     calicut: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-800',
-      border: 'border-yellow-200',
-      name: 'Calicut'
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      border: "border-yellow-200",
+      name: "Calicut",
     },
     cochin: {
-      bg: 'bg-green-100',
-      text: 'text-green-800',
-      border: 'border-green-200',
-      name: 'Cochin'
+      bg: "bg-green-100",
+      text: "text-green-800",
+      border: "border-green-200",
+      name: "Cochin",
     },
     irinjalakuda: {
-      bg: 'bg-blue-100',
-      text: 'text-blue-800',
-      border: 'border-blue-200',
-      name: 'Irinjalakuda'
+      bg: "bg-blue-100",
+      text: "text-blue-800",
+      border: "border-blue-200",
+      name: "Irinjalakuda",
     },
     kodungallur: {
-      bg: 'bg-purple-100',
-      text: 'text-purple-800',
-      border: 'border-purple-200',
-      name: 'Kodungallur'
-    }
-  }
+      bg: "bg-purple-100",
+      text: "text-purple-800",
+      border: "border-purple-200",
+      name: "Kodungallur",
+    },
+  };
 
   const config = configMap[centre] || {
-    bg: 'bg-gray-100',
-    text: 'text-gray-800',
-    border: 'border-gray-200',
-    name: centre || 'Unknown'
-  }
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-200",
+    name: centre || "Unknown",
+  };
 
   return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text} ${config.border} border`}>
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text} ${config.border} border`}
+    >
       <MapPin className="w-3 h-3 mr-1" />
       {config.name}
     </span>
-  )
+  );
 }
 
 interface EditStaffModalProps {
-  staff: StaffProfile | null
-  isOpen: boolean
-  onClose: () => void
-  onSave: (updatedStaff: Partial<StaffProfile>) => void
-  onDelete: (staffId: string) => void
-  isSuperAdmin: boolean
+  staff: StaffProfile | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedStaff: Partial<StaffProfile>) => void;
+  onDelete: (staffId: string) => void;
+  isSuperAdmin: boolean;
 }
 
 interface DeleteConfirmationModalProps {
-  staff: StaffProfile
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
+  staff: StaffProfile;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
-function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteConfirmationModalProps) {
-  const [nameInput, setNameInput] = useState('')
-  const [error, setError] = useState('')
-  const [deleting, setDeleting] = useState(false)
+function DeleteConfirmationModal({
+  staff,
+  isOpen,
+  onClose,
+  onConfirm,
+}: DeleteConfirmationModalProps) {
+  const [nameInput, setNameInput] = useState("");
+  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const handleConfirm = async () => {
     if (nameInput.trim() !== staff.full_name) {
-      setError('Entered name does not match. Please try again.')
-      return
+      setError("Entered name does not match. Please try again.");
+      return;
     }
 
-    setDeleting(true)
+    setDeleting(true);
     try {
-      await onConfirm()
-      onClose()
+      await onConfirm();
+      onClose();
     } catch (error) {
-      setError('Failed to delete staff member')
+      setError("Failed to delete staff member");
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (isOpen) {
-      setNameInput('')
-      setError('')
+      setNameInput("");
+      setError("");
     }
-  }, [isOpen])
+  }, [isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -143,8 +156,12 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-red-900">Delete Staff Member</h3>
-                <p className="text-sm text-red-700">This action cannot be undone</p>
+                <h3 className="text-lg font-bold text-red-900">
+                  Delete Staff Member
+                </h3>
+                <p className="text-sm text-red-700">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
           </div>
@@ -155,7 +172,9 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
                 Are you sure you want to permanently delete this staff member?
               </p>
               <p className="text-xs text-amber-700">
-                This will remove them from all active staff lists, user login/permissions, and future assignments. Historical data will remain intact.
+                This will remove them from all active staff lists, user
+                login/permissions, and future assignments. Historical data will
+                remain intact.
               </p>
             </div>
 
@@ -170,12 +189,13 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
                 type="text"
                 value={nameInput}
                 onChange={(e) => {
-                  setNameInput(e.target.value)
-                  setError('')
+                  setNameInput(e.target.value);
+                  setError("");
                 }}
                 placeholder="Enter staff name to confirm"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 ${error ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 ${
+                  error ? "border-red-300 bg-red-50" : "border-gray-300"
+                }`}
               />
               {error && (
                 <p className="text-sm text-red-600 mt-2 flex items-center space-x-1">
@@ -211,13 +231,20 @@ function DeleteConfirmationModal({ staff, isOpen, onClose, onConfirm }: DeleteCo
         </motion.div>
       </div>
     </>
-  )
+  );
 }
 
-function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin }: EditStaffModalProps) {
-  const [formData, setFormData] = useState<Partial<StaffProfile>>({})
-  const [saving, setSaving] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
+function EditStaffModal({
+  staff,
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  isSuperAdmin,
+}: EditStaffModalProps) {
+  const [formData, setFormData] = useState<Partial<StaffProfile>>({});
+  const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (staff) {
@@ -225,43 +252,48 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
         full_name: staff.full_name,
         role: staff.role,
         department: staff.department,
-        branch_assigned: staff.branch_assigned
-      })
+        branch_assigned: staff.branch_assigned,
+      });
     }
-  }, [staff])
+  }, [staff]);
 
   const handleSave = async () => {
-    if (!staff) return
+    if (!staff) return;
 
-    setSaving(true)
+    setSaving(true);
     try {
-      await onSave(formData)
-      onClose()
-      toast.success('Staff member updated successfully')
+      await onSave(formData);
+      onClose();
+      toast.success("Staff member updated successfully");
     } catch (error) {
-      toast.error('Failed to update staff member')
+      toast.error("Failed to update staff member");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!staff) return
+    if (!staff) return;
 
     try {
-      await onDelete(staff.id)
-      toast.success(`Staff member ${staff.full_name} has been successfully deleted`)
-      onClose()
+      await onDelete(staff.id);
+      toast.success(
+        `Staff member ${staff.full_name} has been successfully deleted`
+      );
+      onClose();
     } catch (error) {
-      toast.error('Failed to delete staff member')
+      toast.error("Failed to delete staff member");
     }
-  }
+  };
 
-  if (!isOpen || !staff) return null
+  if (!isOpen || !staff) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -271,7 +303,9 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
         >
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">Edit Staff Member</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                Edit Staff Member
+              </h3>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -288,8 +322,10 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </label>
               <input
                 type="text"
-                value={formData.full_name || ''}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                value={formData.full_name || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, full_name: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -300,8 +336,10 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </label>
               <input
                 type="text"
-                value={formData.role || ''}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                value={formData.role || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -312,8 +350,10 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
               </label>
               <input
                 type="text"
-                value={formData.department || ''}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                value={formData.department || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, department: e.target.value })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -323,11 +363,16 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
                 Base Centre
               </label>
               <select
-                value={formData.branch_assigned || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  branch_assigned: e.target.value as 'calicut' | 'cochin' | null
-                })}
+                value={formData.branch_assigned || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    branch_assigned: e.target.value as
+                      | "calicut"
+                      | "cochin"
+                      | null,
+                  })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select Base Centre</option>
@@ -384,58 +429,61 @@ function EditStaffModal({ staff, isOpen, onClose, onSave, onDelete, isSuperAdmin
         </motion.div>
       </div>
     </>
-  )
+  );
 }
 
 interface AddStaffModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: (newStaff: Omit<StaffProfile, 'id' | 'created_at'>) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: (newStaff: Omit<StaffProfile, "id" | "created_at">) => void;
 }
 
 function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffModalProps) {
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    role: 'staff',
-    department: 'Operations',
-    branch_assigned: 'calicut' as 'calicut' | 'cochin' | null,
-  })
-  const [saving, setSaving] = useState(false)
+    full_name: "",
+    email: "",
+    password: "",
+    role: "staff",
+    department: "Operations",
+    branch_assigned: "calicut" as "calicut" | "cochin" | null,
+  });
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     if (!formData.full_name || !formData.email || !formData.password) {
-      toast.error('Full Name, Email, and Password are required.')
-      return
+      toast.error("Full Name, Email, and Password are required.");
+      return;
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long.')
-      return
+      toast.error("Password must be at least 6 characters long.");
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
     try {
       const staffPayload = {
         ...formData,
         base_centre: formData.branch_assigned, // Alias for compatibility
-        branch_location: formData.branch_assigned // Alias for compatibility
-      }
-      await onSuccess(staffPayload as any)
-      onClose()
+        branch_location: formData.branch_assigned, // Alias for compatibility
+      };
+      await onSuccess(staffPayload as any);
+      onClose();
     } catch (error: any) {
       // Error toast is already handled by the mutation hook
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+        onClick={onClose}
+      />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -444,114 +492,194 @@ function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffModalProps) {
           className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
         >
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900">Add New Staff Member</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Add New Staff Member
+            </h3>
           </div>
           <div className="p-6 space-y-4">
             {/* Form fields for new staff */}
-            <input type="text" placeholder="Full Name" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
-            <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
-            <input type="password" placeholder="Set Initial Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
-            <input type="text" placeholder="Role (e.g., staff, admin)" value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
-            <input type="text" placeholder="Department" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
-            <select value={formData.branch_assigned || ''} onChange={(e) => setFormData({ ...formData, branch_assigned: e.target.value as 'calicut' | 'cochin' | null })} className="w-full px-4 py-3 border border-gray-300 rounded-xl">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={formData.full_name}
+              onChange={(e) =>
+                setFormData({ ...formData, full_name: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            />
+            <input
+              type="password"
+              placeholder="Set Initial Password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            />
+            <input
+              type="text"
+              placeholder="Role (e.g., staff, admin)"
+              value={formData.role}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            />
+            <input
+              type="text"
+              placeholder="Department"
+              value={formData.department}
+              onChange={(e) =>
+                setFormData({ ...formData, department: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            />
+            <select
+              value={formData.branch_assigned || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  branch_assigned: e.target.value as
+                    | "calicut"
+                    | "cochin"
+                    | null,
+                })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+            >
               <option value="calicut">Calicut Centre</option>
               <option value="cochin">Cochin Centre</option>
               <option value="">Global Access</option>
             </select>
           </div>
           <div className="p-6 border-t border-gray-200 flex space-x-3">
-            <button onClick={onClose} className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 font-medium">Cancel</button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium disabled:opacity-50">
-              {saving ? 'Saving...' : 'Add Staff'}
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Add Staff"}
             </button>
           </div>
         </motion.div>
       </div>
     </>
-  )
+  );
 }
 
 export function StaffManagement() {
-  const { activeBranch, userAccessLevel } = useBranch()
-  const { data: staff = [], isLoading, isError, error } = useStaff()
-  const { addStaff, updateStaff, deleteStaff, isAdding, isUpdating, isDeleting } = useStaffMutations()
+  const { activeBranch, userAccessLevel } = useBranch();
+  const { data: staff = [], isLoading, isError, error } = useStaff();
+  const {
+    addStaff,
+    updateStaff,
+    deleteStaff,
+    isAdding,
+    isUpdating,
+    isDeleting,
+  } = useStaffMutations();
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCentre, setSelectedCentre] = useState<string>('all')
-  const [editingStaff, setEditingStaff] = useState<StaffProfile | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCentre, setSelectedCentre] = useState<string>("all");
+  const [editingStaff, setEditingStaff] = useState<StaffProfile | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     if (isError) {
-      toast.error(`Failed to load staff: ${error.message}`)
+      toast.error(`Failed to load staff: ${error.message}`);
     }
-  }, [isError, error])
+  }, [isError, error]);
 
   const filteredStaff = useMemo(() => {
     return staff
-      .filter(s => {
-        if (!searchTerm) return true
-        const lowerSearch = searchTerm.toLowerCase()
+      .filter((s) => {
+        if (!searchTerm) return true;
+        const lowerSearch = searchTerm.toLowerCase();
         return (
           s.full_name.toLowerCase().includes(lowerSearch) ||
           s.role.toLowerCase().includes(lowerSearch) ||
           s.department.toLowerCase().includes(lowerSearch)
-        )
+        );
       })
-      .filter(s => {
-        if (selectedCentre === 'all') return true
-        if (selectedCentre === 'global') return !s.branch_assigned
-        return s.branch_assigned === selectedCentre
+      .filter((s) => {
+        if (selectedCentre === "all") return true;
+        if (selectedCentre === "global") return !s.branch_assigned;
+        return s.branch_assigned === selectedCentre;
       })
-      .filter(s => {
-        if (userAccessLevel === 'admin' && activeBranch !== 'global') {
-          return s.branch_assigned === activeBranch || s.role === 'super_admin'
+      .filter((s) => {
+        if (userAccessLevel === "admin" && activeBranch !== "global") {
+          return s.branch_assigned === activeBranch || s.role === "super_admin";
         }
-        return true
-      })
-  }, [staff, searchTerm, selectedCentre, activeBranch, userAccessLevel])
+        return true;
+      });
+  }, [staff, searchTerm, selectedCentre, activeBranch, userAccessLevel]);
 
   const handleEditStaff = (staffMember: StaffProfile) => {
-    setEditingStaff(staffMember)
-    setShowEditModal(true)
-  }
+    setEditingStaff(staffMember);
+    setShowEditModal(true);
+  };
 
-  const handleSaveStaff = async (updatedData: Partial<Omit<StaffProfile, 'id'>>) => {
-    if (!editingStaff) return
-    await updateStaff({ id: editingStaff.id, ...updatedData })
-    setShowEditModal(false)
-    setEditingStaff(null)
-  }
+  const handleSaveStaff = async (
+    updatedData: Partial<Omit<StaffProfile, "id">>
+  ) => {
+    if (!editingStaff) return;
+    await updateStaff({ id: editingStaff.id, ...updatedData });
+    setShowEditModal(false);
+    setEditingStaff(null);
+  };
 
   const handleDeleteStaff = async (staffId: string) => {
-    await deleteStaff(staffId)
-    setShowEditModal(false)
-    setEditingStaff(null)
-  }
+    await deleteStaff(staffId);
+    setShowEditModal(false);
+    setEditingStaff(null);
+  };
 
-  const handleAddStaff = async (newStaffData: Omit<StaffProfile, 'id' | 'created_at'> & { password?: string }) => {
-    await addStaff(newStaffData as any)
-    setShowAddModal(false)
-  }
+  const handleAddStaff = async (
+    newStaffData: Omit<StaffProfile, "id" | "created_at"> & {
+      password?: string;
+    }
+  ) => {
+    await addStaff(newStaffData as any);
+    setShowAddModal(false);
+  };
 
   const getStaffStats = () => {
-    const total = filteredStaff.length
-    const calicut = filteredStaff.filter(s => s.branch_assigned === 'calicut').length
-    const cochin = filteredStaff.filter(s => s.branch_assigned === 'cochin').length
-    const global = filteredStaff.filter(s => !s.branch_assigned).length
+    const total = filteredStaff.length;
+    const calicut = filteredStaff.filter(
+      (s) => s.branch_assigned === "calicut"
+    ).length;
+    const cochin = filteredStaff.filter(
+      (s) => s.branch_assigned === "cochin"
+    ).length;
+    const global = filteredStaff.filter((s) => !s.branch_assigned).length;
 
-    return { total, calicut, cochin, global }
-  }
+    return { total, calicut, cochin, global };
+  };
 
-  const stats = getStaffStats()
+  const stats = getStaffStats();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
-    )
+    );
   }
 
   return (
@@ -559,8 +687,12 @@ export function StaffManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">Staff Directory</h1>
-          <p className="text-gray-600 mt-1">Manage staff assignments and base centre allocations</p>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase text-gold-gradient">
+            Staff Directory
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage staff assignments and base centre allocations
+          </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -651,11 +783,21 @@ export function StaffManagement() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Staff Member</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Role</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Department</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Base Centre</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Actions</th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                  Staff Member
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                  Role
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                  Department
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                  Base Centre
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -672,29 +814,39 @@ export function StaffManagement() {
                         currentAvatarUrl={staffMember.avatar_url}
                         staffId={staffMember.id}
                         staffName={staffMember.full_name}
-                        onAvatarUpdate={(avatar_url) => updateStaff({ id: staffMember.id, avatar_url })}
+                        onAvatarUpdate={(avatar_url) =>
+                          updateStaff({ id: staffMember.id, avatar_url })
+                        }
                         size="sm"
                       />
                       <div>
-                        <p className="font-medium text-gray-900">{staffMember.full_name}</p>
+                        <p className="font-medium text-gray-900">
+                          {staffMember.full_name}
+                        </p>
                         <p className="text-sm text-gray-500">
-                          {staffMember.email || 'No email'}
+                          {staffMember.email || "No email"}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{staffMember.role}</span>
+                    <span className="text-sm text-gray-900">
+                      {staffMember.role}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{staffMember.department}</span>
+                    <span className="text-sm text-gray-900">
+                      {staffMember.department}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <BaseCentreBadge centre={staffMember.branch_assigned} />
                   </td>
                   <td className="px-6 py-4">
                     {/* All staff now have access to features same like super admin/admin within their branch */}
-                    {staffMember.branch_assigned === activeBranch || activeBranch === 'global' || userAccessLevel === 'super_admin' ? (
+                    {staffMember.branch_assigned === activeBranch ||
+                    activeBranch === "global" ||
+                    userAccessLevel === "super_admin" ? (
                       <button
                         onClick={() => handleEditStaff(staffMember)}
                         className="inline-flex items-center space-x-2 px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
@@ -714,8 +866,12 @@ export function StaffManagement() {
           {filteredStaff.length === 0 && (
             <div className="p-12 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No staff found</h3>
-              <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No staff found
+              </h3>
+              <p className="text-gray-500">
+                Try adjusting your search or filter criteria.
+              </p>
             </div>
           )}
         </div>
@@ -725,12 +881,12 @@ export function StaffManagement() {
       <AnimatePresence>
         {showEditModal && (
           <EditStaffModal
-            isSuperAdmin={userAccessLevel === 'super_admin'}
+            isSuperAdmin={userAccessLevel === "super_admin"}
             staff={editingStaff}
             isOpen={showEditModal}
             onClose={() => {
-              setShowEditModal(false)
-              setEditingStaff(null)
+              setShowEditModal(false);
+              setEditingStaff(null);
             }}
             onSave={handleSaveStaff}
             onDelete={handleDeleteStaff}
@@ -745,6 +901,6 @@ export function StaffManagement() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
-export default StaffManagement
+export default StaffManagement;

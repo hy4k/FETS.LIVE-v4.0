@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import ConversationList from './ConversationList';
-import UserList from './UserList';
-import Conversation from './Conversation';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
-import { Conversation as ConversationType } from '../../types';
+import React, { useState } from "react";
+import ConversationList from "./ConversationList";
+import UserList from "./UserList";
+import Conversation from "./Conversation";
+import { usePushNotifications } from "../../hooks/usePushNotifications";
+import { Conversation as ConversationType } from "../../types";
 
 const Chat: React.FC = () => {
-  const [selectedConversation, setSelectedConversation] = useState<ConversationType | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<ConversationType | null>(null);
   const { subscribe } = usePushNotifications();
 
   return (
@@ -20,7 +21,9 @@ const Chat: React.FC = () => {
           <Conversation conversation={selectedConversation} />
         ) : (
           <div className="flex-1 p-4 flex items-center justify-center">
-            <h2 className="text-lg font-bold mb-4">Select a conversation to start chatting</h2>
+            <h2 className="text-lg font-bold mb-4">
+              Select a conversation to start chatting
+            </h2>
           </div>
         )}
       </div>

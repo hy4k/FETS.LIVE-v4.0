@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Calendar, Users, Clock, CheckCircle, AlertTriangle, 
   ChevronLeft, ChevronRight, Plus, Upload, Search, 
   FileText, X, Cpu, LayoutDashboard, UserCheck, 
   ShieldCheck, AlertCircle, Info, Download, Filter,
-  Briefcase, MapPin, ArrowUpRight, Activity, Zap
+  Briefcase, MapPin, ArrowUpRight, Activity, Zap,
+  Edit, Trash2, UserPlus, Save
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useBranch } from '../hooks/useBranch'
@@ -50,7 +51,38 @@ function DailyOpsView({
 }) {
   const [search, setSearch] = useState('')
   const [filterClient, setFilterClient] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [editingCandidate, setEditingCandidate] = useState<any>(null)
   const queryClient = useQueryClient()
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['ops-candidates'] })
+    queryClient.invalidateQueries({ queryKey: ['ops-sessions'] })
+    queryClient.invalidateQueries({ queryKey: ['calendar-sessions-month'] })
+    queryClient.invalidateQueries({ queryKey: ['clients-sessions'] })
+  }
+
+  const deleteCandidate = async (c: any) => {
+    if (!confirm(`Delete candidate "${c.full_name}"?`)) return
+    try {
+      await supabase.from('candidates').delete().eq('id', c.id)
+      // Decrement session count
+      if (c.client_name) {
+        const { data: sess } = await supabase.from('calendar_sessions').select('id, candidate_count')
+          .eq('date', date).eq('client_name', c.client_name).eq('branch_location', branch).maybeSingle()
+        if (sess && sess.candidate_count > 1) {
+          await supabase.from('calendar_sessions').update({ candidate_count: sess.candidate_count - 1 }).eq('id', sess.id)
+        } else if (sess) {
+          await supabase.from('calendar_sessions').delete().eq('id', sess.id)
+        }
+      }
+      if (selCandidate?.id === c.id) onSelectCandidate(null)
+      toast.success('Candidate deleted')
+      refreshAll()
+    } catch (err: any) {
+      toast.error('Delete failed: ' + err.message)
+    }
+  }
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['ops-sessions', branch, date],
@@ -187,8 +219,12 @@ function DailyOpsView({
           </button>
         </div>
 
-        {/* Live Stats */}
+        {/* Live Stats + Add Button */}
         <div className="flex items-center gap-4">
+          <button onClick={() => { setEditingCandidate(null); setShowAddModal(true) }}
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white rounded-2xl shadow-lg shadow-amber-200/40 hover:shadow-xl active:scale-[0.97] transition-all text-xs font-black uppercase tracking-wider">
+            <UserPlus size={16} /> Add Candidate
+          </button>
           {[
             { label: 'Sessions', value: sessions.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: Calendar },
             { label: 'Checked In', value: `${checkedIn}/${candidates.length}`, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
@@ -291,7 +327,11 @@ function DailyOpsView({
                       <span className="text-[10px] font-bold text-slate-400">{c.address || '—'}</span>
                     </div>
                   </div>
-                  {c.check_in_time && <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 px-2 py-1 rounded-lg shrink-0">CHECKED IN</span>}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {c.check_in_time && <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 px-2 py-1 rounded-lg mr-1">IN</span>}
+                    <button onClick={(e) => { e.stopPropagation(); setEditingCandidate(c); setShowAddModal(true) }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit"><Edit size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); deleteCandidate(c) }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete"><Trash2 size={14} /></button>
+                  </div>
                 </div>
               )
             })}
@@ -386,6 +426,16 @@ function DailyOpsView({
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Add/Edit Candidate Modal */}
+      <CandidateFormModal 
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditingCandidate(null) }}
+        branch={branch}
+        date={date}
+        editCandidate={editingCandidate}
+        onSaved={refreshAll}
+      />
     </div>
   )
 }
@@ -623,6 +673,8 @@ function UploadRosterView({ date, setDate, branch }: { date: string; setDate: (d
         setLastUpload({ count: uploads.length, time: new Date().toLocaleTimeString() })
         queryClient.invalidateQueries({ queryKey: ['ops-candidates'] })
         queryClient.invalidateQueries({ queryKey: ['ops-sessions'] })
+        queryClient.invalidateQueries({ queryKey: ['calendar-sessions-month'] })
+        queryClient.invalidateQueries({ queryKey: ['clients-sessions'] })
       } catch (err: any) {
         console.error(err)
         toast.error('Excel processing failed: ' + err.message)
@@ -696,6 +748,384 @@ function UploadRosterView({ date, setDate, branch }: { date: string; setDate: (d
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════
+// ─── CALENDAR VIEW (Monthly Grid with Session Counts) ───
+// ═══════════════════════════════════════════════════════════════
+
+function CalendarView({ branch, onDateSelect }: { branch: string; onDateSelect: (d: string) => void }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const year = currentMonth.getFullYear()
+  const month = currentMonth.getMonth()
+
+  const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const endDay = new Date(year, month + 1, 0).getDate()
+  const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${endDay}`
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['calendar-sessions-month', branch, startStr, endStr],
+    queryFn: async () => {
+      let q = supabase.from('calendar_sessions').select('*').gte('date', startStr).lte('date', endStr).order('date')
+      if (branch !== 'global') q = q.eq('branch_location', branch)
+      const { data } = await q
+      return data || []
+    }
+  })
+
+  // Group sessions by date
+  const sessionsByDate = useMemo(() => {
+    const map: Record<string, any[]> = {}
+    sessions.forEach((s: any) => {
+      if (!map[s.date]) map[s.date] = []
+      map[s.date].push(s)
+    })
+    return map
+  }, [sessions])
+
+  // Build calendar grid
+  const firstDayOfWeek = new Date(year, month, 1).getDay() // 0=Sun
+  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1  // Mon=0
+  const totalCells = startOffset + endDay
+  const rows = Math.ceil(totalCells / 7)
+  const today = TODAY()
+
+  const changeMonth = (dir: number) => {
+    const d = new Date(currentMonth)
+    d.setMonth(d.getMonth() + dir)
+    setCurrentMonth(d)
+  }
+
+  const monthTotal = sessions.reduce((sum: number, s: any) => sum + (s.candidate_count || 0), 0)
+
+  return (
+    <div className="h-full flex flex-col gap-6 overflow-y-auto no-scrollbar">
+      {/* Month Nav + Stats */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => changeMonth(-1)} className="w-12 h-12 rounded-2xl bg-white shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-500 hover:text-slate-800 active:shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] transition-all border border-white/60">
+            <ChevronLeft size={20} />
+          </button>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase min-w-[220px] text-center">
+            {currentMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+          </h2>
+          <button onClick={() => changeMonth(1)} className="w-12 h-12 rounded-2xl bg-white shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-500 hover:text-slate-800 active:shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] transition-all border border-white/60">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 bg-white rounded-2xl px-5 py-3 shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-white/60">
+            <Calendar size={16} className="text-violet-500" />
+            <div>
+              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Sessions</div>
+              <div className="text-lg font-black text-violet-600 leading-none">{sessions.length}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-white rounded-2xl px-5 py-3 shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-white/60">
+            <Users size={16} className="text-emerald-500" />
+            <div>
+              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Candidates</div>
+              <div className="text-lg font-black text-emerald-600 leading-none">{monthTotal}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="bg-white rounded-3xl shadow-[8px_8px_20px_rgb(209,217,230),-8px_-8px_20px_rgba(255,255,255,0.9)] border border-white/60 overflow-hidden flex-1">
+        {/* Week Header */}
+        <div className="grid grid-cols-7 border-b border-slate-100">
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+            <div key={d} className="py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{d}</div>
+          ))}
+        </div>
+
+        {/* Day Cells */}
+        <div className="grid grid-cols-7 flex-1">
+          {Array.from({ length: rows * 7 }).map((_, idx) => {
+            const dayNum = idx - startOffset + 1
+            const isValid = dayNum >= 1 && dayNum <= endDay
+            const dateStr = isValid ? `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}` : ''
+            const daySessions = isValid ? (sessionsByDate[dateStr] || []) : []
+            const dayTotal = daySessions.reduce((sum: number, s: any) => sum + (s.candidate_count || 0), 0)
+            const isToday = dateStr === today
+            const isSunday = idx % 7 === 6
+
+            // Group by client
+            const clientGroups: Record<string, number> = {}
+            daySessions.forEach((s: any) => {
+              const client = (s.client_name || 'OTHER').toUpperCase()
+              clientGroups[client] = (clientGroups[client] || 0) + (s.candidate_count || 0)
+            })
+
+            return (
+              <div
+                key={idx}
+                onClick={() => isValid && onDateSelect(dateStr)}
+                className={`min-h-[100px] p-2 border-b border-r border-slate-50 transition-all cursor-pointer hover:bg-blue-50/30 ${
+                  !isValid ? 'bg-slate-50/30' : isToday ? 'bg-amber-50/40 ring-2 ring-inset ring-amber-300' : isSunday ? 'bg-rose-50/20' : ''
+                }`}
+              >
+                {isValid && (
+                  <>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-sm font-black ${isToday ? 'text-amber-600' : isSunday ? 'text-rose-400' : 'text-slate-700'}`}>{dayNum}</span>
+                      {dayTotal > 0 && (
+                        <span className="text-[9px] font-black text-white bg-slate-700 px-2 py-0.5 rounded-full">{dayTotal}</span>
+                      )}
+                    </div>
+                    {/* Client-wise mini bars */}
+                    <div className="space-y-1">
+                      {Object.entries(clientGroups).slice(0, 3).map(([client, count]) => {
+                        const cs = getClientStyle(client)
+                        return (
+                          <div key={client} className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cs.accent }} />
+                            <span className="text-[8px] font-bold truncate flex-1" style={{ color: cs.text }}>{client}</span>
+                            <span className="text-[8px] font-black" style={{ color: cs.text }}>{count}</span>
+                          </div>
+                        )
+                      })}
+                      {daySessions.length > 0 && (
+                        <div className="text-[8px] font-bold text-slate-400 mt-0.5">{daySessions.length} session{daySessions.length > 1 ? 's' : ''}</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── CLIENTS VIEW ───
+// ═══════════════════════════════════════════════════════════════
+
+function ClientsView({ branch }: { branch: string }) {
+  const [selectedMonth, setSelectedMonth] = useState(new Date())
+  const year = selectedMonth.getFullYear()
+  const month = selectedMonth.getMonth()
+  const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const endDay = new Date(year, month + 1, 0).getDate()
+  const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${endDay}`
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['clients-sessions', branch, startStr, endStr],
+    queryFn: async () => {
+      let q = supabase.from('calendar_sessions').select('*').gte('date', startStr).lte('date', endStr)
+      if (branch !== 'global') q = q.eq('branch_location', branch)
+      const { data } = await q
+      return data || []
+    }
+  })
+
+  // Group by client
+  const clientStats = useMemo(() => {
+    const map: Record<string, { sessions: number; candidates: number; exams: Set<string>; days: Set<string> }> = {}
+    sessions.forEach((s: any) => {
+      const client = (s.client_name || 'OTHER').toUpperCase()
+      if (!map[client]) map[client] = { sessions: 0, candidates: 0, exams: new Set(), days: new Set() }
+      map[client].sessions += 1
+      map[client].candidates += (s.candidate_count || 0)
+      if (s.exam_name) map[client].exams.add(s.exam_name)
+      if (s.date) map[client].days.add(s.date)
+    })
+    return Object.entries(map).sort((a, b) => b[1].candidates - a[1].candidates)
+  }, [sessions])
+
+  const totalCandidates = clientStats.reduce((sum, [, s]) => sum + s.candidates, 0)
+
+  return (
+    <div className="h-full flex flex-col gap-6 overflow-y-auto no-scrollbar">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">Client Overview</h2>
+        <div className="flex items-center gap-3">
+          <button onClick={() => { const d = new Date(selectedMonth); d.setMonth(d.getMonth() - 1); setSelectedMonth(d) }} className="w-10 h-10 rounded-xl bg-white shadow-[3px_3px_8px_rgb(209,217,230),-3px_-3px_8px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all border border-white/60"><ChevronLeft size={16} /></button>
+          <span className="text-sm font-black text-slate-600 min-w-[130px] text-center">{selectedMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
+          <button onClick={() => { const d = new Date(selectedMonth); d.setMonth(d.getMonth() + 1); setSelectedMonth(d) }} className="w-10 h-10 rounded-xl bg-white shadow-[3px_3px_8px_rgb(209,217,230),-3px_-3px_8px_rgba(255,255,255,0.9)] flex items-center justify-center text-slate-400 hover:text-slate-700 transition-all border border-white/60"><ChevronRight size={16} /></button>
+        </div>
+      </div>
+
+      {/* Client Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {clientStats.map(([client, stats]) => {
+          const cs = getClientStyle(client)
+          const pct = totalCandidates > 0 ? Math.round((stats.candidates / totalCandidates) * 100) : 0
+          return (
+            <motion.div key={client} whileHover={{ y: -3 }} className="bg-white rounded-2xl p-6 shadow-[4px_4px_12px_rgb(209,217,230),-4px_-4px_12px_rgba(255,255,255,0.9)] border border-white/60 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1.5 rounded-t-2xl" style={{ backgroundColor: cs.accent }} />
+              <div className="flex items-center gap-4 mb-5 mt-2">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md" style={{ backgroundColor: cs.accent }}>
+                  {client.substring(0, 2)}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: cs.text }}>{client}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stats.exams.size} exam types · {stats.days.size} active days</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="text-center p-3 rounded-xl" style={{ backgroundColor: cs.bg }}>
+                  <div className="text-xl font-black" style={{ color: cs.text }}>{stats.candidates}</div>
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Candidates</div>
+                </div>
+                <div className="text-center p-3 rounded-xl" style={{ backgroundColor: cs.bg }}>
+                  <div className="text-xl font-black" style={{ color: cs.text }}>{stats.sessions}</div>
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Sessions</div>
+                </div>
+                <div className="text-center p-3 rounded-xl" style={{ backgroundColor: cs.bg }}>
+                  <div className="text-xl font-black" style={{ color: cs.text }}>{pct}%</div>
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Share</div>
+                </div>
+              </div>
+              {/* Progress Bar */}
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }} className="h-full rounded-full" style={{ backgroundColor: cs.accent }} />
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {clientStats.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-slate-400 font-bold uppercase tracking-widest text-sm py-20">No session data for this month.</div>
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── ADD / EDIT CANDIDATE MODAL ───
+// ═══════════════════════════════════════════════════════════════
+
+function CandidateFormModal({ 
+  isOpen, onClose, branch, date, editCandidate, onSaved 
+}: { 
+  isOpen: boolean; onClose: () => void; branch: string; date: string; editCandidate?: any; onSaved: () => void 
+}) {
+  const [form, setForm] = useState({
+    full_name: '', phone: '', client_name: '', exam_name: '', address: '', confirmation_number: ''
+  })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (editCandidate) {
+      setForm({
+        full_name: editCandidate.full_name || '',
+        phone: editCandidate.phone || '',
+        client_name: editCandidate.client_name || '',
+        exam_name: editCandidate.exam_name || '',
+        address: editCandidate.address || '',
+        confirmation_number: editCandidate.confirmation_number || ''
+      })
+    } else {
+      setForm({ full_name: '', phone: '', client_name: '', exam_name: '', address: '', confirmation_number: '' })
+    }
+  }, [editCandidate, isOpen])
+
+  const handleSave = async () => {
+    if (!form.full_name || !form.client_name) return toast.error('Name and Client are required')
+    setSaving(true)
+    try {
+      const payload = {
+        ...form,
+        exam_date: `${date}T09:00:00`,
+        branch_location: branch,
+        status: 'registered'
+      }
+
+      if (editCandidate) {
+        await supabase.from('candidates').update(payload).eq('id', editCandidate.id)
+        toast.success('Candidate updated')
+      } else {
+        await supabase.from('candidates').insert(payload)
+        // Also ensure a calendar session exists
+        const { data: existingSess } = await supabase
+          .from('calendar_sessions').select('id, candidate_count')
+          .eq('date', date).eq('client_name', form.client_name)
+          .eq('branch_location', branch).maybeSingle()
+        if (existingSess) {
+          await supabase.from('calendar_sessions').update({ candidate_count: (existingSess.candidate_count || 0) + 1 }).eq('id', existingSess.id)
+        } else {
+          await supabase.from('calendar_sessions').insert({
+            date, client_name: form.client_name, exam_name: form.exam_name || 'General',
+            candidate_count: 1, branch_location: branch, start_time: '09:00:00', end_time: '17:00:00'
+          })
+        }
+        toast.success('Candidate added')
+      }
+      onSaved()
+      onClose()
+    } catch (err: any) {
+      toast.error('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  const inputCls = "w-full p-4 text-sm font-bold bg-white outline-none rounded-2xl shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] border border-white/40 placeholder:text-slate-300"
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-xl p-8 bg-white rounded-3xl shadow-2xl relative border border-slate-100">
+        <button onClick={onClose} className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"><X size={20} /></button>
+        <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase mb-1">{editCandidate ? 'Edit Candidate' : 'Add Candidate'}</h2>
+        <p className="text-xs text-slate-400 font-medium mb-6">Date: {formatDisplayDate(date)} · Branch: {(branch || '').toUpperCase()}</p>
+        
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Full Name *</label>
+              <input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className={inputCls} placeholder="John Doe" />
+            </div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Phone</label>
+              <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder="+91 ..." />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Client Name *</label>
+              <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} className={inputCls} placeholder="PROMETRIC" list="client-list" />
+              <datalist id="client-list">
+                {Object.keys(CLIENT_COLORS).map(c => <option key={c} value={c} />)}
+              </datalist>
+            </div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Exam Name</label>
+              <input value={form.exam_name} onChange={e => setForm({ ...form, exam_name: e.target.value })} className={inputCls} placeholder="CMA Part 1" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Place / Address</label>
+              <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className={inputCls} placeholder="Calicut, Kerala" />
+            </div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Confirmation #</label>
+              <input value={form.confirmation_number} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className={inputCls} placeholder="ABC123" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-8">
+          <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 transition-colors">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-amber-400 to-amber-600 shadow-lg shadow-amber-200/50 hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}
+            {editCandidate ? 'Update' : 'Add Candidate'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 // ─── MAIN EXAM OPS CENTER COMPONENT ───
 // ═══════════════════════════════════════════════════════════════
@@ -709,10 +1139,11 @@ export function ExamOpsCenter() {
 
   const NAV = [
     { id: 'ops',      label: 'Exam Day',  icon: Zap,         color: 'from-amber-400 to-amber-600',  iconColor: 'text-amber-600',  activeBg: 'bg-amber-50',  activeBorder: 'border-amber-300' },
+    { id: 'calendar', label: 'Calendar',  icon: Calendar,    color: 'from-violet-400 to-violet-600',iconColor: 'text-violet-600', activeBg: 'bg-violet-50', activeBorder: 'border-violet-300' },
+    { id: 'clients',  label: 'Clients',   icon: Briefcase,   color: 'from-cyan-400 to-cyan-600',    iconColor: 'text-cyan-600',   activeBg: 'bg-cyan-50',   activeBorder: 'border-cyan-300' },
     { id: 'upload',   label: 'Upload',    icon: Upload,      color: 'from-blue-500 to-violet-600',  iconColor: 'text-blue-600',   activeBg: 'bg-blue-50',   activeBorder: 'border-blue-300' },
     { id: 'roster',   label: 'Roster',    icon: UserCheck,   color: 'from-emerald-400 to-emerald-600', iconColor: 'text-emerald-600', activeBg: 'bg-emerald-50', activeBorder: 'border-emerald-300' },
     { id: 'cpr',      label: 'CPR',       icon: ShieldCheck, color: 'from-rose-400 to-rose-600',    iconColor: 'text-rose-600',   activeBg: 'bg-rose-50',   activeBorder: 'border-rose-300' },
-    { id: 'calendar', label: 'Calendar',  icon: Calendar,    color: 'from-violet-400 to-violet-600',iconColor: 'text-violet-600', activeBg: 'bg-violet-50', activeBorder: 'border-violet-300' },
   ]
 
   return (
@@ -779,20 +1210,17 @@ export function ExamOpsCenter() {
             >
               {view === 'ops' ? (
                 <DailyOpsView date={date} setDate={setDate} branch={branch} onSelectCandidate={setSelCand} selCandidate={selCand} />
+              ) : view === 'calendar' ? (
+                <CalendarView branch={branch} onDateSelect={(d) => { setDate(d); setView('ops') }} />
+              ) : view === 'clients' ? (
+                <ClientsView branch={branch} />
               ) : view === 'upload' ? (
                 <UploadRosterView date={date} setDate={setDate} branch={branch} />
               ) : view === 'roster' ? (
                 <RosterView date={date} setDate={setDate} branch={branch} />
               ) : view === 'cpr' ? (
                 <CPRView branch={branch} />
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center p-20 text-center bg-white/30 rounded-3xl border-2 border-dashed border-slate-200">
-                   <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 mb-6 shadow-md"><AlertCircle size={40} /></div>
-                   <h3 className="text-xl font-black text-slate-700 uppercase tracking-tight mb-2">Module Under Calibration</h3>
-                   <p className="text-sm font-medium text-slate-400 max-w-xs">This interface is being synchronized. Please check back shortly.</p>
-                   <button onClick={() => setView('ops')} className="mt-8 px-8 py-4 bg-white rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.9)] hover:bg-amber-50 hover:text-amber-700 active:shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] transition-all border border-white/60">Return to Exam Day</button>
-                </div>
-              )}
+              ) : null}
             </motion.div>
           </AnimatePresence>
         </div>

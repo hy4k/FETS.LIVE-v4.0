@@ -78,7 +78,7 @@ const queryClient = new QueryClient({
 function AppContent() {
   const { user, loading, profile } = useAuth()
   const { activeBranch, getBranchTheme } = useBranch()
-  const [activeTab, setActiveTab] = useState('exam-ops-center')
+  const [activeTab, setActiveTab] = useState('command-center')
   const isMobile = useIsMobile()
   const [isRecovering, setIsRecovering] = useState(false)
   const [aiQuery, setAiQuery] = useState<string | undefined>(undefined)
@@ -155,7 +155,7 @@ function AppContent() {
     }
 
     const routeComponents: { [key: string]: { component: JSX.Element; name: string } } = {
-      'command-center': { component: <CommandCentre onNavigate={setActiveTab} onAiQuery={(q: string) => { setAiQuery(q); setActiveTab('fets-intelligence'); }} />, name: 'Command Centre' },
+      'command-center': { component: <ExamOpsCenter />, name: 'FETS Point' },
       'access-hub': { component: <AccessHubPage />, name: 'F-Vault' },
       'dashboard': { component: <Dashboard onNavigate={setActiveTab} />, name: 'Dashboard' },
       'candidate-tracker': { component: <CandidateTracker />, name: 'Candidate Tracker' },
@@ -172,7 +172,7 @@ function AppContent() {
       'user-management': { component: <UserManagement />, name: 'User Management' },
       'profile': { component: <FetsProfilePage />, name: 'Profile' },
       'fets-omni-ai': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS AI' },
-      'exam-ops': { component: <ExamOpsCenter />, name: 'Exam Ops Center' }
+      'exam-ops': { component: <ExamOpsCenter />, name: 'FETS Point' }
     }
 
     const currentRoute = routeComponents[activeTab] || routeComponents['command-center'];

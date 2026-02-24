@@ -6,7 +6,9 @@ import {
   FileText, X, Cpu, LayoutDashboard, UserCheck, 
   ShieldCheck, AlertCircle, Info, Download, Filter,
   Briefcase, MapPin, ArrowUpRight, Activity, Zap,
-  Edit, Trash2, UserPlus, Save
+  Edit, Trash2, UserPlus, Save, Home, ExternalLink,
+  ListChecks, ChevronDown, ClipboardCheck, BarChart3,
+  Key, Link2, Globe
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useBranch } from '../hooks/useBranch'
@@ -14,6 +16,11 @@ import { useAuth } from '../hooks/useAuth'
 import { toast } from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as XLSX from 'xlsx'
+import { useDashboardStats } from '../hooks/useCommandCentre'
+import { AccessHub } from './AccessHub'
+import { ChecklistFormModal } from './checklist/ChecklistFormModal'
+import { StaffBranchSelector } from './checklist/StaffBranchSelector'
+import { ChecklistTemplate } from '../types/checklist'
 
 // ─── PREMIUM UI CONSTANTS ───
 const TODAY = () => new Date().toLocaleDateString('sv-SE')
@@ -1127,17 +1134,273 @@ function CandidateFormModal({
 
 
 // ═══════════════════════════════════════════════════════════════
-// ─── MAIN EXAM OPS CENTER COMPONENT ───
+// ─── HOME VIEW (Unified Command Dashboard) ───
+// ═══════════════════════════════════════════════════════════════
+
+const QUICK_LINKS = [
+  { name: 'Pearson VUE', url: 'https://connect.pearsonvue.com/', image: '/client-logos/pearson.png' },
+  { name: 'Prometric', url: 'https://easyserve.prometric.com/', image: '/client-logos/prometric.png' },
+  { name: 'CMA US', url: 'https://proscheduler.prometric.com/', image: '/client-logos/cma_us.png' },
+  { name: 'PSI Exams', url: 'https://test-takers.psiexams.com/', image: '/client-logos/psi.png' }
+]
+
+function HomeView({ branch, onNavigateToExamDay, onOpenChecklist }: { 
+  branch: string; 
+  onNavigateToExamDay: (date: string) => void;
+  onOpenChecklist: (type: 'pre_exam' | 'post_exam') => void;
+}) {
+  const { profile } = useAuth()
+  const { activeBranch } = useBranch()
+  const { data: dashboardData } = useDashboardStats()
+  
+  // Collapsible sections
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const toggleSection = (id: string) => setExpandedSection(prev => prev === id ? null : id)
+  
+  // Checklist status
+  const [todayStatus, setTodayStatus] = useState({ pre: 'Pending', post: 'Pending' })
+  
+  useEffect(() => {
+    const fetchStatus = async () => {
+      const today = new Date().toISOString().split('T')[0]
+      const { data: checklists } = await supabase
+        .from('checklist_submissions')
+        .select('*')
+        .gte('submitted_at', today)
+      const hasPre = checklists?.find((c: any) => c.template_id?.includes('pre') || c.answers?.type === 'pre_exam')
+      const hasPost = checklists?.find((c: any) => c.template_id?.includes('post') || c.answers?.type === 'post_exam')
+      setTodayStatus({ pre: hasPre ? 'Done' : 'Pending', post: hasPost ? 'Done' : 'Pending' })
+    }
+    fetchStatus()
+  }, [])
+
+  const todaysExams = dashboardData?.todaysExams || []
+  const totalCandidates = todaysExams.reduce((sum: number, e: any) => sum + (e.candidate_count || 0), 0)
+  const now = new Date()
+
+  // Neumorphic helpers
+  const neuCard = "bg-[#EEF2F9] rounded-2xl shadow-[6px_6px_14px_rgb(209,217,230),-6px_-6px_14px_rgba(255,255,255,0.9)] border border-white/50"
+  const neuBtn = "bg-[#EEF2F9] rounded-2xl shadow-[4px_4px_10px_rgb(209,217,230),-4px_-4px_10px_rgba(255,255,255,0.8)] hover:shadow-[3px_3px_6px_rgb(209,217,230),-3px_-3px_6px_rgba(255,255,255,0.8)] active:shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)] transition-all border border-white/40"
+  
+  return (
+    <div className="h-full overflow-y-auto no-scrollbar space-y-7 pr-2">
+
+      {/* ═══ SECTION 1: Officer Briefing ═══ */}
+      <div className="flex items-start gap-6">
+        {/* Profile Card */}
+        <div className={`${neuCard} p-6 flex items-center gap-6 flex-1`}>
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-md">
+              <img src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.full_name || 'U')}&background=0F172A&color=EAB308&size=128`} className="w-full h-full object-cover" alt="" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-400 rounded-full border-2 border-[#EEF2F9]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1">On Duty</div>
+            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight truncate">{profile?.full_name || 'Operator'}</h2>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-[10px] font-bold text-amber-600">{now.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}</span>
+              <span className="text-[10px] font-bold text-slate-400">{(activeBranch || '').toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="flex gap-4 shrink-0">
+          {[
+            { label: 'Today Sessions', value: todaysExams.length, icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Candidates', value: totalCandidates, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+          ].map(s => (
+            <div key={s.label} className={`${neuCard} px-5 py-4 flex items-center gap-3`}>
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color}`}><s.icon size={18} /></div>
+              <div>
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</div>
+                <div className={`text-xl font-black ${s.color} leading-none`}>{s.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ SECTION 2: Today's Sessions Preview ═══ */}
+      {todaysExams.length > 0 && (
+        <div className={`${neuCard} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500"><Zap size={16} /></div>
+              <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Today's Lineup</span>
+            </div>
+            <button onClick={() => onNavigateToExamDay(TODAY())} className="text-[10px] font-black text-amber-600 uppercase tracking-widest hover:text-amber-700 flex items-center gap-1">
+              View All <ChevronRight size={12} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {todaysExams.slice(0, 8).map((exam: any, i: number) => {
+              const cs = getClientStyle(exam.client_name)
+              const hour = parseInt((exam.start_time || '09:00').split(':')[0])
+              return (
+                <button key={i} onClick={() => onNavigateToExamDay(TODAY())} className="text-left p-4 rounded-xl bg-white/60 border border-white/80 hover:bg-white transition-all group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cs.accent }} />
+                    <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: cs.text }}>{(exam.client_name || 'OTHER').toUpperCase()}</span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-500 truncate mb-1">{exam.exam_name || 'Exam'}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-slate-400">{hour < 12 ? 'AM' : 'PM'} Session</span>
+                    <span className="text-sm font-black" style={{ color: cs.text }}>{exam.candidate_count || 0} <span className="text-[8px] text-slate-400 font-bold">pax</span></span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SECTION 3: Daily Checklist (Collapsible) ═══ */}
+      <button onClick={() => toggleSection('checklist')} className={`${neuCard} p-5 w-full text-left flex items-center justify-between group`}>
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400"><ListChecks size={20} /></div>
+          <div>
+            <div className="text-sm font-black text-slate-700 uppercase tracking-tight">Daily Reports</div>
+            <div className="flex items-center gap-3 mt-1">
+              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${todayStatus.pre === 'Done' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                Morning: {todayStatus.pre}
+              </span>
+              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${todayStatus.post === 'Done' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                Evening: {todayStatus.post}
+              </span>
+            </div>
+          </div>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform ${expandedSection === 'checklist' ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {expandedSection === 'checklist' && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden -mt-4">
+            <div className="grid grid-cols-2 gap-5 pt-2">
+              <button onClick={() => onOpenChecklist('pre_exam')} className={`${neuBtn} p-6 flex flex-col items-center gap-4 group hover:scale-[1.01] active:scale-[0.99]`}>
+                <div className={`w-14 h-14 rounded-2xl ${todayStatus.pre === 'Done' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-400'} shadow-md flex items-center justify-center`}>
+                  <ClipboardCheck size={28} />
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Step 01</div>
+                  <div className="text-base font-black text-slate-700 uppercase tracking-tight">Morning Check</div>
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-lg ${todayStatus.pre === 'Done' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                  {todayStatus.pre === 'Done' ? '✓ Submitted' : 'Fill Now →'}
+                </span>
+              </button>
+              <button onClick={() => onOpenChecklist('post_exam')} className={`${neuBtn} p-6 flex flex-col items-center gap-4 group hover:scale-[1.01] active:scale-[0.99]`}>
+                <div className={`w-14 h-14 rounded-2xl ${todayStatus.post === 'Done' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'} shadow-md flex items-center justify-center`}>
+                  <CheckCircle size={28} />
+                </div>
+                <div className="text-center">
+                  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Step 02</div>
+                  <div className="text-base font-black text-slate-700 uppercase tracking-tight">Evening Check</div>
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-lg ${todayStatus.post === 'Done' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                  {todayStatus.post === 'Done' ? '✓ Submitted' : 'Fill Now →'}
+                </span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ SECTION 4: F-Vault (Collapsible) ═══ */}
+      <button onClick={() => toggleSection('vault')} className={`${neuCard} p-5 w-full text-left flex items-center justify-between group`}>
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500"><Key size={20} /></div>
+          <div>
+            <div className="text-sm font-black text-slate-700 uppercase tracking-tight">F-Vault</div>
+            <div className="text-[10px] font-bold text-slate-400 mt-0.5">Secure credential access</div>
+          </div>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform ${expandedSection === 'vault' ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {expandedSection === 'vault' && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden -mt-4">
+            <div className="pt-2">
+              <AccessHub variant="emerald" readOnly />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ SECTION 5: Quick Links (Collapsible) ═══ */}
+      <button onClick={() => toggleSection('links')} className={`${neuCard} p-5 w-full text-left flex items-center justify-between group`}>
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500"><Globe size={20} /></div>
+          <div>
+            <div className="text-sm font-black text-slate-700 uppercase tracking-tight">Quick Links</div>
+            <div className="text-[10px] font-bold text-slate-400 mt-0.5">Client portals & tools</div>
+          </div>
+        </div>
+        <ChevronDown size={18} className={`text-slate-400 transition-transform ${expandedSection === 'links' ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {expandedSection === 'links' && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden -mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              {QUICK_LINKS.map(link => (
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className={`${neuBtn} p-5 flex flex-col items-center justify-center gap-3 group hover:scale-[1.03] transition-transform h-32`}>
+                  <div className="w-full h-16 flex items-center justify-center p-2">
+                    <img src={link.image} alt={link.name} className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300 scale-110" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <div className="h-4" />
+    </div>
+  )
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ─── MAIN: FETS POINT (Unified Landing) ───
 // ═══════════════════════════════════════════════════════════════
 
 export function ExamOpsCenter() {
-  const [view, setView] = useState('ops')
+  const [view, setView] = useState('home')
   const [date, setDate] = useState(TODAY())
   const { activeBranch } = useBranch()
+  const { profile } = useAuth()
   const branch = activeBranch === 'global' ? 'calicut' : activeBranch
   const [selCand, setSelCand] = useState<any>(null)
 
+  // Checklist state
+  const [activeTemplate, setActiveTemplate] = useState<ChecklistTemplate | null>(null)
+  const [showStaffSelector, setShowStaffSelector] = useState(false)
+  const [preSelection, setPreSelection] = useState<{ staffId: string; branchId: string; staffName: string } | null>(null)
+  const [showChecklistModal, setShowChecklistModal] = useState(false)
+
+  const handleOpenChecklist = async (type: 'pre_exam' | 'post_exam' | 'custom') => {
+    try {
+      const { data, error } = await supabase
+        .from('checklist_templates' as any)
+        .select('*')
+        .eq('type', type)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+      if (error || !data || data.length === 0) { toast.error(`No active ${type.replace('_', ' ')} checklist found.`); return }
+      let bestMatch = data.find((t: any) => t.branch_location === activeBranch)
+      if (!bestMatch) bestMatch = data.find((t: any) => t.branch_location === 'global' || !t.branch_location)
+      if (!bestMatch) bestMatch = data[0]
+      setActiveTemplate(bestMatch as unknown as ChecklistTemplate)
+      setShowStaffSelector(true)
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to load checklist')
+    }
+  }
+
   const NAV = [
+    { id: 'home',     label: 'Home',      icon: Home,        color: 'from-slate-600 to-slate-800',  iconColor: 'text-slate-700',  activeBg: 'bg-slate-50',  activeBorder: 'border-slate-300' },
     { id: 'ops',      label: 'Exam Day',  icon: Zap,         color: 'from-amber-400 to-amber-600',  iconColor: 'text-amber-600',  activeBg: 'bg-amber-50',  activeBorder: 'border-amber-300' },
     { id: 'calendar', label: 'Calendar',  icon: Calendar,    color: 'from-violet-400 to-violet-600',iconColor: 'text-violet-600', activeBg: 'bg-violet-50', activeBorder: 'border-violet-300' },
     { id: 'clients',  label: 'Clients',   icon: Briefcase,   color: 'from-cyan-400 to-cyan-600',    iconColor: 'text-cyan-600',   activeBg: 'bg-cyan-50',   activeBorder: 'border-cyan-300' },
@@ -1150,11 +1413,11 @@ export function ExamOpsCenter() {
     <div className="flex w-full h-[calc(100vh-160px)] bg-[#EEF2F9] text-slate-700 overflow-hidden p-6 lg:p-10" style={{ fontFamily: "'Inter', sans-serif" }}>
       
       {/* ═══ Sidebar Navigation ═══ */}
-      <div className="w-28 lg:w-32 flex flex-col items-center py-8 gap-3 mr-8 lg:mr-10 bg-white/40 rounded-3xl shadow-[8px_8px_20px_rgb(209,217,230),-8px_-8px_20px_rgba(255,255,255,0.9)] border border-white/60 backdrop-blur-sm">
+      <div className="w-28 lg:w-32 flex flex-col items-center py-6 gap-2.5 mr-8 lg:mr-10 bg-white/40 rounded-3xl shadow-[8px_8px_20px_rgb(209,217,230),-8px_-8px_20px_rgba(255,255,255,0.9)] border border-white/60 backdrop-blur-sm overflow-y-auto no-scrollbar">
         
         {/* Logo */}
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-sm mb-6 shadow-xl shadow-amber-200/40">
-          <Activity size={28} />
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-amber-400 font-black text-xs mb-4 shadow-xl">
+          <span className="text-lg font-black italic" style={{ fontFamily: "'Montserrat', sans-serif" }}>FP</span>
         </div>
 
         {/* Nav Items */}
@@ -1166,17 +1429,17 @@ export function ExamOpsCenter() {
               onClick={() => setView(n.id)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`w-20 lg:w-24 h-20 lg:h-22 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all border-2 ${
+              className={`w-20 lg:w-24 h-[70px] rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all border-2 ${
                 isActive 
                   ? `${n.activeBg} ${n.activeBorder} shadow-[inset_3px_3px_6px_rgb(209,217,230),inset_-3px_-3px_6px_rgba(255,255,255,0.9)]` 
                   : 'border-transparent bg-white/30 hover:bg-white/70 shadow-[3px_3px_8px_rgb(209,217,230),-3px_-3px_8px_rgba(255,255,255,0.8)]'
               }`}
               title={n.label}
             >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isActive ? `bg-gradient-to-br ${n.color} text-white shadow-md` : 'bg-white/50 text-slate-400'}`}>
-                <n.icon size={18} />
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? `bg-gradient-to-br ${n.color} text-white shadow-md` : 'bg-white/50 text-slate-400'}`}>
+                <n.icon size={16} />
               </div>
-              <span className={`text-[8px] lg:text-[9px] font-black uppercase tracking-widest leading-none text-center ${isActive ? n.iconColor : 'text-slate-400'}`}>{n.label}</span>
+              <span className={`text-[7px] lg:text-[8px] font-black uppercase tracking-widest leading-none text-center ${isActive ? n.iconColor : 'text-slate-400'}`}>{n.label}</span>
             </motion.button>
           )
         })}
@@ -1186,10 +1449,10 @@ export function ExamOpsCenter() {
       <div className="flex-1 flex flex-col overflow-hidden">
         
         {/* Title Block */}
-        <div className="flex items-center gap-5 mb-8">
-          <div className="h-1.5 w-14 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
+        <div className="flex items-center gap-5 mb-6 shrink-0">
+          <div className="h-1.5 w-14 bg-gradient-to-r from-slate-700 to-slate-900 rounded-full" />
           <h1 className="text-3xl lg:text-4xl font-black text-slate-800 tracking-tight uppercase leading-none" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-            Exam Ops <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-700">Center</span>
+            FETS <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-700">Point</span>
           </h1>
           <div className="ml-auto flex items-center gap-2.5 bg-white/60 px-5 py-2.5 rounded-2xl border border-white/60 shadow-sm">
              <MapPin size={14} className="text-amber-500" />
@@ -1208,7 +1471,13 @@ export function ExamOpsCenter() {
               transition={{ duration: 0.25 }}
               className="h-full"
             >
-              {view === 'ops' ? (
+              {view === 'home' ? (
+                <HomeView 
+                  branch={branch} 
+                  onNavigateToExamDay={(d) => { setDate(d); setView('ops') }}
+                  onOpenChecklist={(type) => handleOpenChecklist(type)}
+                />
+              ) : view === 'ops' ? (
                 <DailyOpsView date={date} setDate={setDate} branch={branch} onSelectCandidate={setSelCand} selCandidate={selCand} />
               ) : view === 'calendar' ? (
                 <CalendarView branch={branch} onDateSelect={(d) => { setDate(d); setView('ops') }} />
@@ -1225,6 +1494,32 @@ export function ExamOpsCenter() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ═══ Checklist Modals ═══ */}
+      <AnimatePresence>
+        {showStaffSelector && activeTemplate && (
+          <StaffBranchSelector
+            onClose={() => { setShowStaffSelector(false); setActiveTemplate(null) }}
+            onSelect={(data) => {
+              setPreSelection({ staffId: data.staffId, branchId: data.branchId, staffName: data.staffName })
+              setShowStaffSelector(false)
+              setShowChecklistModal(true)
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showChecklistModal && activeTemplate && (
+          <ChecklistFormModal
+            template={activeTemplate}
+            onClose={() => { setShowChecklistModal(false); setActiveTemplate(null); setPreSelection(null) }}
+            onSuccess={() => { toast.success('Checklist submitted successfully!') }}
+            currentUser={profile}
+            overrideStaff={preSelection ? { id: preSelection.staffId, name: preSelection.staffName } : undefined}
+            overrideBranch={preSelection?.branchId}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

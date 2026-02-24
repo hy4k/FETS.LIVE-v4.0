@@ -513,7 +513,7 @@ const ViewAllVaultModal: React.FC<{ entries: VaultEntry[]; onClose: () => void; 
 
 
 // Main Access Hub Widget Component
-export default function AccessHub({ readOnly = false, variant = 'default' }: { readOnly?: boolean; variant?: 'default' | 'emerald' }) {
+export function AccessHub({ readOnly = false, variant = 'default' }: { readOnly?: boolean; variant?: 'default' | 'emerald' }) {
     const { user } = useAuth()
     const [entries, setEntries] = useState<VaultEntry[]>([])
     const [loading, setLoading] = useState(true)
@@ -789,3 +789,5 @@ export default function AccessHub({ readOnly = false, variant = 'default' }: { r
         </>
     )
 }
+
+export default AccessHub

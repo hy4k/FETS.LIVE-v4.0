@@ -47,7 +47,11 @@ const THEME = {
     shadowGold: '0 0 30px rgba(212, 168, 83, 0.2)',
 }
 
-export function UserManagement() {
+interface UserManagementProps {
+    onNavigate?: (tab: string) => void;
+}
+
+export function UserManagement({ onNavigate }: UserManagementProps = {}) {
     const { profile: currentUser, hasPermission } = useAuth()
     const { data: staff = [], isLoading } = useStaff()
     const { updateStaff, deleteStaff, addStaff } = useStaffMutations()
@@ -574,7 +578,7 @@ export function UserManagement() {
                     </div>
                 ) : mainTab === 'modules' ? (
                     <div style={{ minHeight: '600px', maxWidth: '800px', margin: 'auto' }}>
-                        <ModuleControl />
+                        <ModuleControl onLaunch={(id) => onNavigate && onNavigate(id)} />
                     </div>
                 ) : (
                     <div style={{ minHeight: '600px' }}>
@@ -597,7 +601,7 @@ export function UserManagement() {
 }
 
 // Module Control Component
-function ModuleControl() {
+function ModuleControl({ onLaunch }: { onLaunch: (id: string) => void }) {
     const { modules, isLoading, toggleModule, isUpdating } = useAppModules()
 
     if (isLoading) {
@@ -616,17 +620,26 @@ function ModuleControl() {
                         <h4 className="font-bold text-lg" style={{ color: THEME.textPrimary }}>{mod.name}</h4>
                         <p className="text-sm" style={{ color: THEME.textMuted }}>{mod.id}</p>
                     </div>
-                    <button
-                        onClick={() => toggleModule(mod.id, !mod.is_enabled)}
-                        disabled={isUpdating}
-                        className="px-6 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50"
-                        style={{
-                            background: mod.is_enabled ? THEME.gold : THEME.bgTertiary,
-                            color: mod.is_enabled ? THEME.bgPrimary : THEME.textSecondary
-                        }}
-                    >
-                        {mod.is_enabled ? 'Enabled' : 'Disabled'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => onLaunch(mod.id)}
+                            className="px-6 py-2.5 rounded-xl font-bold transition-all text-white border border-white/10 hover:bg-white/5"
+                        >
+                            Launch App
+                        </button>
+                        <button
+                            onClick={() => toggleModule(mod.id, !mod.is_enabled)}
+                            disabled={isUpdating}
+                            className="px-6 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50"
+                            style={{
+                                background: mod.is_enabled ? THEME.gold : THEME.bgTertiary,
+                                color: mod.is_enabled ? THEME.bgPrimary : THEME.textSecondary,
+                                minWidth: '120px'
+                            }}
+                        >
+                            {mod.is_enabled ? 'Enabled' : 'Disabled'}
+                        </button>
+                    </div>
                 </div>
             ))}
         </div>

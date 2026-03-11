@@ -144,7 +144,7 @@ function AppContent() {
       if (activeTab === 'fets-intelligence') return <MobileAiChat />;
       if (activeTab === 'incident-log') return <MobileIncidentManager />;
       if (activeTab === 'access-hub') return <AccessHubPage />;
-      if (activeTab === 'user-management') return <UserManagement />;
+      if (activeTab === 'user-management') return <UserManagement onNavigate={setActiveTab} />;
       if (activeTab === 'profile') return <FetsProfilePage />;
       if (activeTab === 'checklist-management') return <ChecklistManagement currentUser={profile} />;
       if (activeTab === 'system-manager') return <SystemManager />;
@@ -168,7 +168,7 @@ function AppContent() {
       'news-manager': { component: <NewsManager />, name: 'News Manager' },
       'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
-      'user-management': { component: <UserManagement />, name: 'User Management' },
+      'user-management': { component: <UserManagement onNavigate={setActiveTab} />, name: 'User Management' },
       'profile': { component: <FetsProfilePage />, name: 'Profile' },
       'fets-omni-ai': { component: <FetsIntelligence initialQuery={aiQuery} />, name: 'FETS AI' }
     }

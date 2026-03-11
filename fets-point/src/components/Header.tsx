@@ -388,7 +388,7 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
               </div>
 
               {/* SECOND ROW NAVIGATION ITEMS */}
-              <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2">
+              <div className="flex flex-1 items-center justify-center gap-3 md:gap-6 overflow-x-auto no-scrollbar py-2">
                 {secondRowItems.map((item) => {
                   const isActive = activeTab === item.id;
                   return (
@@ -398,11 +398,14 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                       className={`utility-btn ${isActive ? 'active' : ''} px-6 py-3`}
                     >
                       <item.icon size={14} className={`${isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}`} />
-                      <span className="text-[11px] font-bold uppercase tracking-widest">{item.label}</span>
+                      <span className="text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">{item.label}</span>
                     </button>
                   )
                 })}
               </div>
+
+              {/* Spacer strictly to balance BranchSelector width to maintain a true center */}
+              <div className="w-[180px] shrink-0 hidden xl:block" />
             </div>
           </div>
         )}

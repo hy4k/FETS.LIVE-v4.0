@@ -20,8 +20,7 @@ import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { UpdatePassword } from './components/UpdatePassword';
-import { StaffBranchSelector } from './components/checklist/StaffBranchSelector';
-import { ChecklistFormModal } from './components/checklist/ChecklistFormModal';
+
 
 import { BranchIndicator } from './components/BranchIndicator';
 
@@ -56,7 +55,7 @@ const FetsIntelligence = lazy(() => import('./components/FetsIntelligence').then
 const FetsRoster = lazy(() => import('./components/FetsRosterPremium'))
 const FetsCalendar = lazy(() => import('./components/FetsCalendarPremium').then(module => ({ default: module.FetsCalendarPremium })))
 const SystemManager = lazy(() => import('./components/SystemManager').then(module => ({ default: module.default })))
-const ChecklistManagement = lazy(() => import('./components/checklist/ChecklistManager').then(module => ({ default: module.ChecklistManager })))
+
 const NewsManager = lazy(() => import('./components/NewsManager').then(module => ({ default: module.NewsManager })))
 const UserManagement = lazy(() => import('./components/UserManagement').then(module => ({ default: module.UserManagement })))
 const LostAndFound = lazy(() => import('./components/LostAndFound').then(module => ({ default: module.LostAndFound })))
@@ -82,11 +81,7 @@ function AppContent() {
   const [isRecovering, setIsRecovering] = useState(false)
   const [aiQuery, setAiQuery] = useState<string | undefined>(undefined)
 
-  // Checklist State
-  const [showStaffSelector, setShowStaffSelector] = useState(false);
-  const [activeTemplate, setActiveTemplate] = useState<any | null>(null);
-  const [preSelection, setPreSelection] = useState<{ staffId: string; branchId: string; staffName: string } | null>(null);
-  const [showChecklistModal, setShowChecklistModal] = useState(false);
+
 
   useEffect(() => {
     const setupPush = async () => {
@@ -105,31 +100,7 @@ function AppContent() {
     setupPush();
   }, []);
 
-  const handleOpenChecklist = async (type: 'pre_exam' | 'post_exam' | 'custom') => {
-    try {
-      const { data, error } = await supabase
-        .from('checklist_templates')
-        .select('*')
-        .eq('type', type)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        toast.error(`No active ${type.replace('_', ' ')} checklist found.`);
-        return;
-      }
-
-      let bestMatch = data.find((t: any) => t.branch_location === activeBranch);
-      if (!bestMatch) bestMatch = data.find((t: any) => t.branch_location === 'global' || !t.branch_location);
-      if (!bestMatch) bestMatch = data[0];
-
-      setActiveTemplate(bestMatch);
-      setShowStaffSelector(true);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load checklist');
-    }
-  };
 
   if (loading) return null;
   if (isRecovering) return <UpdatePassword onComplete={() => { setIsRecovering(false); window.location.hash = ''; }} />;
@@ -137,7 +108,7 @@ function AppContent() {
 
   const renderContent = () => {
     if (isMobile) {
-      if (activeTab === 'command-center') return <MobileHome setActiveTab={setActiveTab} profile={profile} onOpenChecklist={handleOpenChecklist} />;
+      if (activeTab === 'command-center') return <MobileHome setActiveTab={setActiveTab} profile={profile} />;
       if (activeTab === 'fets-calendar') return <MobileCalendar />;
       if (activeTab === 'candidate-tracker') return <MobileRegister />;
       if (activeTab === 'my-desk') return <MobileMyDesk setActiveTab={setActiveTab} />;
@@ -146,7 +117,7 @@ function AppContent() {
       if (activeTab === 'access-hub') return <AccessHubPage />;
       if (activeTab === 'user-management') return <UserManagement onNavigate={setActiveTab} />;
       if (activeTab === 'profile') return <FetsProfilePage />;
-      if (activeTab === 'checklist-management') return <ChecklistManagement currentUser={profile} />;
+
       if (activeTab === 'system-manager') return <SystemManager />;
       if (activeTab === 'news-manager') return <NewsManager />;
       if (activeTab === 'lost-and-found') return <LostAndFound />;
@@ -166,7 +137,7 @@ function AppContent() {
       'incident-log': { component: <RaiseACasePage />, name: 'Raise A Case' },
       'system-manager': { component: <SystemManager />, name: 'System Manager' },
       'news-manager': { component: <NewsManager />, name: 'News Manager' },
-      'checklist-management': { component: <ChecklistManagement currentUser={profile} />, name: 'Checklist Management' },
+
       'lost-and-found': { component: <LostAndFound />, name: 'Lost & Found' },
       'user-management': { component: <UserManagement onNavigate={setActiveTab} />, name: 'User Management' },
       'profile': { component: <FetsProfilePage />, name: 'Profile' },
@@ -206,20 +177,7 @@ function AppContent() {
         <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       )}
 
-      <AnimatePresence>
-        {showStaffSelector && activeTemplate && (
-          <StaffBranchSelector onClose={() => { setShowStaffSelector(false); setActiveTemplate(null); }}
-            onSelect={(data) => { setPreSelection(data); setShowStaffSelector(false); setShowChecklistModal(true); }} />
-        )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {showChecklistModal && activeTemplate && (
-          <ChecklistFormModal template={activeTemplate} onClose={() => { setShowChecklistModal(false); setActiveTemplate(null); setPreSelection(null); }}
-            onSuccess={() => { toast.success('Checklist submitted!'); setActiveTab('command-center'); }} currentUser={profile}
-            overrideStaff={preSelection ? { id: preSelection.staffId, name: preSelection.staffName } : undefined} overrideBranch={preSelection?.branchId} />
-        )}
-      </AnimatePresence>
     </div>
   )
 }

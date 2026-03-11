@@ -92,7 +92,6 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
   const secondRowItems = [
     { id: 'incident-log', label: 'RAISE A CASE', icon: AlertCircle },
-    { id: 'checklist-management', label: 'CHECKLIST', icon: ClipboardList },
     { id: 'my-desk', label: 'MY DESK', icon: MessageSquare },
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
     { id: 'lost-and-found', label: 'LOST & FOUND', icon: PackageSearch },

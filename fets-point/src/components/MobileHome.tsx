@@ -14,10 +14,9 @@ import { useAppModules } from '../hooks/useAppModules';
 interface MobileHomeProps {
   setActiveTab: (tab: string) => void;
   profile: any;
-  onOpenChecklist: (type: 'pre_exam' | 'post_exam') => void;
 }
 
-export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHomeProps) {
+export function MobileHome({ setActiveTab, profile }: MobileHomeProps) {
   const { activeBranch, setActiveBranch } = useBranch();
   const { modules } = useAppModules();
   const [todayStatus, setTodayStatus] = useState({ pre: 'pending', post: 'pending' });
@@ -74,7 +73,6 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
   const secondaryModules = [
     { id: 'system-manager', label: 'Systems', icon: Server, color: 'text-slate-600', sub: 'Infrastructure' },
     { id: 'news-manager', label: 'News', icon: Newspaper, color: 'text-amber-600', sub: 'Notices' },
-    { id: 'checklist-management', label: 'Manage Checks', icon: ClipboardList, color: 'text-blue-600', sub: 'Protocol Mgmt' },
     { id: 'lost-and-found', label: 'Lost & Found', icon: PackageSearch, color: 'text-rose-600', sub: 'Assets' },
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid, color: 'text-emerald-600', sub: 'Analytics' },
     { id: 'fets-intelligence', label: 'FETS AI', icon: Brain, color: 'text-indigo-600', sub: 'AI Support' },
@@ -180,61 +178,7 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
       {/* Main Content Area */}
       <div className="px-6 -mt-4 relative z-20 space-y-10">
 
-        {/* ACTION CARDS: CHECKLISTS */}
-        <div className="space-y-5">
-          <div className="flex justify-between items-center px-2">
-            <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em]">Protocol Reporting</h2>
-            <div className="h-0.5 flex-1 mx-4 bg-slate-200/50 rounded-full" />
-          </div>
 
-          <div className="grid grid-cols-2 gap-5">
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              onClick={() => onOpenChecklist('pre_exam')}
-              className={`p-6 rounded-[40px] border-2 transition-all flex flex-col items-center text-center gap-5 ${todayStatus.pre === 'completed'
-                ? 'bg-emerald-50 border-emerald-100 shadow-inner'
-                : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
-                }`}
-            >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${todayStatus.pre === 'completed' ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 text-white shadow-blue-100'
-                }`}>
-                <ClipboardCheck size={28} />
-              </div>
-              <div>
-                <h3 className={`font-black text-sm leading-tight mb-2 ${todayStatus.pre === 'completed' ? 'text-emerald-700' : 'text-slate-900'}`}>
-                  Pre-Exam<br />Checklist
-                </h3>
-                <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${todayStatus.pre === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                  }`}>
-                  {todayStatus.pre === 'completed' ? 'Submitted' : 'Pending'}
-                </div>
-              </div>
-            </motion.button>
-
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              onClick={() => onOpenChecklist('post_exam')}
-              className={`p-6 rounded-[40px] border-2 transition-all flex flex-col items-center text-center gap-5 ${todayStatus.post === 'completed'
-                ? 'bg-emerald-50 border-emerald-100 shadow-inner'
-                : 'bg-white border-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]'
-                }`}
-            >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${todayStatus.post === 'completed' ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-[#3E2723] text-white shadow-[#3E2723]/10'
-                }`}>
-                <CheckCircle size={28} />
-              </div>
-              <div>
-                <h3 className={`font-black text-sm leading-tight mb-2 ${todayStatus.post === 'completed' ? 'text-emerald-700' : 'text-slate-900'}`}>
-                  Post-Exam<br />Checklist
-                </h3>
-                <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${todayStatus.post === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
-                  }`}>
-                  {todayStatus.post === 'completed' ? 'Submitted' : 'Pending'}
-                </div>
-              </div>
-            </motion.button>
-          </div>
-        </div>
 
         {/* CORE MODULES GRID */}
         <div className="space-y-5">

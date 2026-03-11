@@ -46,10 +46,7 @@ export function Login() {
       } else {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          await supabase
-            .from('staff_profiles')
-            .update({ branch_assigned: selectedBranch })
-            .eq('user_id', user.id)
+          localStorage.setItem('fets_active_branch', selectedBranch)
         }
       }
     } catch (err: any) {
@@ -371,9 +368,12 @@ export function Login() {
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
       >
-        <p className="text-white/25 text-[10px] font-medium">
+        <p className="text-white/25 text-[10px] font-medium mb-1">
           © {new Date().getFullYear()} FETS.LIVE · All rights reserved
         </p>
+        <a href="/privacy-policy" className="text-white/40 hover:text-white/80 text-[10px] transition-colors underline">
+          Privacy Policy
+        </a>
       </motion.div>
 
       {/* Font import */}

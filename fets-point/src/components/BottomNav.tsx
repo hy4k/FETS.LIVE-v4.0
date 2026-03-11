@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LayoutDashboard, CalendarDays, AlertCircle, Brain, Globe, X, MapPin, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBranch } from '../hooks/useBranch';
+import { useAppModules } from '../hooks/useAppModules';
 
 interface BottomNavProps {
   activeTab: string;
@@ -10,6 +11,7 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
   const { activeBranch, setActiveBranch } = useBranch();
+  const { modules } = useAppModules();
   const [showBranchPicker, setShowBranchPicker] = useState(false);
 
   const branches = [
@@ -23,8 +25,11 @@ export function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
     { id: 'command-center', label: 'Home', icon: LayoutDashboard },
     { id: 'fets-calendar', label: 'Calendar', icon: CalendarDays },
     { id: 'incident-log', label: 'Cases', icon: AlertCircle },
-    { id: 'mobile-ai-chat', label: 'FETS AI', icon: Brain },
-  ];
+    { id: 'fets-intelligence', label: 'FETS AI', icon: Brain },
+  ].filter(item => {
+    const mod = modules.find(m => m.id === item.id);
+    return !mod || mod.is_enabled;
+  });
 
   return (
     <>

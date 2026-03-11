@@ -141,7 +141,7 @@ function AppContent() {
       if (activeTab === 'fets-calendar') return <MobileCalendar />;
       if (activeTab === 'candidate-tracker') return <MobileRegister />;
       if (activeTab === 'my-desk') return <MobileMyDesk setActiveTab={setActiveTab} />;
-      if (activeTab === 'mobile-ai-chat') return <MobileAiChat />;
+      if (activeTab === 'fets-intelligence') return <MobileAiChat />;
       if (activeTab === 'incident-log') return <MobileIncidentManager />;
       if (activeTab === 'access-hub') return <AccessHubPage />;
       if (activeTab === 'user-management') return <UserManagement />;
@@ -183,7 +183,7 @@ function AppContent() {
     );
   }
 
-  const isFullscreenPage = activeTab === 'my-desk' || activeTab === 'mobile-ai-chat';
+  const isFullscreenPage = activeTab === 'my-desk' || activeTab === 'fets-intelligence';
 
   return (
     <div className={`golden-theme min-h-screen h-screen flex flex-col overflow-hidden relative ${getBranchTheme(activeBranch)}`}>

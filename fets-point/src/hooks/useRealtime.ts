@@ -13,10 +13,10 @@ export function useRealtimeStatus() {
   const [isConnected, setIsConnected] = useState(true)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
   const [reconnectAttempts, setReconnectAttempts] = useState(0)
-  
+
   useEffect(() => {
     const channel = supabase.channel('connection-status')
-    
+
     channel
       .on('system', { event: '*' }, (payload) => {
         console.log('🔴 Realtime status:', payload)
@@ -38,12 +38,12 @@ export function useRealtimeStatus() {
           setReconnectAttempts(prev => prev + 1)
         }
       })
-    
+
     return () => {
       supabase.removeChannel(channel)
     }
   }, [])
-  
+
   return { isConnected, lastUpdate, reconnectAttempts }
 }
 
@@ -53,15 +53,15 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
   const [liveUpdates, setLiveUpdates] = useState<CandidateRow[]>([])
   const [isSubscribed, setIsSubscribed] = useState(false)
   const lastUpdateRef = useRef<Date>(new Date())
-  
+
   useEffect(() => {
     console.log('🔄 Setting up realtime candidates subscription...', filters)
-    
+
     // Create a unique channel name for branch-specific subscriptions
-    const channelName = filters?.branch && filters.branch !== 'global' 
-      ? `candidates-changes-${filters.branch}` 
+    const channelName = filters?.branch && filters.branch !== 'global'
+      ? `candidates-changes-${filters.branch}`
       : 'candidates-changes'
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -72,7 +72,7 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
           table: 'candidates',
           // Apply filters
           ...(filters?.date && {
-            filter: `exam_date=gte.${filters.date}T00:00:00Z,exam_date=lt.${filters.date}T23:59:59Z`
+            filter: `exam_date=gte.${filters.date},exam_date=lte.${filters.date}T23:59:59.999Z`
           }),
           ...(filters?.branch && filters.branch !== 'global' && {
             filter: `branch_location=eq.${filters.branch}`
@@ -81,7 +81,7 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
         (payload) => {
           console.log('📊 Candidate update:', payload)
           lastUpdateRef.current = new Date()
-          
+
           // Update local state for immediate UI feedback
           if (payload.eventType === 'INSERT') {
             setLiveUpdates(prev => [payload.new as CandidateRow, ...prev])
@@ -90,8 +90,8 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
               duration: 3000
             })
           } else if (payload.eventType === 'UPDATE') {
-            setLiveUpdates(prev => 
-              prev.map(item => 
+            setLiveUpdates(prev =>
+              prev.map(item =>
                 item.id === payload.new.id ? payload.new as CandidateRow : item
               )
             )
@@ -100,7 +100,7 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
               duration: 2000
             })
           } else if (payload.eventType === 'DELETE') {
-            setLiveUpdates(prev => 
+            setLiveUpdates(prev =>
               prev.filter(item => item.id !== payload.old.id)
             )
             toast.error('Candidate removed', {
@@ -108,7 +108,7 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
               duration: 2000
             })
           }
-          
+
           // Invalidate and refetch React Query cache
           queryClient.invalidateQueries({ queryKey: ['candidates'] })
           queryClient.invalidateQueries({ queryKey: ['candidates', 'metrics'] })
@@ -117,7 +117,7 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
       .subscribe((status) => {
         console.log('📡 Candidates subscription status:', status)
         setIsSubscribed(status === 'SUBSCRIBED')
-        
+
         if (status === 'CHANNEL_ERROR') {
           toast.error('Lost connection to candidate updates', {
             icon: '📡',
@@ -130,18 +130,18 @@ export function useRealtimeCandidates(filters?: { date?: string; status?: string
           })
         }
       })
-    
+
     return () => {
       console.log('🔄 Cleaning up candidates subscription')
       supabase.removeChannel(channel)
       setIsSubscribed(false)
     }
   }, [queryClient, filters])
-  
-  return { 
-    liveUpdates, 
-    isSubscribed, 
-    lastUpdate: lastUpdateRef.current 
+
+  return {
+    liveUpdates,
+    isSubscribed,
+    lastUpdate: lastUpdateRef.current
   }
 }
 
@@ -151,15 +151,15 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
   const [liveUpdates, setLiveUpdates] = useState<IncidentRow[]>([])
   const [isSubscribed, setIsSubscribed] = useState(false)
   const lastUpdateRef = useRef<Date>(new Date())
-  
+
   useEffect(() => {
     console.log('🔄 Setting up realtime incidents subscription...', status)
-    
+
     // Create a unique channel name for branch-specific subscriptions
-    const channelName = branch && branch !== 'global' 
-      ? `incidents-changes-${branch}` 
+    const channelName = branch && branch !== 'global'
+      ? `incidents-changes-${branch}`
       : 'incidents-changes'
-    
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -177,7 +177,7 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
         (payload) => {
           console.log('🚨 Incident update:', payload)
           lastUpdateRef.current = new Date()
-          
+
           // Update local state for immediate UI feedback
           if (payload.eventType === 'INSERT') {
             setLiveUpdates(prev => [payload.new as IncidentRow, ...prev])
@@ -186,12 +186,12 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
               duration: 4000
             })
           } else if (payload.eventType === 'UPDATE') {
-            setLiveUpdates(prev => 
-              prev.map(item => 
+            setLiveUpdates(prev =>
+              prev.map(item =>
                 item.id === payload.new.id ? payload.new as IncidentRow : item
               )
             )
-            
+
             const incident = payload.new as IncidentRow
             if (incident.status === 'resolved' || incident.status === 'closed') {
               toast.success('Incident resolved', {
@@ -205,7 +205,7 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
               })
             }
           } else if (payload.eventType === 'DELETE') {
-            setLiveUpdates(prev => 
+            setLiveUpdates(prev =>
               prev.filter(item => item.id !== payload.old.id)
             )
             toast.success('Incident removed', {
@@ -213,7 +213,7 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
               duration: 2000
             })
           }
-          
+
           // Invalidate and refetch React Query cache
           queryClient.invalidateQueries({ queryKey: ['incidents'] })
         }
@@ -221,7 +221,7 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
       .subscribe((status) => {
         console.log('📡 Incidents subscription status:', status)
         setIsSubscribed(status === 'SUBSCRIBED')
-        
+
         if (status === 'CHANNEL_ERROR') {
           toast.error('Lost connection to incident updates', {
             icon: '📡',
@@ -234,18 +234,18 @@ export function useRealtimeIncidents(status?: string, branch?: string) {
           })
         }
       })
-    
+
     return () => {
       console.log('🔄 Cleaning up incidents subscription')
       supabase.removeChannel(channel)
       setIsSubscribed(false)
     }
   }, [queryClient, status, branch])
-  
-  return { 
-    liveUpdates, 
-    isSubscribed, 
-    lastUpdate: lastUpdateRef.current 
+
+  return {
+    liveUpdates,
+    isSubscribed,
+    lastUpdate: lastUpdateRef.current
   }
 }
 
@@ -255,10 +255,10 @@ export function useRealtimeRoster(date?: string) {
   const [liveUpdates, setLiveUpdates] = useState<RosterRow[]>([])
   const [isSubscribed, setIsSubscribed] = useState(false)
   const lastUpdateRef = useRef<Date>(new Date())
-  
+
   useEffect(() => {
     console.log('🔄 Setting up realtime roster subscription...', date)
-    
+
     const channel = supabase
       .channel('roster-changes')
       .on(
@@ -273,7 +273,7 @@ export function useRealtimeRoster(date?: string) {
         (payload) => {
           console.log('👥 Roster update:', payload)
           lastUpdateRef.current = new Date()
-          
+
           // Update local state
           if (payload.eventType === 'INSERT') {
             setLiveUpdates(prev => [payload.new as RosterRow, ...prev])
@@ -282,8 +282,8 @@ export function useRealtimeRoster(date?: string) {
               duration: 2000
             })
           } else if (payload.eventType === 'UPDATE') {
-            setLiveUpdates(prev => 
-              prev.map(item => 
+            setLiveUpdates(prev =>
+              prev.map(item =>
                 item.id === payload.new.id ? payload.new as RosterRow : item
               )
             )
@@ -292,7 +292,7 @@ export function useRealtimeRoster(date?: string) {
               duration: 2000
             })
           } else if (payload.eventType === 'DELETE') {
-            setLiveUpdates(prev => 
+            setLiveUpdates(prev =>
               prev.filter(item => item.id !== payload.old.id)
             )
             toast.success('Schedule removed', {
@@ -300,7 +300,7 @@ export function useRealtimeRoster(date?: string) {
               duration: 2000
             })
           }
-          
+
           // Invalidate React Query cache
           queryClient.invalidateQueries({ queryKey: ['roster'] })
         }
@@ -309,18 +309,18 @@ export function useRealtimeRoster(date?: string) {
         console.log('📡 Roster subscription status:', status)
         setIsSubscribed(status === 'SUBSCRIBED')
       })
-    
+
     return () => {
       console.log('🔄 Cleaning up roster subscription')
       supabase.removeChannel(channel)
       setIsSubscribed(false)
     }
   }, [queryClient, date])
-  
-  return { 
-    liveUpdates, 
-    isSubscribed, 
-    lastUpdate: lastUpdateRef.current 
+
+  return {
+    liveUpdates,
+    isSubscribed,
+    lastUpdate: lastUpdateRef.current
   }
 }
 
@@ -330,17 +330,17 @@ export function useRealtimeDashboard() {
   const incidentsRealtime = useRealtimeIncidents()
   const rosterRealtime = useRealtimeRoster()
   const connectionStatus = useRealtimeStatus()
-  
-  const isFullyConnected = candidatesRealtime.isSubscribed && 
-                          incidentsRealtime.isSubscribed && 
-                          rosterRealtime.isSubscribed
-  
+
+  const isFullyConnected = candidatesRealtime.isSubscribed &&
+    incidentsRealtime.isSubscribed &&
+    rosterRealtime.isSubscribed
+
   const lastUpdate = new Date(Math.max(
     candidatesRealtime.lastUpdate.getTime(),
     incidentsRealtime.lastUpdate.getTime(),
     rosterRealtime.lastUpdate.getTime()
   ))
-  
+
   return {
     isConnected: connectionStatus.isConnected,
     isFullySubscribed: isFullyConnected,

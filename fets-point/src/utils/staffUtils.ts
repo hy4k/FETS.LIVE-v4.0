@@ -23,7 +23,7 @@ export const filterStaffForRoster = (staff: StaffProfile[]): StaffProfile[] => {
     }
     
     // Additional filter for specific super admin names
-    const superAdminNames = ['Mithun', 'Niyas']
+    const superAdminNames = ['Mithun']
     if (superAdminNames.some(name => 
       person.full_name.toLowerCase().includes(name.toLowerCase())
     )) {
@@ -42,7 +42,7 @@ export const filterStaffForRoster = (staff: StaffProfile[]): StaffProfile[] => {
 export const isSuperAdminUser = (staff: StaffProfile): boolean => {
   if (staff.role === 'super_admin') return true
   
-  const superAdminNames = ['Mithun', 'Niyas']
+  const superAdminNames = ['Mithun']
   return superAdminNames.some(name => 
     staff.full_name.toLowerCase().includes(name.toLowerCase())
   )

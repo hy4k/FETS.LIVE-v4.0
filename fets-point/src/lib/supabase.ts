@@ -36,15 +36,15 @@ export const supabaseHelpers = {
     let query = supabase.from('candidates').select('*')
 
     if (filters?.date) {
-      query = query.gte('exam_date', `${filters.date}T00:00:00Z`)
-        .lt('exam_date', `${filters.date}T23:59:59Z`)
+      query = query.gte('exam_date', filters.date)
+        .lte('exam_date', `${filters.date}T23:59:59.999Z`)
     } else {
       // Range filtering
       if (filters?.startDate) {
-        query = query.gte('exam_date', `${filters.startDate}T00:00:00Z`)
+        query = query.gte('exam_date', filters.startDate)
       }
       if (filters?.endDate) {
-        query = query.lt('exam_date', `${filters.endDate}T23:59:59Z`)
+        query = query.lte('exam_date', `${filters.endDate}T23:59:59.999Z`)
       }
       // If no date filters are provided, and no specific date is selected, 
       // we DON'T filter by date, effectively fetching all history (up to default limit).

@@ -65,17 +65,6 @@ const updateStaff = async ({ id, ...updatedData }: Partial<StaffProfile> & { id:
 }
 
 const deleteStaff = async (staffId: string) => {
-  // 1. Delete dependent records first to avoid foreign key violations.
-  const tablesToDeleteFrom = ['roster_schedules', 'leave_requests', 'checklist_items']
-  for (const table of tablesToDeleteFrom) {
-    // These will not throw an error if the column doesn't exist, which is safe.
-    await supabase.from(table as any).delete().eq('profile_id', staffId)
-    await supabase.from(table as any).delete().eq('staff_profile_id', staffId)
-    await supabase.from(table as any).delete().eq('assigned_to', staffId)
-    await supabase.from(table as any).delete().eq('completed_by', staffId)
-  }
-
-  // 2. Now, delete the staff profile itself.
   const { error } = await supabase.from('staff_profiles').delete().eq('id', staffId)
 
   if (error) throw new Error(error.message)

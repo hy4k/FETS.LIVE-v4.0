@@ -139,40 +139,9 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
 
     try {
-
-      // Update the branch in the database for persistence
-
-      if (user?.id) {
-
-        const { error } = await supabase
-
-          .from('staff_profiles')
-
-          .update({ branch_assigned: branch })
-
-          .eq('user_id', user.id);
-
-
-
-        if (error) {
-
-          console.error('❌ Error updating branch:', error.message);
-
-          setIsSwitching(false);
-          document.body.classList.remove('branch-switching');
-
-          return;
-
-        }
-
-      }
-
-
-
       // Update state and persistence
       setActiveBranchState(branch);
       localStorage.setItem('fets_active_branch', branch);
-
     } finally {
 
       setTimeout(() => {
@@ -182,7 +151,7 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
     }
 
-  }, [canAccessBranch, activeBranch, viewMode, profile, user]);
+  }, [canAccessBranch, activeBranch, profile?.email, profile?.role]);
 
 
 
@@ -202,7 +171,7 @@ export function BranchProvider({ children }: BranchProviderProps) {
 
       console.log(`🏢 Synchronized branch from profile: ${activeBranch}`);
     }
-  }, [profile]);
+  }, [profile, activeBranch]);
 
 
 

@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useBranch } from '../hooks/useBranch';
 import { canSwitchBranches, formatBranchName, getAvailableBranches } from '../utils/authUtils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppModules } from '../hooks/useAppModules';
 
 interface HeaderProps {
   isMobile?: boolean;
@@ -43,6 +44,7 @@ const AnimatedLabel = ({ label }: { label: string }) => {
 export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, setActiveTab, activeTab, onQuickCapture }: HeaderProps = {}) {
   const { profile, signOut } = useAuth();
   const { activeBranch, setActiveBranch } = useBranch();
+  const { modules } = useAppModules();
 
   // Branch Switcher State
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -97,10 +99,15 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'fets-intelligence', label: 'FETS AI', icon: Brain },
     { id: 'user-management', label: 'MANAGEMENT', icon: Shield },
   ].filter(item => {
+    // Check if item is a toggleable module and is disabled
+    const moduleState = modules.find(m => m.id === item.id);
+    if (moduleState && !moduleState.is_enabled) {
+      return false;
+    }
+
     if (item.id === 'user-management') {
       const isMithun = profile?.email === 'mithun@fets.in';
-      const isSuperAdmin = profile?.role === 'super_admin';
-      return isMithun || isSuperAdmin;
+      return isMithun;
     }
     return true;
   });

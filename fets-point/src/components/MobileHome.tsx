@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useBranch } from '../hooks/useBranch';
+import { useAppModules } from '../hooks/useAppModules';
 
 interface MobileHomeProps {
   setActiveTab: (tab: string) => void;
@@ -18,6 +19,7 @@ interface MobileHomeProps {
 
 export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHomeProps) {
   const { activeBranch, setActiveBranch } = useBranch();
+  const { modules } = useAppModules();
   const [todayStatus, setTodayStatus] = useState({ pre: 'pending', post: 'pending' });
   const [showBranchPicker, setShowBranchPicker] = useState(false);
 
@@ -64,7 +66,10 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
     { id: 'fets-calendar', label: 'Calendar', icon: Calendar, color: 'bg-amber-500', sub: 'Exams' },
     { id: 'my-desk', label: 'My Desk', icon: MessageSquare, color: 'bg-pink-500', sub: 'Team Feed' },
     { id: 'fets-roster', label: 'Roster', icon: UserCheck, color: 'bg-indigo-500', sub: 'Shifts' },
-  ];
+  ].filter(item => {
+    const mod = modules.find(m => m.id === item.id);
+    return !mod || mod.is_enabled;
+  });
 
   const secondaryModules = [
     { id: 'system-manager', label: 'Systems', icon: Server, color: 'text-slate-600', sub: 'Infrastructure' },
@@ -72,8 +77,11 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
     { id: 'checklist-management', label: 'Manage Checks', icon: ClipboardList, color: 'text-blue-600', sub: 'Protocol Mgmt' },
     { id: 'lost-and-found', label: 'Lost & Found', icon: PackageSearch, color: 'text-rose-600', sub: 'Assets' },
     { id: 'dashboard', label: 'Overview', icon: LayoutGrid, color: 'text-emerald-600', sub: 'Analytics' },
-    { id: 'mobile-ai-chat', label: 'FETS AI', icon: Brain, color: 'text-indigo-600', sub: 'AI Support' },
-  ];
+    { id: 'fets-intelligence', label: 'FETS AI', icon: Brain, color: 'text-indigo-600', sub: 'AI Support' },
+  ].filter(item => {
+    const mod = modules.find(m => m.id === item.id);
+    return !mod || mod.is_enabled;
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F0F2F5] pb-32 pt-safe">
@@ -347,7 +355,7 @@ export function MobileHome({ setActiveTab, profile, onOpenChecklist }: MobileHom
         </div>
 
         {/* MANAGEMENT LINK */}
-        {(profile?.role === 'super_admin' || profile?.email === 'mithun@fets.in') && (
+        {profile?.email === 'mithun@fets.in' && (
           <div className="pt-2 pb-10">
             <button
               onClick={() => setActiveTab('user-management')}

@@ -86,6 +86,7 @@ export interface Session {
   exam_name: string
   user_id: string
   branch?: string
+  branch_location?: string
   status?: string
 }
 

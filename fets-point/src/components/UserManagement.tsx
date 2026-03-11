@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast'
 import { StaffProfile } from '../types/shared'
 import { getAvailableBranches, formatBranchName } from '../utils/authUtils'
 import { ClientControl } from './ClientControl'
+import { useAppModules } from '../hooks/useAppModules'
 
 const PERMISSION_KEYS = [
     { key: 'can_edit_roster', label: 'Roster Management', icon: Users, description: 'Create and edit staff rosters' },
@@ -53,7 +54,7 @@ export function UserManagement() {
 
     const [searchTerm, setSearchTerm] = useState('')
     const [branchFilter, setBranchFilter] = useState<string>('all')
-    const [mainTab, setMainTab] = useState<'users' | 'clients'>('users')
+    const [mainTab, setMainTab] = useState<'users' | 'clients' | 'modules'>('users')
 
     const [selectedUser, setSelectedUser] = useState<StaffProfile | null>(null)
     const [activeTab, setActiveTab] = useState<'profile' | 'employment' | 'growth' | 'permissions'>('profile')
@@ -118,7 +119,7 @@ export function UserManagement() {
         setFormData({ ...formData, [field]: newArray })
     }
 
-    const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.email === 'mithun@fets.in';
+    const isSuperAdmin = currentUser?.email === 'mithun@fets.in';
 
     // Access Denied Screen
     if (!isSuperAdmin) {
@@ -201,7 +202,8 @@ export function UserManagement() {
                         >
                             {[
                                 { id: 'users', label: 'Personnel', icon: Users },
-                                { id: 'clients', label: 'Clients', icon: Building2 }
+                                { id: 'clients', label: 'Clients', icon: Building2 },
+                                { id: 'modules', label: 'Modules', icon: Settings2 }
                             ].map(tab => (
                                 <button
                                     key={tab.id}
@@ -570,6 +572,10 @@ export function UserManagement() {
                             )}
                         </div>
                     </div>
+                ) : mainTab === 'modules' ? (
+                    <div style={{ minHeight: '600px', maxWidth: '800px', margin: 'auto' }}>
+                        <ModuleControl />
+                    </div>
                 ) : (
                     <div style={{ minHeight: '600px' }}>
                         <ClientControl />
@@ -586,6 +592,43 @@ export function UserManagement() {
                     />
                 )}
             </AnimatePresence>
+        </div>
+    )
+}
+
+// Module Control Component
+function ModuleControl() {
+    const { modules, isLoading, toggleModule, isUpdating } = useAppModules()
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <p className="text-white">Loading modules...</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="grid gap-4">
+            {modules.map(mod => (
+                <div key={mod.id} className="p-6 rounded-2xl flex items-center justify-between" style={{ background: THEME.bgSecondary, border: `1px solid ${THEME.border}` }}>
+                    <div>
+                        <h4 className="font-bold text-lg" style={{ color: THEME.textPrimary }}>{mod.name}</h4>
+                        <p className="text-sm" style={{ color: THEME.textMuted }}>{mod.id}</p>
+                    </div>
+                    <button
+                        onClick={() => toggleModule(mod.id, !mod.is_enabled)}
+                        disabled={isUpdating}
+                        className="px-6 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50"
+                        style={{
+                            background: mod.is_enabled ? THEME.gold : THEME.bgTertiary,
+                            color: mod.is_enabled ? THEME.bgPrimary : THEME.textSecondary
+                        }}
+                    >
+                        {mod.is_enabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                </div>
+            ))}
         </div>
     )
 }

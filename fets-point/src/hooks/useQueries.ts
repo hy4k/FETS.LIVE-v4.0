@@ -72,8 +72,8 @@ export const useCandidateMetrics = (date?: string, branch?: string): { data: Can
       let query = supabase
         .from('candidates')
         .select('*')
-        .gte('exam_date', `${targetDate}T00:00:00Z`)
-        .lt('exam_date', `${targetDate}T23:59:59Z`)
+        .gte('exam_date', targetDate)
+        .lte('exam_date', `${targetDate}T23:59:59.999Z`)
 
       // Apply branch filtering
       if (branch && branch !== 'global') {

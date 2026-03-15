@@ -107,10 +107,10 @@ function StaffProfileModal({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative w-full max-w-2xl bg-[#0f0f1a] border border-[#1e1e2a] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl bg-[#111d36] border border-[#1e3358] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="relative px-6 py-5 bg-[#0a0a14] border-b border-[#1e1e2a] flex items-center gap-4">
+        <div className="relative px-6 py-5 bg-[#0a1628] border-b border-[#1e3358] flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0 shadow-lg"
             style={{ backgroundColor: avatarColor }}>
             {(staff as any).avatar_url
@@ -120,7 +120,7 @@ function StaffProfileModal({
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-white">{staff.full_name}</h2>
-            <p className="text-sm text-zinc-400">{staff.role || 'Staff Member'}</p>
+            <p className="text-sm text-slate-300">{staff.role || 'Staff Member'}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               {staff.branch_assigned && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1a1500] text-[#FFD633] border border-[#FFD633]/20 flex items-center gap-1">
@@ -128,15 +128,15 @@ function StaffProfileModal({
                 </span>
               )}
               {staff.department && (
-                <span className="text-[10px] text-zinc-500">{staff.department}</span>
+                <span className="text-[10px] text-slate-400">{staff.department}</span>
               )}
             </div>
           </div>
           {/* Today's attendance quick badge */}
           {todayAtt && (
             <div className="text-right shrink-0">
-              <div className="text-[10px] text-zinc-600 mb-1">Today</div>
-              <div className={`px-2 py-1 rounded-lg text-[11px] font-bold`}
+              <div className="text-[10px] text-slate-500 mb-1">Today</div>
+              <div className={`px-3 py-2 rounded-lg text-[11px] font-bold`}
                 style={{
                   backgroundColor: ATTENDANCE_STATUS[todayAtt.status]?.bg,
                   color: ATTENDANCE_STATUS[todayAtt.status]?.text
@@ -144,14 +144,14 @@ function StaffProfileModal({
                 {ATTENDANCE_STATUS[todayAtt.status]?.label}
               </div>
               {todayAtt.check_in && (
-                <div className="text-[10px] text-zinc-600 mt-0.5">
+                <div className="text-[10px] text-slate-500 mt-0.5">
                   In: {formatTimeDisplay(todayAtt.check_in)}
                 </div>
               )}
             </div>
           )}
           <button onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#1e1e2a] flex items-center justify-center text-zinc-500 hover:text-red-400 transition-colors">
+            className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#1e3358] flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
             <X size={14} />
           </button>
         </div>
@@ -161,15 +161,15 @@ function StaffProfileModal({
           {/* Contact info */}
           <div className="grid grid-cols-2 gap-3">
             {staff.email && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[#0a0a14] rounded-xl border border-[#1e1e2a]">
-                <Mail size={13} className="text-zinc-600 flex-shrink-0" />
-                <span className="text-xs text-zinc-400 truncate">{staff.email}</span>
+              <div className="flex items-center gap-2 px-3 py-2 bg-[#0a1628] rounded-xl border border-[#1e3358]">
+                <Mail size={13} className="text-slate-500 flex-shrink-0" />
+                <span className="text-xs text-slate-300 truncate">{staff.email}</span>
               </div>
             )}
             {(staff as any).contact_number && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[#0a0a14] rounded-xl border border-[#1e1e2a]">
-                <Phone size={13} className="text-zinc-600 flex-shrink-0" />
-                <span className="text-xs text-zinc-400">{(staff as any).contact_number}</span>
+              <div className="flex items-center gap-2 px-3 py-2 bg-[#0a1628] rounded-xl border border-[#1e3358]">
+                <Phone size={13} className="text-slate-500 flex-shrink-0" />
+                <span className="text-xs text-slate-300">{(staff as any).contact_number}</span>
               </div>
             )}
           </div>
@@ -177,7 +177,7 @@ function StaffProfileModal({
           {/* Certification badges */}
           {certifications.length > 0 && (
             <div>
-              <h4 className="text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-2">Certifications</h4>
+              <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Certifications</h4>
               <div className="flex flex-wrap gap-2">
                 {certifications.map(cert => {
                   const c = CERT_COLORS[cert] || CERT_COLORS['TCA Certified']
@@ -194,7 +194,7 @@ function StaffProfileModal({
 
           {/* Performance metrics */}
           <div>
-            <h4 className="text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-3">Performance Metrics</h4>
+            <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Performance Metrics</h4>
             <div className="grid grid-cols-4 gap-3">
               {[
                 { label: 'Total Days', value: totalDays, color: '#FFD633' },
@@ -202,9 +202,9 @@ function StaffProfileModal({
                 { label: 'Week Present', value: weeklySummary.present, color: '#3b82f6' },
                 { label: 'Week Late', value: weeklySummary.late, color: '#f97316' },
               ].map(m => (
-                <div key={m.label} className="bg-[#0a0a14] border border-[#1e1e2a] rounded-xl p-3 text-center">
+                <div key={m.label} className="bg-[#0a1628] border border-[#1e3358] rounded-xl p-3 text-center">
                   <div className="text-xl font-bold" style={{ color: m.color }}>{m.value}</div>
-                  <div className="text-[9px] text-zinc-600 font-medium uppercase tracking-wider mt-0.5">{m.label}</div>
+                  <div className="text-[9px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">{m.label}</div>
                 </div>
               ))}
             </div>
@@ -212,7 +212,7 @@ function StaffProfileModal({
 
           {/* Weekly attendance breakdown */}
           <div>
-            <h4 className="text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-3">This Week's Attendance</h4>
+            <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">This Week's Attendance</h4>
             <div className="grid grid-cols-4 gap-2">
               {(Object.entries(ATTENDANCE_STATUS) as [string, typeof ATTENDANCE_STATUS[keyof typeof ATTENDANCE_STATUS]][]).map(([k, v]) => {
                 const count = k === 'present' ? weeklySummary.present
@@ -233,17 +233,17 @@ function StaffProfileModal({
           {/* Recent schedule history */}
           {recentSchedules.length > 0 && (
             <div>
-              <h4 className="text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-3">Recent Shifts</h4>
+              <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Recent Shifts</h4>
               <div className="space-y-2">
                 {recentSchedules.map(sched => {
                   const sc = SHIFT_CODES[sched.shift_code as ShiftCode]
                   return (
-                    <div key={sched.id} className="flex items-center justify-between px-3 py-2 bg-[#0a0a14] border border-[#1e1e2a] rounded-xl">
-                      <span className="text-xs text-zinc-400">{sched.date}</span>
+                    <div key={sched.id} className="flex items-center justify-between px-3 py-2 bg-[#0a1628] border border-[#1e3358] rounded-xl">
+                      <span className="text-xs text-slate-300">{sched.date}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold px-2 py-0.5 rounded-md"
                           style={{
-                            background: sc?.bgColor || '#1e1e2a',
+                            background: sc?.bgColor || '#1e3358',
                             color: sc?.textColor || '#9ca3af'
                           }}>
                           {sched.shift_code}
@@ -251,7 +251,7 @@ function StaffProfileModal({
                         {sched.overtime_hours && sched.overtime_hours > 0 && (
                           <span className="text-[10px] text-[#FFD633] font-bold">+{sched.overtime_hours}h OT</span>
                         )}
-                        <span className={`text-[10px] font-medium ${sched.status === 'confirmed' ? 'text-green-400' : 'text-zinc-600'}`}>
+                        <span className={`text-[10px] font-medium ${sched.status === 'confirmed' ? 'text-green-400' : 'text-slate-500'}`}>
                           {sched.status}
                         </span>
                       </div>
@@ -313,8 +313,8 @@ function StaffGridView({
             key={staff.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0f0f1a] border border-[#1e1e2a] rounded-2xl p-4 cursor-pointer
-              hover:border-[#2a2a3a] hover:shadow-[0_0_20px_rgba(255,214,51,0.05)] transition-all group"
+            className="bg-[#111d36] border border-[#1e3358] rounded-2xl p-4 cursor-pointer
+              hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all group"
             onClick={() => onViewProfile(staff)}
           >
             {/* Top: Avatar + status */}
@@ -328,10 +328,10 @@ function StaffGridView({
                   }
                 </div>
                 {/* Online indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0f0f1a]"
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#111d36]"
                   style={{ backgroundColor: av.dot }} />
               </div>
-              <span className="text-[10px] font-bold px-2 py-1 rounded-lg border"
+              <span className="text-[10px] font-bold px-3 py-2 rounded-lg border"
                 style={{ backgroundColor: av.bg, color: av.text, borderColor: av.text + '30' }}>
                 {av.label}
               </span>
@@ -340,9 +340,9 @@ function StaffGridView({
             {/* Name & Role */}
             <div className="mb-3">
               <h3 className="text-sm font-bold text-white group-hover:text-[#FFD633] transition-colors">{staff.full_name}</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">{staff.role || 'Staff'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{staff.role || 'Staff'}</p>
               {staff.branch_assigned && (
-                <p className="text-[10px] text-zinc-700 mt-0.5 flex items-center gap-1">
+                <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
                   <MapPin size={9} />{staff.branch_assigned}
                 </p>
               )}
@@ -350,7 +350,7 @@ function StaffGridView({
 
             {/* Today's check-in/out */}
             {todayAtt && (
-              <div className="flex items-center gap-2 mb-3 px-2 py-1.5 bg-[#0a0a14] rounded-lg">
+              <div className="flex items-center gap-2 mb-3 px-3 py-2.5 bg-[#0a1628] rounded-lg">
                 {todayAtt.check_in && (
                   <div className="flex items-center gap-1 text-[10px] text-green-400">
                     <LogIn size={10} />
@@ -382,13 +382,13 @@ function StaffGridView({
                   )
                 })}
                 {certifications.length > 2 && (
-                  <span className="text-[9px] text-zinc-600">+{certifications.length - 2}</span>
+                  <span className="text-[9px] text-slate-500">+{certifications.length - 2}</span>
                 )}
               </div>
             )}
 
             {/* Weekly summary mini bar */}
-            <div className="flex items-center gap-1.5 text-[9px] text-zinc-600 pt-2 border-t border-[#1e1e2a]">
+            <div className="flex items-center gap-1.5 text-[9px] text-slate-500 pt-2 border-t border-[#1e3358]">
               <div className="flex items-center gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 <span>{weekSummary.present}</span>
@@ -401,7 +401,7 @@ function StaffGridView({
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                 <span>{weekSummary.absent}</span>
               </div>
-              <span className="ml-auto text-zinc-700 flex items-center gap-0.5">
+              <span className="ml-auto text-slate-400 flex items-center gap-0.5">
                 <Eye size={9} className="group-hover:text-[#FFD633] transition-colors" /> Profile
               </span>
             </div>
@@ -457,30 +457,30 @@ function AttendanceView({
           { label: 'Late', value: stats.late, color: '#fb923c', bg: 'rgba(234,88,12,0.1)' },
           { label: 'Absent', value: stats.absent, color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
         ].map(s => (
-          <div key={s.label} className="bg-[#0f0f1a] border border-[#1e1e2a] rounded-xl p-4 text-center">
+          <div key={s.label} className="bg-[#111d36] border border-[#1e3358] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider mt-1">{s.label}</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-3 bg-[#0f0f1a] border border-[#1e1e2a] rounded-xl px-4 py-3">
-        <Search size={14} className="text-zinc-600" />
+      <div className="flex items-center gap-3 bg-[#111d36] border border-[#1e3358] rounded-xl px-4 py-3">
+        <Search size={14} className="text-slate-500" />
         <input
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search staff…"
-          className="flex-1 bg-transparent text-sm text-zinc-300 placeholder-zinc-700 outline-none"
+          className="flex-1 bg-transparent text-sm text-slate-200 placeholder-zinc-700 outline-none"
         />
-        <span className="text-xs text-zinc-600">{todayStr}</span>
+        <span className="text-xs text-slate-500">{todayStr}</span>
       </div>
 
       {/* Attendance table */}
-      <div className="bg-[#0f0f1a] border border-[#1e1e2a] rounded-2xl overflow-hidden">
+      <div className="bg-[#111d36] border border-[#1e3358] rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[1fr_120px_100px_100px_120px_auto] gap-3 px-4 py-3 bg-[#0a0a14] border-b border-[#1e1e2a] text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+        <div className="grid grid-cols-[1fr_120px_100px_100px_120px_auto] gap-3 px-4 py-3 bg-[#0a1628] border-b border-[#1e3358] text-[10px] font-bold text-slate-500 uppercase tracking-wider">
           <span>Staff</span>
           <span>Status</span>
           <span>Check In</span>
@@ -490,7 +490,7 @@ function AttendanceView({
         </div>
 
         {/* Rows */}
-        <div className="divide-y divide-[#1a1a24]">
+        <div className="divide-y divide-[#162848]">
           {filtered.map(staff => {
             const rec = attendance.find(a => a.staff_id === staff.id && a.date === todayStr)
             const avatarColor = getAvatarBg(staff.full_name)
@@ -509,7 +509,7 @@ function AttendanceView({
               <div
                 key={staff.id}
                 className={`grid grid-cols-[1fr_120px_100px_100px_120px_auto] gap-3 px-4 py-3 items-center
-                  hover:bg-[#0a0a14] transition-colors
+                  hover:bg-[#0a1628] transition-colors
                   ${isLate ? 'border-l-2 border-l-orange-500' : ''}`}
               >
                 {/* Staff info */}
@@ -520,7 +520,7 @@ function AttendanceView({
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-zinc-200 truncate">{staff.full_name}</div>
-                    <div className="text-[10px] text-zinc-600 truncate">{staff.role}</div>
+                    <div className="text-[10px] text-slate-500 truncate">{staff.role}</div>
                   </div>
                 </div>
 
@@ -538,7 +538,7 @@ function AttendanceView({
                     <select
                       defaultValue=""
                       onChange={e => e.target.value && onUpdateStatus(staff.id, e.target.value as AttendanceRecord['status'])}
-                      className="bg-[#1e1e2a] border border-[#2a2a3a] rounded-lg text-[10px] text-zinc-400 px-2 py-1 outline-none cursor-pointer"
+                      className="bg-[#1e3358] border border-[#1e3560] rounded-lg text-[10px] text-slate-300 px-3 py-2 outline-none cursor-pointer"
                       disabled={isUpdating}
                     >
                       <option value="">Mark…</option>
@@ -549,17 +549,17 @@ function AttendanceView({
                 </div>
 
                 {/* Check In */}
-                <span className={`text-xs font-mono ${isLate ? 'text-orange-400' : 'text-zinc-300'}`}>
+                <span className={`text-xs font-mono ${isLate ? 'text-orange-400' : 'text-slate-200'}`}>
                   {rec?.check_in ? formatTimeDisplay(rec.check_in) : '–'}
                 </span>
 
                 {/* Check Out */}
-                <span className="text-xs font-mono text-zinc-300">
+                <span className="text-xs font-mono text-slate-200">
                   {rec?.check_out ? formatTimeDisplay(rec.check_out) : '–'}
                 </span>
 
                 {/* Duration */}
-                <span className="text-xs text-zinc-500 font-mono">{duration}</span>
+                <span className="text-xs text-slate-400 font-mono">{duration}</span>
 
                 {/* Actions */}
                 <div className="flex items-center gap-1.5">
@@ -567,14 +567,14 @@ function AttendanceView({
                     <button
                       onClick={() => onCheckIn(staff.id)}
                       disabled={isUpdating}
-                      className="flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-[10px] font-bold hover:bg-green-500/20 transition-colors disabled:opacity-40">
+                      className="flex items-center gap-1 px-4 py-2.5 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm font-bold hover:bg-green-500/20 transition-colors disabled:opacity-40">
                       <LogIn size={10} /> In
                     </button>
                   ) : !rec?.check_out ? (
                     <button
                       onClick={() => onCheckOut(staff.id)}
                       disabled={isUpdating}
-                      className="flex items-center gap-1 px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/20 transition-colors disabled:opacity-40">
+                      className="flex items-center gap-1 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm font-bold hover:bg-red-500/20 transition-colors disabled:opacity-40">
                       <LogOut size={10} /> Out
                     </button>
                   ) : (
@@ -828,22 +828,22 @@ export function FetsRosterPremium() {
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f]">
-      <div className="bg-[#0f0f1a] p-8 rounded-2xl border border-[#1e1e2a] flex flex-col items-center gap-4">
+    <div className="flex items-center justify-center min-h-screen bg-[#0d1224]">
+      <div className="bg-[#111d36] p-8 rounded-2xl border border-[#1e3358] flex flex-col items-center gap-4">
         <div className="relative w-12 h-12">
-          <div className="absolute inset-0 rounded-full border-2 border-[#1e1e2a]" />
+          <div className="absolute inset-0 rounded-full border-2 border-[#1e3358]" />
           <div className="absolute inset-0 rounded-full border-2 border-t-[#FFD633] animate-spin" />
         </div>
-        <p className="text-zinc-400 font-medium">Loading roster data…</p>
+        <p className="text-slate-300 font-medium">Loading roster data…</p>
       </div>
     </div>
   )
 
   // ── Mobile ───────────────────────────────────────────────────────────────
   if (isMobile) return (
-    <div className={`min-h-screen bg-[#0a0a0f] pt-8 pb-32 px-4`}>
+    <div className={`min-h-screen bg-[#0d1224] pt-8 pb-32 px-4`}>
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl bg-[#0f0f1a] border ${
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl bg-[#111d36] border ${
           notification.type === 'success' ? 'border-green-500/50 text-green-400' :
           notification.type === 'error' ? 'border-red-500/50 text-red-400' : 'border-yellow-500/50 text-yellow-400'
         }`}>
@@ -884,7 +884,7 @@ export function FetsRosterPremium() {
   ]
 
   return (
-    <div className={`min-h-screen bg-[#0a0a0f] -mt-32 pt-56 px-6`}
+    <div className={`min-h-screen bg-gradient-to-br from-[#0d1224] via-[#0d1830] to-[#0a1628] -mt-32 pt-56 px-6`}
       style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
       <div className="max-w-[1800px] mx-auto">
 
@@ -898,22 +898,22 @@ export function FetsRosterPremium() {
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2 uppercase italic">
               FETS <span className="text-[#FFD633]">Roster</span>
             </h1>
-            <p className="text-zinc-500 font-medium">
+            <p className="text-slate-400 font-medium">
               {activeBranch && activeBranch !== 'global' ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} · ` : ''}
               Staff Scheduling & Attendance
             </p>
           </div>
           <div className="text-right">
-            <p className="text-zinc-600 font-semibold uppercase tracking-wider text-sm">
+            <p className="text-slate-500 font-semibold uppercase tracking-wider text-sm">
               {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            <p className="text-zinc-700 text-xs mt-0.5">{staffProfiles.length} staff members</p>
+            <p className="text-slate-400 text-xs mt-0.5">{staffProfiles.length} staff members</p>
           </div>
         </motion.div>
 
         {/* ── NOTIFICATION ── */}
         {notification && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl bg-[#0f0f1a] shadow-xl border ${
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl bg-[#111d36] shadow-xl border ${
             notification.type === 'success' ? 'border-green-500/40 text-green-400' :
             notification.type === 'error' ? 'border-red-500/40 text-red-400' : 'border-yellow-500/40 text-yellow-400'
           }`}>
@@ -927,17 +927,17 @@ export function FetsRosterPremium() {
         )}
 
         {/* ── CONTROL TOOLBAR ── */}
-        <div className="bg-[#0f0f1a] border border-[#1e1e2a] rounded-2xl p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-[#111d36] border border-[#1e3358] rounded-2xl p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-wrap">
             {/* Main view tabs */}
-            <div className="flex items-center bg-[#0a0a14] rounded-xl border border-[#1e1e2a] p-1 gap-1">
+            <div className="flex items-center bg-[#0a1628] rounded-xl border border-[#1e3358] p-1 gap-1">
               {NAV_ITEMS.map(({ id, icon, label }) => (
                 <button key={id}
                   onClick={() => setMainView(id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-5 py-3 rounded-lg text-sm font-bold transition-all ${
                     mainView === id
                       ? 'bg-[#FFD633] text-black shadow'
-                      : 'text-zinc-500 hover:text-zinc-300'}`}>
+                      : 'text-slate-400 hover:text-slate-200'}`}>
                   {icon} {label}
                 </button>
               ))}
@@ -946,19 +946,19 @@ export function FetsRosterPremium() {
             {/* Date navigation (roster view only) */}
             {(mainView === 'roster' || mainView === 'attendance') && (
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-[#0a0a14] rounded-xl border border-[#1e1e2a]">
+                <div className="flex items-center bg-[#0a1628] rounded-xl border border-[#1e3358]">
                   <button onClick={() => navigateDate('prev')}
-                    className="p-2 hover:bg-[#1e1e2a] rounded-l-xl transition-colors">
-                    <ChevronLeft className="h-5 w-5 text-zinc-500" />
+                    className="p-2 hover:bg-[#1e3358] rounded-l-xl transition-colors">
+                    <ChevronLeft className="h-5 w-5 text-slate-400" />
                   </button>
-                  <h2 className="text-sm font-bold text-zinc-300 min-w-[180px] text-center">{getViewTitle()}</h2>
+                  <h2 className="text-sm font-bold text-slate-200 min-w-[180px] text-center">{getViewTitle()}</h2>
                   <button onClick={() => navigateDate('next')}
-                    className="p-2 hover:bg-[#1e1e2a] rounded-r-xl transition-colors">
-                    <ChevronRight className="h-5 w-5 text-zinc-500" />
+                    className="p-2 hover:bg-[#1e3358] rounded-r-xl transition-colors">
+                    <ChevronRight className="h-5 w-5 text-slate-400" />
                   </button>
                 </div>
                 <button onClick={() => setCurrentDate(new Date())}
-                  className="px-3 py-2 text-xs font-bold text-zinc-400 bg-[#0a0a14] border border-[#1e1e2a] rounded-xl hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors">
+                  className="px-4 py-2.5 text-sm font-bold text-slate-300 bg-[#0a1628] border border-[#1e3358] rounded-xl hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors">
                   Today
                 </button>
               </div>
@@ -967,13 +967,13 @@ export function FetsRosterPremium() {
             {/* Search (staff grid) */}
             {mainView === 'staff-grid' && (
               <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search staff…"
-                  className="pl-8 pr-3 py-2 bg-[#0a0a14] border border-[#1e1e2a] rounded-xl text-xs text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-[#FFD633]/50 w-44 transition-all"
+                  className="pl-8 pr-3 py-2 bg-[#0a1628] border border-[#1e3358] rounded-xl text-xs text-slate-200 placeholder-zinc-700 focus:outline-none focus:border-[#FFD633]/50 w-44 transition-all"
                 />
               </div>
             )}
@@ -982,13 +982,13 @@ export function FetsRosterPremium() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* View mode toggle (roster only) */}
             {mainView === 'roster' && (
-              <div className="flex items-center bg-[#0a0a14] border border-[#1e1e2a] rounded-xl p-1 gap-1">
+              <div className="flex items-center bg-[#0a1628] border border-[#1e3358] rounded-xl p-1 gap-1">
                 <button onClick={() => setViewMode('month')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'month' ? 'bg-[#FFD633] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'month' ? 'bg-[#FFD633] text-black' : 'text-slate-400 hover:text-slate-200'}`}>
                   Timeline
                 </button>
                 <button onClick={() => setViewMode('list')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-[#FFD633] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-[#FFD633] text-black' : 'text-slate-400 hover:text-slate-200'}`}>
                   List
                 </button>
               </div>
@@ -997,7 +997,7 @@ export function FetsRosterPremium() {
             {/* Staff filter */}
             <div className="relative">
               <button onClick={() => setShowFilter(!showFilter)}
-                className={`p-2 rounded-xl border transition-colors ${showFilter ? 'bg-[#FFD633]/10 border-[#FFD633]/40 text-[#FFD633]' : 'bg-[#0a0a14] border-[#1e1e2a] text-zinc-500 hover:text-zinc-300'}`}>
+                className={`p-2 rounded-xl border transition-colors ${showFilter ? 'bg-[#FFD633]/10 border-[#FFD633]/40 text-[#FFD633]' : 'bg-[#0a1628] border-[#1e3358] text-slate-400 hover:text-slate-200'}`}>
                 <Filter className="h-4 w-4" />
               </button>
               <AnimatePresence>
@@ -1006,17 +1006,17 @@ export function FetsRosterPremium() {
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="absolute right-0 mt-2 w-56 bg-[#0f0f1a] border border-[#1e1e2a] rounded-xl shadow-2xl z-20 max-h-80 overflow-y-auto"
+                    className="absolute right-0 mt-2 w-56 bg-[#111d36] border border-[#1e3358] rounded-xl shadow-2xl z-20 max-h-80 overflow-y-auto"
                   >
                     <div className="p-3">
-                      <div className="text-[10px] font-bold text-zinc-600 uppercase mb-2 tracking-wider">Filter by Staff</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-wider">Filter by Staff</div>
                       <button onClick={() => { setSelectedStaffFilter(''); setShowFilter(false) }}
-                        className="block w-full text-left px-3 py-2 text-xs text-zinc-300 hover:bg-[#1e1e2a] rounded-lg mb-1 font-semibold transition-colors">
+                        className="block w-full text-left px-4 py-2.5 text-sm text-slate-200 hover:bg-[#1e3358] rounded-lg mb-1 font-semibold transition-colors">
                         All Staff
                       </button>
                       {staffProfiles.map(s => (
                         <button key={s.id} onClick={() => { setSelectedStaffFilter(s.id); setShowFilter(false) }}
-                          className={`block w-full text-left px-3 py-2 text-xs rounded-lg transition-colors ${selectedStaffFilter === s.id ? 'bg-[#FFD633]/10 text-[#FFD633]' : 'text-zinc-400 hover:bg-[#1e1e2a]'}`}>
+                          className={`block w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors ${selectedStaffFilter === s.id ? 'bg-[#FFD633]/10 text-[#FFD633]' : 'text-slate-300 hover:bg-[#1e3358]'}`}>
                           {s.full_name}
                         </button>
                       ))}
@@ -1037,14 +1037,14 @@ export function FetsRosterPremium() {
 
             {/* Refresh */}
             <button onClick={loadData}
-              className="p-2 bg-[#0a0a14] border border-[#1e1e2a] rounded-xl text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 transition-colors">
+              className="p-2 bg-[#0a1628] border border-[#1e3358] rounded-xl text-slate-400 hover:text-slate-200 hover:border-zinc-600 transition-colors">
               <RefreshCw className="h-4 w-4" />
             </button>
           </div>
         </div>
 
         {/* ── MAIN CONTENT ── */}
-        <div className="bg-[#0f0f1a] border border-[#1e1e2a] rounded-2xl p-6 min-h-[600px]">
+        <div className="bg-[#111d36] border border-[#1e3358] rounded-2xl p-6 min-h-[600px]">
           <AnimatePresence mode="wait">
             {/* SCHEDULE TIMELINE / LIST */}
             {mainView === 'roster' && (
@@ -1068,7 +1068,7 @@ export function FetsRosterPremium() {
               <motion.div key="staff-grid"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-zinc-300">
+                  <h3 className="text-sm font-bold text-slate-200">
                     {filteredStaff.length} Staff Members
                     {activeBranch && activeBranch !== 'global' ? ` · ${activeBranch}` : ' · All Branches'}
                   </h3>

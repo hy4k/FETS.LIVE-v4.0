@@ -193,13 +193,13 @@ export function FetsVault() {
   )
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0a09] text-amber-100/80 rounded-3xl overflow-hidden border border-amber-900/30 shadow-2xl relative font-sans">
+    <div className="flex flex-col h-full bg-[#0d0820] text-amber-100/80 rounded-3xl overflow-hidden border border-violet-900/30 shadow-2xl relative font-sans">
 
       {/* Background Visuals (Dark Metal Texture) */}
       <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
         backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`
       }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-amber-900/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-violet-900/20 pointer-events-none" />
 
       {/* Header Area */}
       <div className="relative z-10 p-6 flex flex-col gap-6 ">
@@ -223,7 +223,7 @@ export function FetsVault() {
             {/* Lock Button */}
             <button
               onClick={() => setIsLocked(!isLocked)}
-              className={`h-16 w-16 rounded-2xl border transition-all flex items-center justify-center ${isLocked ? 'bg-amber-600/20 text-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-[#1c1917] text-amber-800 border-amber-900/30 hover:border-amber-500/50 hover:text-amber-500'}`}
+              className={`h-16 w-16 rounded-2xl border transition-all flex items-center justify-center ${isLocked ? 'bg-amber-600/20 text-amber-500 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-[#1a1040] text-amber-800 border-violet-900/30 hover:border-amber-500/50 hover:text-amber-500'}`}
             >
               {isLocked ? <Lock size={24} /> : <Unlock size={24} />}
             </button>
@@ -249,15 +249,15 @@ export function FetsVault() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search your treasures..."
-            className="w-full bg-[#1c1917] border border-amber-900/30 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium outline-none focus:border-amber-500/50 focus:shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-all placeholder:text-amber-900/50 text-amber-200"
+            className="w-full bg-[#1a1040] border border-violet-900/30 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium outline-none focus:border-amber-500/50 focus:shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-all placeholder:text-amber-900/50 text-amber-200"
           />
         </div>
       </div>
 
       {/* Locked State Overlay */}
       {isLocked ? (
-        <div className="absolute inset-0 z-20 bg-[#0a0a09] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-          <div className="w-64 h-64 rounded-full border-4 border-amber-900/40 border-dashed animate-[spin_10s_linear_infinite] absolute" />
+        <div className="absolute inset-0 z-20 bg-[#0d0820] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+          <div className="w-64 h-64 rounded-full border-4 border-violet-900/40 border-dashed animate-[spin_10s_linear_infinite] absolute" />
           <div className="w-48 h-48 rounded-full border-2 border-amber-500/20 absolute" />
           <ShieldCheck size={80} className="text-amber-600 mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-pulse" />
           <h2 className="text-4xl font-black text-white uppercase tracking-widest mb-2">Vault Secured</h2>
@@ -275,7 +275,7 @@ export function FetsVault() {
       <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar p-6">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center opacity-50">
-            <div className="w-12 h-12 border-4 border-amber-900/40 border-t-amber-500 rounded-full animate-spin mb-4" />
+            <div className="w-12 h-12 border-4 border-violet-900/40 border-t-amber-500 rounded-full animate-spin mb-4" />
             <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Unlocking Vault...</p>
           </div>
         ) : filteredEntries.length > 0 ? (
@@ -286,18 +286,18 @@ export function FetsVault() {
                 key={entry.id}
                 onClick={() => setActiveEntryId(activeEntryId === entry.id ? null : entry.id)}
                 className={`
-                    group relative bg-gradient-to-br from-[#1c1917] to-[#0c0a09] border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300
+                    group relative bg-gradient-to-br from-[#1a1040] to-[#0c0a09] border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300
                     ${activeEntryId === entry.id
                     ? 'col-span-1 md:col-span-2 lg:col-span-2 border-amber-500/60 shadow-[0_0_40px_rgba(245,158,11,0.15)] z-20 scale-[1.01]'
-                    : 'border-amber-900/20 hover:border-amber-500/40 hover:shadow-xl hover:scale-[1.02]'
+                    : 'border-violet-900/20 hover:border-amber-500/40 hover:shadow-xl hover:scale-[1.02]'
                   }
                 `}
               >
                 {/* Decorative Rivets */}
-                <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
-                <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
-                <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
-                <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-900/40 shadow-inner" />
+                <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-violet-900/40 shadow-inner" />
+                <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-violet-900/40 shadow-inner" />
+                <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-violet-900/40 shadow-inner" />
+                <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-violet-900/40 shadow-inner" />
 
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -307,7 +307,7 @@ export function FetsVault() {
                          w-12 h-12 rounded-xl flex items-center justify-center shadow-inner
                          ${activeEntryId === entry.id
                           ? 'bg-amber-500 text-amber-950 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                          : 'bg-[#292524] text-amber-700 group-hover:text-amber-500 transition-colors'}
+                          : 'bg-[#221538] text-amber-700 group-hover:text-amber-500 transition-colors'}
                       `}>
                         {activeEntryId === entry.id ? <Unlock size={24} /> : <Lock size={20} />}
                       </div>
@@ -319,7 +319,7 @@ export function FetsVault() {
                     </div>
                     <button
                       onClick={(e) => deleteEntry(entry.id, e)}
-                      className="p-2 hover:bg-red-900/20 text-amber-900/40 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 hover:bg-red-900/20 text-violet-900/40 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -334,12 +334,12 @@ export function FetsVault() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="pt-6 border-t border-amber-900/20 grid gap-6 grid-cols-1 md:grid-cols-2">
+                        <div className="pt-6 border-t border-violet-900/20 grid gap-6 grid-cols-1 md:grid-cols-2">
 
                           {/* Left Column */}
                           <div className="space-y-4">
                             {(entry.username || entry.password) && (
-                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                              <div className="bg-black/40 p-4 rounded-xl border border-violet-900/30 space-y-3 shadow-inner">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Key size={10} /> Access Keys</h4>
 
                                 {entry.username && (
@@ -371,10 +371,10 @@ export function FetsVault() {
 
                             {/* Custom Fields */}
                             {entry.custom_fields && Array.isArray(entry.custom_fields) && entry.custom_fields.length > 0 && (
-                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-2 shadow-inner">
+                              <div className="bg-black/40 p-4 rounded-xl border border-violet-900/30 space-y-2 shadow-inner">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Database size={10} /> Custom Attributes</h4>
                                 {entry.custom_fields.map((field: any, idx: number) => (
-                                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-amber-900/20 last:border-0 last:pb-0">
+                                  <div key={idx} className="flex justify-between items-center pb-2 border-b border-violet-900/20 last:border-0 last:pb-0">
                                     <div>
                                       <label className="text-[9px] uppercase tracking-widest text-amber-900 block">{field.key}</label>
                                       <div className="text-amber-100 text-sm">{field.value}</div>
@@ -390,7 +390,7 @@ export function FetsVault() {
                           <div className="space-y-4">
                             {/* Contact/Email */}
                             {(entry.prof_email || entry.contact_numbers) && (
-                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                              <div className="bg-black/40 p-4 rounded-xl border border-violet-900/30 space-y-3 shadow-inner">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-2"><Briefcase size={10} /> Contact Intel</h4>
 
                                 {entry.prof_email && (
@@ -404,7 +404,7 @@ export function FetsVault() {
                                 )}
 
                                 {entry.contact_numbers && (
-                                  <div className="pt-2 border-t border-amber-900/20">
+                                  <div className="pt-2 border-t border-violet-900/20">
                                     <label className="text-[9px] uppercase tracking-widest text-amber-900 block">Comms</label>
                                     <div className="text-amber-100 text-sm whitespace-pre-line">{entry.contact_numbers}</div>
                                   </div>
@@ -414,7 +414,7 @@ export function FetsVault() {
 
                             {/* URLs */}
                             {(entry.url || entry.other_urls) && (
-                              <div className="bg-black/40 p-4 rounded-xl border border-amber-900/30 space-y-3 shadow-inner">
+                              <div className="bg-black/40 p-4 rounded-xl border border-violet-900/30 space-y-3 shadow-inner">
                                 {entry.url && (
                                   <a href={entry.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-black text-amber-400 hover:text-amber-300 uppercase tracking-wider group/link">
                                     <Globe size={14} /> Launch Portal <ExternalLink size={10} className="group-hover/link:translate-x-1 transition-transform" />
@@ -455,12 +455,12 @@ export function FetsVault() {
               initial={{ opacity: 0, scale: 0.8, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 50 }}
-              className="w-full max-w-2xl bg-[#1c1917] rounded-3xl border-2 border-amber-600 shadow-[0_0_100px_rgba(251,191,36,0.2)] overflow-hidden relative"
+              className="w-full max-w-2xl bg-[#1a1040] rounded-3xl border-2 border-amber-600 shadow-[0_0_100px_rgba(251,191,36,0.2)] overflow-hidden relative"
             >
               {/* Modal Glow */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_20px_#fbbf24]" />
 
-              <div className="p-8 border-b border-amber-900/40 bg-[#292524] flex justify-between items-center relative z-10">
+              <div className="p-8 border-b border-violet-900/40 bg-[#221538] flex justify-between items-center relative z-10">
                 <div className="flex items-center gap-3">
                   <Gem className="text-amber-400" />
                   <h3 className="text-xl font-black uppercase tracking-wide text-amber-100">Mint New Asset</h3>
@@ -472,15 +472,15 @@ export function FetsVault() {
 
                 {/* Section: Basic Info */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 border-b border-amber-900/30 pb-2">01. Asset Identification</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 border-b border-violet-900/30 pb-2">01. Asset Identification</h4>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Name / Title</label>
-                      <input autoFocus type="text" required value={newEntry.title} onChange={e => setNewEntry({ ...newEntry, title: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none transition-all focus:shadow-[0_0_10px_rgba(245,158,11,0.1)]" placeholder="E.g. Royal Bank" />
+                      <input autoFocus type="text" required value={newEntry.title} onChange={e => setNewEntry({ ...newEntry, title: e.target.value })} className="w-full bg-black/30 border border-violet-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none transition-all focus:shadow-[0_0_10px_rgba(245,158,11,0.1)]" placeholder="E.g. Royal Bank" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Classification</label>
-                      <input type="text" list="categories" value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none" placeholder="General" />
+                      <input type="text" list="categories" value={newEntry.category} onChange={e => setNewEntry({ ...newEntry, category: e.target.value })} className="w-full bg-black/30 border border-violet-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none" placeholder="General" />
                       <datalist id="categories">
                         <option value="Financial" />
                         <option value="Corporate" />
@@ -493,31 +493,31 @@ export function FetsVault() {
 
                 {/* Section: Credentials */}
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-amber-900/30 pb-2">
+                  <div className="flex justify-between items-center border-b border-violet-900/30 pb-2">
                     <h4 className="text-xs font-black uppercase tracking-widest text-amber-600">02. Secure Keys</h4>
                     <Lock size={12} className="text-amber-800" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Portal URL</label>
-                    <input type="url" value={newEntry.url} onChange={e => setNewEntry({ ...newEntry, url: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-blue-300 focus:border-amber-500/50 outline-none" placeholder="https://" />
+                    <input type="url" value={newEntry.url} onChange={e => setNewEntry({ ...newEntry, url: e.target.value })} className="w-full bg-black/30 border border-violet-900/30 rounded-xl py-3 px-4 text-sm text-blue-300 focus:border-amber-500/50 outline-none" placeholder="https://" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Username / ID</label>
-                      <input type="text" value={newEntry.username} onChange={e => setNewEntry({ ...newEntry, username: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
+                      <input type="text" value={newEntry.username} onChange={e => setNewEntry({ ...newEntry, username: e.target.value })} className="w-full bg-black/30 border border-violet-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[9px] font-bold text-amber-800 uppercase tracking-widest">Secret Phrase</label>
-                      <input type="text" value={newEntry.password} onChange={e => setNewEntry({ ...newEntry, password: e.target.value })} className="w-full bg-black/30 border border-amber-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
+                      <input type="text" value={newEntry.password} onChange={e => setNewEntry({ ...newEntry, password: e.target.value })} className="w-full bg-black/30 border border-violet-900/30 rounded-xl py-3 px-4 text-sm text-amber-100 focus:border-amber-500/50 outline-none font-mono" />
                     </div>
                   </div>
                 </div>
 
                 {/* Section: Custom Data (Free Form) */}
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-amber-900/30 pb-2">
+                  <div className="flex justify-between items-center border-b border-violet-900/30 pb-2">
                     <h4 className="text-xs font-black uppercase tracking-widest text-amber-600">03. Additional Intel</h4>
                     <button type="button" onClick={addCustomField} className="px-3 py-1 rounded bg-amber-500/10 text-[10px] font-bold uppercase tracking-wider text-amber-500 hover:bg-amber-500 hover:text-black transition-colors flex items-center gap-2">
                       <Plus size={10} /> Add Field
@@ -526,15 +526,15 @@ export function FetsVault() {
 
                   {customFieldsInput.map((field, idx) => (
                     <div key={idx} className="flex gap-2 items-start animate-in fade-in slide-in-from-left-4">
-                      <input type="text" placeholder="Label (e.g. PIN)" value={field.key} onChange={e => updateCustomField(idx, 'key', e.target.value)} className="w-1/3 bg-black/30 border border-amber-900/30 rounded-xl py-2 px-3 text-xs text-amber-700 focus:border-amber-500/50 outline-none" />
-                      <input type="text" placeholder="Data" value={field.value} onChange={e => updateCustomField(idx, 'value', e.target.value)} className="flex-1 bg-black/30 border border-amber-900/30 rounded-xl py-2 px-3 text-xs text-amber-100 focus:border-amber-500/50 outline-none" />
+                      <input type="text" placeholder="Label (e.g. PIN)" value={field.key} onChange={e => updateCustomField(idx, 'key', e.target.value)} className="w-1/3 bg-black/30 border border-violet-900/30 rounded-xl py-2 px-3 text-xs text-amber-700 focus:border-amber-500/50 outline-none" />
+                      <input type="text" placeholder="Data" value={field.value} onChange={e => updateCustomField(idx, 'value', e.target.value)} className="flex-1 bg-black/30 border border-violet-900/30 rounded-xl py-2 px-3 text-xs text-amber-100 focus:border-amber-500/50 outline-none" />
                       <button type="button" onClick={() => removeCustomField(idx)} className="p-2 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     </div>
                   ))}
                   {customFieldsInput.length === 0 && <p className="text-[10px] text-amber-900/50 italic py-2">No custom data points added.</p>}
                 </div>
 
-                <div className="pt-6 border-t border-amber-900/30 flex gap-4">
+                <div className="pt-6 border-t border-violet-900/30 flex gap-4">
                   <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-4 text-amber-800 font-bold uppercase tracking-widest text-xs hover:bg-amber-900/10 rounded-xl transition-colors">Cancel</button>
                   <button
                     type="submit"

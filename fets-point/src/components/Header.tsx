@@ -4,7 +4,8 @@ import {
   Bell, ChevronDown, MapPin, LayoutDashboard,
   Brain, ShieldAlert, MessageSquare, ClipboardList,
   CalendarDays, UserSearch, UserCheck, Menu, LogOut,
-  Server, Cpu, Shield, X, PackageSearch, AlertCircle, BookOpen
+  Server, Cpu, Shield, X, PackageSearch, AlertCircle, BookOpen,
+  ChevronRight, Settings2, Layers
 } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -82,10 +83,26 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
 
   const currentBranchName = activeBranch === 'calicut' ? 'Calicut' : activeBranch === 'cochin' ? 'Cochin' : activeBranch === 'kannur' ? 'Kannur' : 'Global View';
 
+  // Management dropdown state
+  const [showManagementMenu, setShowManagementMenu] = useState(false);
+  const managementRef = useRef<HTMLDivElement>(null);
+  const isMithun = profile?.email === 'mithun@fets.in';
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (managementRef.current && !managementRef.current.contains(event.target as Node)) {
+        setShowManagementMenu(false);
+      }
+    }
+    if (showManagementMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showManagementMenu]);
+
   // --- NAVIGATION ITEMS ---
   const topNavItems = [
     { id: 'command-center', label: 'FETS POINT', icon: LayoutDashboard },
-    { id: 'candidate-tracker', label: 'FETS REGISTER', icon: UserSearch },
     { id: 'fets-calendar', label: 'FETS CALENDAR', icon: CalendarDays },
     { id: 'fets-roster', label: 'FETS ROSTER', icon: UserCheck },
   ];
@@ -96,18 +113,9 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
     { id: 'system-manager', label: 'SYSTEM MANAGER', icon: Server },
     { id: 'lost-and-found', label: 'LOST & FOUND', icon: PackageSearch },
     { id: 'fets-intelligence', label: 'FETS AI', icon: Brain },
-    { id: 'user-management', label: 'MANAGEMENT', icon: Shield },
   ].filter(item => {
-    // Check if item is a toggleable module and is disabled
     const moduleState = modules.find(m => m.id === item.id);
-    if (moduleState && !moduleState.is_enabled) {
-      return false;
-    }
-
-    if (item.id === 'user-management') {
-      const isMithun = profile?.email === 'mithun@fets.in';
-      return isMithun;
-    }
+    if (moduleState && !moduleState.is_enabled) return false;
     return true;
   });
 
@@ -200,6 +208,35 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                 <span className="text-xs font-black uppercase tracking-[0.15em]">{item.label}</span>
               </button>
             ))}
+            {/* Management section in mobile - Mithun only */}
+            {isMithun && (
+              <>
+                <div className="pt-2">
+                  <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-4 pl-2">Management</h3>
+                  {[
+                    { id: 'candidate-tracker', label: 'FETS REGISTER', icon: UserSearch, sub: 'Candidate Management' },
+                    { id: 'user-management', label: 'USER MANAGEMENT', icon: Shield, sub: 'Roles & Permissions' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActiveTab?.(item.id); setSidebarOpen?.(false); }}
+                      className={`w-full flex items-center gap-5 p-5 rounded-2xl transition-all mb-3 ${activeTab === item.id
+                        ? 'bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#bec3c9,inset_-4px_-4px_8px_#ffffff] text-amber-600'
+                        : 'bg-[#e0e5ec] shadow-[6px_6px_12px_#bec3c9,-6px_-6px_12px_#ffffff] text-gray-600'
+                      }`}
+                    >
+                      <div className={`p-3 rounded-xl ${activeTab === item.id ? 'bg-amber-100' : 'bg-white/50'}`}>
+                        <item.icon size={22} />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-black uppercase tracking-[0.15em]">{item.label}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">{item.sub}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -401,6 +438,87 @@ export function Header({ isMobile = false, sidebarOpen = false, setSidebarOpen, 
                     </button>
                   )
                 })}
+
+                {/* MANAGEMENT DROPDOWN - Mithun only */}
+                {isMithun && (
+                  <div ref={managementRef} className="relative">
+                    <button
+                      onClick={() => setShowManagementMenu(!showManagementMenu)}
+                      className={`utility-btn ${(activeTab === 'user-management' || activeTab === 'candidate-tracker') ? 'active' : ''} px-6 py-3 flex items-center gap-1.5`}
+                    >
+                      <Settings2 size={14} className={`${(activeTab === 'user-management' || activeTab === 'candidate-tracker') ? 'opacity-100' : 'opacity-40'}`} />
+                      <span className="text-[11px] font-bold uppercase tracking-widest whitespace-nowrap">MANAGEMENT</span>
+                      <ChevronDown size={11} className={`opacity-50 transition-transform duration-300 ${showManagementMenu ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showManagementMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                          transition={{ duration: 0.18 }}
+                          className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-[#e0e5ec] rounded-2xl shadow-[12px_12px_24px_#bec3c9,-12px_-12px_24px_#ffffff] border border-white/40 overflow-hidden z-[80]"
+                        >
+                          {/* Modules Section */}
+                          <div className="px-4 pt-4 pb-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Layers size={11} className="text-amber-600" />
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.35em]">Modules</span>
+                            </div>
+                            <button
+                              onClick={() => { setActiveTab?.('candidate-tracker'); setShowManagementMenu(false); }}
+                              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all mb-1 ${activeTab === 'candidate-tracker'
+                                ? 'bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#bec3c9,inset_-3px_-3px_6px_#ffffff] text-amber-600'
+                                : 'bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-slate-600 hover:text-amber-600'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${activeTab === 'candidate-tracker' ? 'bg-amber-100' : 'bg-white/60'}`}>
+                                  <UserSearch size={16} />
+                                </div>
+                                <div className="text-left">
+                                  <div className="text-xs font-black uppercase tracking-wider">FETS Register</div>
+                                  <div className="text-[9px] text-slate-400 mt-0.5">Candidate Management</div>
+                                </div>
+                              </div>
+                              <ChevronRight size={12} className="opacity-40" />
+                            </button>
+                          </div>
+
+                          {/* Divider */}
+                          <div className="mx-4 border-t border-slate-200/60 my-1" />
+
+                          {/* Admin Section */}
+                          <div className="px-4 pb-4 pt-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield size={11} className="text-amber-600" />
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.35em]">Admin</span>
+                            </div>
+                            <button
+                              onClick={() => { setActiveTab?.('user-management'); setShowManagementMenu(false); }}
+                              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'user-management'
+                                ? 'bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#bec3c9,inset_-3px_-3px_6px_#ffffff] text-amber-600'
+                                : 'bg-[#e0e5ec] shadow-[4px_4px_8px_#bec3c9,-4px_-4px_8px_#ffffff] text-slate-600 hover:text-amber-600'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${activeTab === 'user-management' ? 'bg-amber-100' : 'bg-white/60'}`}>
+                                  <Shield size={16} />
+                                </div>
+                                <div className="text-left">
+                                  <div className="text-xs font-black uppercase tracking-wider">User Management</div>
+                                  <div className="text-[9px] text-slate-400 mt-0.5">Roles & Permissions</div>
+                                </div>
+                              </div>
+                              <ChevronRight size={12} className="opacity-40" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
 
               {/* Spacer strictly to balance BranchSelector width to maintain a true center */}

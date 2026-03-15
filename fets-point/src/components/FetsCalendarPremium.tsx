@@ -347,11 +347,11 @@ export function FetsCalendarPremium() {
   // MONTH VIEW
   // ─────────────────────────────────────────────────────────────────────────
   const MonthView = () => (
-    <div className="rounded-2xl border border-[#1e1e2a] overflow-hidden">
+    <div className="rounded-2xl border border-[#1e3358] overflow-hidden">
       {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-[#1e1e2a] bg-[#0a0a14]">
+      <div className="grid grid-cols-7 border-b border-[#1e3358] bg-[#0a1628]">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-          <div key={day} className={`py-3 text-center text-[11px] font-bold uppercase tracking-wider ${i === 0 || i === 6 ? 'text-zinc-600' : 'text-zinc-500'}`}>
+          <div key={day} className={`py-3 text-center text-[11px] font-bold uppercase tracking-wider ${i === 0 || i === 6 ? 'text-slate-500' : 'text-slate-400'}`}>
             {day}
           </div>
         ))}
@@ -360,7 +360,7 @@ export function FetsCalendarPremium() {
       <div className="grid grid-cols-7">
         {days.map((date, idx) => {
           if (!date) return (
-            <div key={idx} className="min-h-[120px] bg-[#050508] border-b border-r border-[#1a1a24]" />
+            <div key={idx} className="min-h-[120px] bg-[#070e1c] border-b border-r border-[#162848]" />
           )
           const ds = getSessionsForDate(date)
           const allDs = getAllSessionsForDate(date)
@@ -381,13 +381,13 @@ export function FetsCalendarPremium() {
               key={idx}
               onClick={() => openDetailsModal(date)}
               className={`
-                min-h-[120px] p-2 border-b border-r border-[#1a1a24] cursor-pointer
+                min-h-[120px] p-2 border-b border-r border-[#162848] cursor-pointer
                 transition-all duration-200 relative group
                 ${isCurrentDay
-                  ? 'bg-[#1a1500] ring-1 ring-inset ring-[#FFD633]/40'
+                  ? 'bg-[#0c1f3a] ring-1 ring-inset ring-[#FFD633]/40'
                   : isWeekend
-                  ? 'bg-[#08080e]'
-                  : 'bg-[#0c0c16] hover:bg-[#111125]'
+                  ? 'bg-[#091424]'
+                  : 'bg-[#0d1830] hover:bg-[#122040]'
                 }
               `}
             >
@@ -398,14 +398,14 @@ export function FetsCalendarPremium() {
                     ? 'w-7 h-7 rounded-full bg-[#FFD633] text-black text-xs shadow-[0_0_12px_rgba(255,214,51,0.5)]'
                     : isWeekend
                     ? 'text-zinc-700'
-                    : 'text-zinc-400'
+                    : 'text-slate-300'
                   }`}
                 >
                   {date.getDate()}
                 </span>
                 {total > 0 && (
                   <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded
-                    ${isCurrentDay ? 'bg-[#FFD633] text-black' : 'bg-[#1e1e2a] text-zinc-400'}`}>
+                    ${isCurrentDay ? 'bg-[#FFD633] text-black' : 'bg-[#1e3358] text-slate-300'}`}>
                     {total}
                   </span>
                 )}
@@ -424,7 +424,7 @@ export function FetsCalendarPremium() {
                   )
                 })}
                 {entries.length > 3 && (
-                  <div className="text-[9px] text-zinc-600 font-bold pl-1">+{entries.length - 3} more</div>
+                  <div className="text-[9px] text-slate-500 font-bold pl-1">+{entries.length - 3} more</div>
                 )}
                 {allDs.length > ds.length && (
                   <div className="text-[9px] text-[#FFD633]/50 font-bold pl-1">+{allDs.length - ds.length} filtered</div>
@@ -447,24 +447,24 @@ export function FetsCalendarPremium() {
   const WeekView = () => {
     const weekDays = getWeekDays()
     return (
-      <div className="rounded-2xl border border-[#1e1e2a] overflow-hidden">
+      <div className="rounded-2xl border border-[#1e3358] overflow-hidden">
         {/* Header row */}
-        <div className="grid border-b border-[#1e1e2a] bg-[#0a0a14]"
+        <div className="grid border-b border-[#1e3358] bg-[#0a1628]"
           style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-          <div className="py-3 border-r border-[#1e1e2a]" />
+          <div className="py-3 border-r border-[#1e3358]" />
           {weekDays.map((d, i) => {
             const isCur = isToday(d)
             const isWknd = d.getDay() === 0 || d.getDay() === 6
             return (
-              <div key={i} className={`py-3 text-center border-r border-[#1e1e2a] last:border-r-0
+              <div key={i} className={`py-3 text-center border-r border-[#1e3358] last:border-r-0
                 ${isWknd ? 'opacity-50' : ''}`}>
-                <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   {d.toLocaleDateString('en', { weekday: 'short' })}
                 </div>
                 <div className={`text-lg font-bold mt-0.5 mx-auto w-8 h-8 flex items-center justify-center rounded-full
                   ${isCur
                     ? 'bg-[#FFD633] text-black shadow-[0_0_12px_rgba(255,214,51,0.4)]'
-                    : 'text-zinc-300'}`}>
+                    : 'text-slate-200'}`}>
                   {d.getDate()}
                 </div>
               </div>
@@ -474,10 +474,10 @@ export function FetsCalendarPremium() {
         {/* Time slots */}
         <div className="overflow-y-auto max-h-[600px] custom-scrollbar">
           {HOURS.map(hour => (
-            <div key={hour} className="grid border-b border-[#1a1a24]"
+            <div key={hour} className="grid border-b border-[#162848]"
               style={{ gridTemplateColumns: '60px repeat(7, 1fr)', minHeight: '60px' }}>
-              <div className="py-2 px-2 text-right border-r border-[#1a1a24]">
-                <span className="text-[10px] text-zinc-600 font-medium">
+              <div className="py-2 px-2 text-right border-r border-[#162848]">
+                <span className="text-[10px] text-slate-500 font-medium">
                   {hour > 12 ? `${hour - 12}` : hour}{hour >= 12 ? 'PM' : 'AM'}
                 </span>
               </div>
@@ -488,9 +488,9 @@ export function FetsCalendarPremium() {
                 })
                 return (
                   <div key={i}
-                    className={`p-1 border-r border-[#1a1a24] last:border-r-0 cursor-pointer
-                      ${isToday(d) ? 'bg-[#1a1500]/20' : (d.getDay() === 0 || d.getDay() === 6) ? 'bg-[#08080e]/50' : 'bg-[#0c0c16]'}
-                      hover:bg-[#111125] transition-colors`}
+                    className={`p-1 border-r border-[#162848] last:border-r-0 cursor-pointer
+                      ${isToday(d) ? 'bg-[#0c1f3a]/20' : (d.getDay() === 0 || d.getDay() === 6) ? 'bg-[#091424]/50' : 'bg-[#0d1830]'}
+                      hover:bg-[#122040] transition-colors`}
                     onClick={() => canEdit && ds.length === 0 && openModal(d)}
                   >
                     {ds.map(s => {
@@ -531,14 +531,14 @@ export function FetsCalendarPremium() {
     const DAY_HOURS = Array.from({ length: 16 }, (_, i) => i + 6) // 6am–9pm
 
     return (
-      <div className="rounded-2xl border border-[#1e1e2a] overflow-hidden">
+      <div className="rounded-2xl border border-[#1e3358] overflow-hidden">
         {/* Day header */}
-        <div className="px-6 py-4 bg-[#0a0a14] border-b border-[#1e1e2a] flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#0a1628] border-b border-[#1e3358] flex items-center justify-between">
           <div>
             <h3 className={`text-xl font-bold ${isToday(currentDate) ? 'text-[#FFD633]' : 'text-white'}`}>
               {currentDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' })}
             </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               {daySessions.length} sessions · {daySessions.reduce((s, x) => s + x.candidate_count, 0)} candidates
             </p>
           </div>
@@ -552,10 +552,10 @@ export function FetsCalendarPremium() {
         {/* Timeline */}
         <div className="flex overflow-y-auto max-h-[600px] custom-scrollbar">
           {/* Hour labels */}
-          <div className="w-16 flex-shrink-0 border-r border-[#1a1a24]">
+          <div className="w-16 flex-shrink-0 border-r border-[#162848]">
             {DAY_HOURS.map(h => (
-              <div key={h} className="h-[60px] flex items-start justify-end pr-3 pt-1 border-b border-[#1a1a24]">
-                <span className="text-[10px] text-zinc-600">
+              <div key={h} className="h-[60px] flex items-start justify-end pr-3 pt-1 border-b border-[#162848]">
+                <span className="text-[10px] text-slate-500">
                   {h > 12 ? `${h - 12}pm` : h === 12 ? '12pm' : `${h}am`}
                 </span>
               </div>
@@ -564,7 +564,7 @@ export function FetsCalendarPremium() {
           {/* Sessions column */}
           <div className="flex-1 relative">
             {DAY_HOURS.map(h => (
-              <div key={h} className="h-[60px] border-b border-[#1a1a24] bg-[#0c0c16] hover:bg-[#0f0f1a] transition-colors" />
+              <div key={h} className="h-[60px] border-b border-[#162848] bg-[#0d1830] hover:bg-[#111d36] transition-colors" />
             ))}
             {/* Session blocks */}
             {daySessions.map(s => {
@@ -595,19 +595,19 @@ export function FetsCalendarPremium() {
                     <div className="flex items-start justify-between">
                       <div>
                         <span className="text-xs font-bold" style={{ color: c.text }}>{s.client_name}</span>
-                        <p className="text-[10px] text-zinc-300 mt-0.5 line-clamp-1">{s.exam_name}</p>
+                        <p className="text-[10px] text-slate-200 mt-0.5 line-clamp-1">{s.exam_name}</p>
                       </div>
                       <StatusBadge status={status} />
                     </div>
                     <div className="flex items-center gap-3 mt-auto pb-1">
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                      <span className="text-[10px] text-slate-300 flex items-center gap-1">
                         <Clock size={9} />{formatTime(s.start_time)} – {formatTime(s.end_time)}
                       </span>
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                      <span className="text-[10px] text-slate-300 flex items-center gap-1">
                         <Users size={9} />{s.candidate_count}
                       </span>
                       {(s as any).assigned_staff && (
-                        <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                        <span className="text-[10px] text-slate-300 flex items-center gap-1">
                           <User size={9} />{(s as any).assigned_staff}
                         </span>
                       )}
@@ -626,13 +626,13 @@ export function FetsCalendarPremium() {
   // LOADING STATE
   // ─────────────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f]">
-      <div className="bg-[#0f0f1a] p-8 rounded-2xl border border-[#1e1e2a] flex flex-col items-center gap-4 shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#0d1224] via-[#0d1830] to-[#0a1628]">
+      <div className="bg-[#111d36] p-8 rounded-2xl border border-[#1e3358] flex flex-col items-center gap-4 shadow-2xl">
         <div className="relative w-10 h-10">
-          <div className="absolute inset-0 rounded-full border-2 border-[#1e1e2a]" />
+          <div className="absolute inset-0 rounded-full border-2 border-[#1e3358]" />
           <div className="absolute inset-0 rounded-full border-2 border-t-[#FFD633] animate-spin" />
         </div>
-        <p className="text-zinc-400 text-sm font-medium">Loading calendar…</p>
+        <p className="text-slate-300 text-sm font-medium">Loading calendar…</p>
       </div>
     </div>
   )
@@ -641,7 +641,7 @@ export function FetsCalendarPremium() {
   // MAIN RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0a0a0f]" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-[#0d1224] via-[#0d1830] to-[#0a1628]" style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
 
         {/* ── HEADER ── */}
@@ -650,30 +650,30 @@ export function FetsCalendarPremium() {
             <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
               Exam Calendar
             </h1>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <p className="text-sm text-slate-400 mt-0.5">
               {activeBranch && activeBranch !== 'global'
                 ? `${activeBranch.charAt(0).toUpperCase() + activeBranch.slice(1)} Centre`
                 : 'All Centres'} · {getHeaderTitle()}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a2035] border border-[#2563eb]/30 text-blue-400 rounded-lg text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#162e58] border border-[#2563eb]/30 text-blue-400 rounded-lg text-xs font-bold">
               <Users size={12} />{stats.total} candidates
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1500] border border-[#FFD633]/20 text-[#FFD633] rounded-lg text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0c1f3a] border border-[#FFD633]/20 text-[#FFD633] rounded-lg text-xs font-bold">
               <Calendar size={12} />{stats.totalSessions} sessions
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0f2518] border border-[#22c55e]/20 text-green-400 rounded-lg text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0c2040] border border-[#22c55e]/20 text-green-400 rounded-lg text-xs font-bold">
               <Building size={12} />{stats.uniqueClients} clients
             </div>
           </div>
         </div>
 
         {/* ── TOOLBAR ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5 bg-[#0f0f1a] rounded-xl border border-[#1e1e2a] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5 bg-[#111d36] rounded-xl border border-[#1e3358] px-4 py-3">
           <div className="flex items-center gap-3 flex-wrap">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-[#0a0a14] rounded-lg border border-[#1e1e2a] p-0.5">
+            <div className="flex items-center bg-[#0a1628] rounded-lg border border-[#1e3358] p-0.5">
               {([
                 { mode: 'month' as CalendarViewMode, icon: <LayoutGrid size={14} />, label: 'Month' },
                 { mode: 'week'  as CalendarViewMode, icon: <Columns size={14} />,   label: 'Week' },
@@ -681,34 +681,34 @@ export function FetsCalendarPremium() {
               ]).map(({ mode, icon, label }) => (
                 <button key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${viewMode === mode
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === mode
                     ? 'bg-[#FFD633] text-black shadow'
-                    : 'text-zinc-500 hover:text-zinc-300'}`}>
+                    : 'text-slate-400 hover:text-slate-200'}`}>
                   {icon} {label}
                 </button>
               ))}
             </div>
 
             {/* Month/Week/Day Navigation */}
-            <div className="flex items-center bg-[#0a0a14] rounded-lg border border-[#1e1e2a]">
-              <button onClick={() => navigate('prev')} className="p-2 hover:bg-[#1e1e2a] rounded-l-lg transition-colors">
-                <ChevronLeft size={16} className="text-zinc-500" />
+            <div className="flex items-center bg-[#0a1628] rounded-lg border border-[#1e3358]">
+              <button onClick={() => navigate('prev')} className="p-2.5 hover:bg-[#1e3358] rounded-l-lg transition-colors">
+                <ChevronLeft size={16} className="text-slate-400" />
               </button>
-              <span className="px-4 text-sm font-bold text-zinc-300 min-w-[160px] text-center">{getHeaderTitle()}</span>
-              <button onClick={() => navigate('next')} className="p-2 hover:bg-[#1e1e2a] rounded-r-lg transition-colors">
-                <ChevronRight size={16} className="text-zinc-500" />
+              <span className="px-4 text-sm font-bold text-slate-200 min-w-[160px] text-center">{getHeaderTitle()}</span>
+              <button onClick={() => navigate('next')} className="p-2.5 hover:bg-[#1e3358] rounded-r-lg transition-colors">
+                <ChevronRight size={16} className="text-slate-400" />
               </button>
             </div>
             <button onClick={() => setCurrentDate(new Date())}
-              className="px-3 py-2 text-xs font-bold text-zinc-400 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors">
+              className="px-4 py-2.5 text-sm font-bold text-slate-300 bg-[#0a1628] border border-[#1e3358] rounded-lg hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors">
               Today
             </button>
 
             {/* Location filter */}
-            <div className="flex items-center px-3 py-2 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg">
+            <div className="flex items-center px-3 py-2 bg-[#0a1628] border border-[#1e3358] rounded-lg">
               <MapPin size={13} className="text-[#FFD633] mr-2" />
               <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)}
-                className="bg-transparent border-none outline-none text-xs font-bold text-zinc-400 cursor-pointer">
+                className="bg-transparent border-none outline-none text-xs font-bold text-slate-300 cursor-pointer">
                 <option value="all">All Locations</option>
                 <option value="calicut">Calicut</option>
                 <option value="cochin">Cochin</option>
@@ -721,20 +721,20 @@ export function FetsCalendarPremium() {
           <div className="flex items-center gap-2">
             {/* Search */}
             <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search sessions…"
-                className="pl-8 pr-3 py-2 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-[#FFD633]/50 w-40 md:w-48 transition-all"
+                className="pl-9 pr-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#FFD633]/50 w-40 md:w-48 transition-all"
               />
             </div>
 
             {/* Advanced Filters */}
             <div className="relative">
               <button onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-lg border transition-colors ${showFilters ? 'bg-[#FFD633]/10 border-[#FFD633]/40 text-[#FFD633]' : 'bg-[#0a0a14] border-[#1e1e2a] text-zinc-500 hover:text-zinc-300'}`}>
+                className={`p-2 rounded-lg border transition-colors ${showFilters ? 'bg-[#FFD633]/10 border-[#FFD633]/40 text-[#FFD633]' : 'bg-[#0a1628] border-[#1e3358] text-slate-400 hover:text-slate-200'}`}>
                 <Filter size={14} />
               </button>
               <AnimatePresence>
@@ -743,14 +743,14 @@ export function FetsCalendarPremium() {
                     initial={{ opacity: 0, y: -10, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                    className="absolute right-0 mt-2 w-64 bg-[#0f0f1a] border border-[#1e1e2a] rounded-xl shadow-2xl z-30 p-4"
+                    className="absolute right-0 mt-2 w-64 bg-[#111d36] border border-[#1e3358] rounded-xl shadow-2xl z-30 p-4"
                   >
-                    <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-3">Filters</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Filters</p>
                     <div className="space-y-3">
                       <div>
-                        <label className="text-[10px] font-bold text-zinc-600 uppercase">Exam Type</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Exam Type</label>
                         <select value={examTypeFilter} onChange={e => setExamTypeFilter(e.target.value)}
-                          className="mt-1 w-full px-2 py-1.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-xs text-zinc-300 focus:outline-none">
+                          className="mt-1 w-full px-2 py-1.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-xs text-slate-200 focus:outline-none">
                           <option value="all">All Types</option>
                           {Object.keys(EXAM_COLORS).filter(k => k !== 'OTHER').map(k => (
                             <option key={k} value={k}>{k}</option>
@@ -758,9 +758,9 @@ export function FetsCalendarPremium() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-zinc-600 uppercase">Status</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Status</label>
                         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                          className="mt-1 w-full px-2 py-1.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-xs text-zinc-300 focus:outline-none">
+                          className="mt-1 w-full px-2 py-1.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-xs text-slate-200 focus:outline-none">
                           <option value="all">All Status</option>
                           {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                             <option key={k} value={k}>{v.label}</option>
@@ -768,7 +768,7 @@ export function FetsCalendarPremium() {
                         </select>
                       </div>
                       <button onClick={() => { setExamTypeFilter('all'); setStatusFilter('all'); setSearchQuery('') }}
-                        className="w-full py-1.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 border border-[#1e1e2a] rounded-lg transition-colors">
+                        className="w-full py-1.5 text-xs font-bold text-slate-400 hover:text-slate-200 border border-[#1e3358] rounded-lg transition-colors">
                         Clear Filters
                       </button>
                     </div>
@@ -779,7 +779,7 @@ export function FetsCalendarPremium() {
 
             {/* Analysis */}
             <button onClick={() => setShowAnalysis(true)}
-              className="px-3 py-2 text-xs font-bold text-zinc-400 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors flex items-center gap-1.5">
+              className="px-4 py-2.5 text-sm font-bold text-slate-300 bg-[#0a1628] border border-[#1e3358] rounded-lg hover:border-[#FFD633]/50 hover:text-[#FFD633] transition-colors flex items-center gap-1.5">
               <TrendingUp size={13} /> Analysis
             </button>
 
@@ -799,7 +799,7 @@ export function FetsCalendarPremium() {
             <button key={key}
               onClick={() => setExamTypeFilter(examTypeFilter === key ? 'all' : key)}
               className={`flex items-center gap-1.5 px-2 py-1 rounded-md border transition-all text-[10px] font-bold
-                ${examTypeFilter === key ? 'ring-1 ring-offset-1 ring-offset-[#0a0a0f] ring-[#FFD633]' : ''}`}
+                ${examTypeFilter === key ? 'ring-1 ring-offset-1 ring-offset-[#0d1224] ring-[#FFD633]' : ''}`}
               style={{ backgroundColor: c.badge, borderColor: c.border + '60', color: c.badgeText }}>
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.dot }} />
               {key}
@@ -810,19 +810,19 @@ export function FetsCalendarPremium() {
         {/* ── ACTIVE FILTERS CHIPS ── */}
         {(searchQuery || examTypeFilter !== 'all' || statusFilter !== 'all') && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-[11px] text-zinc-600 font-medium">Active filters:</span>
+            <span className="text-[11px] text-slate-500 font-medium">Active filters:</span>
             {searchQuery && (
-              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#1a1500] border border-[#FFD633]/30 text-[#FFD633] rounded-full text-[10px] font-bold">
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#0c1f3a] border border-[#FFD633]/30 text-[#FFD633] rounded-full text-[10px] font-bold">
                 "{searchQuery}" <button onClick={() => setSearchQuery('')}><X size={10} /></button>
               </span>
             )}
             {examTypeFilter !== 'all' && (
-              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#1e1e2a] border border-zinc-700 text-zinc-300 rounded-full text-[10px] font-bold">
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#1e3358] border border-zinc-700 text-slate-200 rounded-full text-[10px] font-bold">
                 {examTypeFilter} <button onClick={() => setExamTypeFilter('all')}><X size={10} /></button>
               </span>
             )}
             {statusFilter !== 'all' && (
-              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#1e1e2a] border border-zinc-700 text-zinc-300 rounded-full text-[10px] font-bold">
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-[#1e3358] border border-zinc-700 text-slate-200 rounded-full text-[10px] font-bold">
                 {STATUS_CONFIG[statusFilter]?.label} <button onClick={() => setStatusFilter('all')}><X size={10} /></button>
               </span>
             )}
@@ -845,24 +845,24 @@ export function FetsCalendarPremium() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-3xl bg-[#0f0f1a] rounded-2xl shadow-2xl border border-[#1e1e2a] overflow-hidden max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-3xl bg-[#111d36] rounded-2xl shadow-2xl border border-[#1e3358] overflow-hidden max-h-[85vh] flex flex-col"
             >
               {/* Header */}
-              <div className="px-6 py-5 border-b border-[#1e1e2a] flex items-center justify-between bg-[#0a0a14]">
+              <div className="px-6 py-5 border-b border-[#1e3358] flex items-center justify-between bg-[#0a1628]">
                 <div>
                   <h3 className="text-lg font-extrabold text-white">
                     {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs font-bold text-zinc-500">{getSessionsForDate(selectedDate).length} sessions</span>
+                    <span className="text-xs font-bold text-slate-400">{getSessionsForDate(selectedDate).length} sessions</span>
                     <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                    <span className="text-xs font-bold text-zinc-500">
+                    <span className="text-xs font-bold text-slate-400">
                       {getSessionsForDate(selectedDate).reduce((s, x) => s + x.candidate_count, 0)} candidates
                     </span>
                   </div>
                 </div>
                 <button onClick={closeModal}
-                  className="w-9 h-9 rounded-xl bg-[#1e1e2a] flex items-center justify-center text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                  className="w-9 h-9 rounded-xl bg-[#1e3358] flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
                   <X size={16} />
                 </button>
               </div>
@@ -893,8 +893,8 @@ export function FetsCalendarPremium() {
                                   </div>
                                   <h4 className="text-sm font-bold text-white leading-snug">{session.exam_name}</h4>
                                   {(session as any).assigned_staff && (
-                                    <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">
-                                      <User size={11} className="text-zinc-600" /> {(session as any).assigned_staff}
+                                    <p className="text-xs text-slate-300 mt-1 flex items-center gap-1">
+                                      <User size={11} className="text-slate-500" /> {(session as any).assigned_staff}
                                     </p>
                                   )}
                                 </div>
@@ -902,29 +902,29 @@ export function FetsCalendarPremium() {
                                   <div className="text-2xl font-extrabold" style={{ color: c.text }}>
                                     {session.candidate_count}
                                   </div>
-                                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider">candidates</div>
+                                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">candidates</div>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1e1e2a]/60">
-                                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#1e3358]/60">
+                                <div className="flex items-center gap-1.5 text-xs text-slate-300">
                                   <Clock size={12} className="text-[#FFD633]" />
                                   <span className="font-semibold">{formatTime(session.start_time)} – {formatTime(session.end_time)}</span>
                                 </div>
                                 {session.branch_location && (
-                                  <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                                    <MapPin size={12} className="text-zinc-600" />
+                                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                                    <MapPin size={12} className="text-slate-500" />
                                     <span className="font-semibold capitalize">{session.branch_location}</span>
                                   </div>
                                 )}
                                 {canEdit && (
                                   <div className="ml-auto flex items-center gap-1">
                                     <button onClick={() => openModal(selectedDate!, session as Session)}
-                                      className="p-1.5 rounded-lg text-zinc-600 hover:text-[#FFD633] hover:bg-[#FFD633]/10 transition-colors">
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-[#FFD633] hover:bg-[#FFD633]/10 transition-colors">
                                       <Edit size={13} />
                                     </button>
                                     <button onClick={() => session.id && handleDelete(session.id)}
-                                      className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
                                       <Trash2 size={13} />
                                     </button>
                                   </div>
@@ -944,7 +944,7 @@ export function FetsCalendarPremium() {
               </div>
 
               {canEdit && (
-                <div className="p-4 border-t border-[#1e1e2a] bg-[#0a0a14] flex justify-center">
+                <div className="p-4 border-t border-[#1e3358] bg-[#0a1628] flex justify-center">
                   <button onClick={() => openModal(selectedDate!)}
                     className="px-6 py-2.5 bg-[#FFD633] hover:bg-[#ffe55a] text-black text-xs font-bold rounded-lg shadow transition-all flex items-center gap-2">
                     <Plus size={13} /> Add Session
@@ -966,15 +966,15 @@ export function FetsCalendarPremium() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-xl bg-[#0f0f1a] rounded-2xl shadow-2xl border border-[#1e1e2a] overflow-hidden"
+              className="relative w-full max-w-xl bg-[#111d36] rounded-2xl shadow-2xl border border-[#1e3358] overflow-hidden"
             >
-              <div className="px-6 py-5 border-b border-[#1e1e2a] flex items-center justify-between bg-[#0a0a14]">
+              <div className="px-6 py-5 border-b border-[#1e3358] flex items-center justify-between bg-[#0a1628]">
                 <div>
                   <h3 className="text-lg font-extrabold text-white">{editingSession ? 'Edit Session' : 'New Session'}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">{editingSession ? 'Update session details' : 'Schedule a new exam session'}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{editingSession ? 'Update session details' : 'Schedule a new exam session'}</p>
                 </div>
                 <button onClick={closeModal}
-                  className="w-9 h-9 rounded-xl bg-[#1e1e2a] flex items-center justify-center text-zinc-500 hover:text-red-400 transition-colors">
+                  className="w-9 h-9 rounded-xl bg-[#1e3358] flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
                   <X size={16} />
                 </button>
               </div>
@@ -983,10 +983,10 @@ export function FetsCalendarPremium() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Client</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Client</label>
                       <select value={formData.client_name}
                         onChange={e => setFormData({ ...formData, client_name: e.target.value, exam_name: '' })}
-                        className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 focus:border-[#FFD633]/50 outline-none"
+                        className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 focus:border-[#FFD633]/50 outline-none"
                         required>
                         <option value="">Select Client</option>
                         {dbClients.length > 0 ? (
@@ -997,21 +997,21 @@ export function FetsCalendarPremium() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Exam</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Exam</label>
                       {(() => {
                         const sel = dbClients.find((c: any) => c.name === formData.client_name)
                         const exams = sel ? dbExams.filter((e: any) => e.client_id === sel.id) : []
                         return exams.length > 0 ? (
                           <select value={formData.exam_name}
                             onChange={e => setFormData({ ...formData, exam_name: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required>
+                            className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required>
                             <option value="">Select Exam</option>
                             {exams.map((e: any) => <option key={e.id} value={e.name}>{e.name}</option>)}
                           </select>
                         ) : (
                           <input type="text" value={formData.exam_name}
                             onChange={e => setFormData({ ...formData, exam_name: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none placeholder-zinc-700"
+                            className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none placeholder-zinc-700"
                             placeholder="e.g. CMA US Exam" required />
                         )
                       })()}
@@ -1020,45 +1020,45 @@ export function FetsCalendarPremium() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Date</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Date</label>
                       <input type="date" value={formData.date}
                         onChange={e => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
+                        className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Candidates</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Candidates</label>
                       <input type="number" value={formData.candidate_count}
                         onChange={e => setFormData({ ...formData, candidate_count: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none"
+                        className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none"
                         min="1" required />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Start Time</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Start Time</label>
                       <input type="time" value={formData.start_time}
                         onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
+                        className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">End Time</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">End Time</label>
                       <input type="time" value={formData.end_time}
                         onChange={e => setFormData({ ...formData, end_time: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
+                        className="w-full px-3 py-2.5 bg-[#0a1628] border border-[#1e3358] rounded-lg text-sm font-medium text-zinc-200 focus:ring-1 focus:ring-[#FFD633]/50 outline-none" required />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Status</label>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Status</label>
                     <div className="grid grid-cols-4 gap-2">
                       {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                         <button key={k} type="button"
                           onClick={() => setFormData({ ...formData, status: k })}
                           className={`px-2 py-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 justify-center transition-all
                             ${formData.status === k
-                              ? 'ring-1 ring-[#FFD633] border-[#FFD633]/50 text-[#FFD633] bg-[#1a1500]'
-                              : 'border-[#1e1e2a] text-zinc-500 bg-[#0a0a14] hover:border-zinc-600'}`}>
+                              ? 'ring-1 ring-[#FFD633] border-[#FFD633]/50 text-[#FFD633] bg-[#0c1f3a]'
+                              : 'border-[#1e3358] text-slate-400 bg-[#0a1628] hover:border-zinc-600'}`}>
                           {v.icon} {v.label}
                         </button>
                       ))}
@@ -1066,9 +1066,9 @@ export function FetsCalendarPremium() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-6 pt-5 border-t border-[#1e1e2a]">
+                <div className="flex gap-3 mt-6 pt-5 border-t border-[#1e3358]">
                   <button type="button" onClick={closeModal}
-                    className="flex-1 px-4 py-2.5 bg-[#0a0a14] border border-[#1e1e2a] text-zinc-400 font-bold text-sm rounded-lg hover:border-zinc-600 transition-colors">
+                    className="flex-1 px-4 py-2.5 bg-[#0a1628] border border-[#1e3358] text-slate-300 font-bold text-sm rounded-lg hover:border-zinc-600 transition-colors">
                     Cancel
                   </button>
                   <button type="submit" disabled={isMutating}
@@ -1094,8 +1094,8 @@ export function FetsCalendarPremium() {
       {/* Custom scrollbar styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0a14; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e1e2a; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0a1628; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3358; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #2a2a3a; }
       `}</style>
     </div>
